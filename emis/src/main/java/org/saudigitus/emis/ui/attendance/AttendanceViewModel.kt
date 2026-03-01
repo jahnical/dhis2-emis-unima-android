@@ -90,6 +90,8 @@ class AttendanceViewModel
 
     fun setOptions(academicYear: String, grade: String, section: String) {
         _options.value = listOf(academicYear, grade, section)
+        Timber.tag("ABSENTEEISM_FILTERS").d("setOptions called with: academicYear='$academicYear', grade='$grade', section='$section'")
+        Timber.tag("ABSENTEEISM_FILTERS").d("options list size: ${_options.value.size}, values: ${_options.value}")
     }
 
     override fun setConfig(program: String) {
@@ -196,10 +198,10 @@ class AttendanceViewModel
                     attendanceDataElement = datastoreAttendance.value?.status.orEmpty(),
                     reasonDataElement = datastoreAttendance.value?.absenceReason.orEmpty(),
                     date = date,
-                    dataElementIds = listOf(
-                        "${schoolCalendar.value?.academicYear}",
-                        "${registration?.grade}",
-                        "${registration?.section}",
+                    dataElementIds = listOfNotNull(
+                        schoolCalendar.value?.academicYear,
+                        registration?.grade,
+                        registration?.section,
                     ),
                     options = options.value,
                 )

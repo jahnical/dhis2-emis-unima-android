@@ -21,7 +21,15 @@ class EMISConfig {
                         ),
                     )
             } catch (ex: Exception) {
-                Timber.e(ex, "Failed to parse EMISConfig from JSON. JSON length: ${json.length}, Error message: ${ex.message}")
+                val jsonPreview = if (json.length > 200) {
+                    json.substring(0, 200) + "..."
+                } else {
+                    json
+                }
+                Timber.e(
+                    ex,
+                    "Failed to parse EMISConfig from JSON.\nError type: ${ex::class.simpleName}\nError message: ${ex.message}\nJSON length: ${json.length}\nJSON preview: $jsonPreview"
+                )
                 null
             }
         } else {

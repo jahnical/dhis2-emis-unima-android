@@ -300,10 +300,10 @@ fun HomeUI(
                                 onEvent(
                                     HomeUiEvent.NavTo(
                                         AppRoutes.absenteeismRoute(
-                                            uiState.academicYear?.code,
-                                            uiState.school?.uid,
-                                            uiState.grade?.code,
-                                            uiState.section?.code,
+                                            uiState.academicYear?.code ?: "",
+                                            uiState.school?.uid ?: "",
+                                            uiState.grade?.code ?: "",
+                                            uiState.section?.code ?: "",
                                         ),
                                     ),
                                 )
