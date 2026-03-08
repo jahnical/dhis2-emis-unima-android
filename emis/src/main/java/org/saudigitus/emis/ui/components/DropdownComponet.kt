@@ -410,7 +410,7 @@ fun DropDown(
             },
             singleLine = true,
             readOnly = true,
-            placeholder = { Text(text = dropdownState.displayName.ifEmpty { stringResource(dropdownState.placeholder()) }) },
+            placeholder = { Text(text = /*dropdownState.displayName.ifEmpty {*/ stringResource(dropdownState.placeholder()) ) },
             leadingIcon = {
                 Icon(
                     imageVector = dropdownState.leadingIcon ?: ImageVector.vectorResource(dropdownState.icon()),
@@ -564,7 +564,7 @@ fun DropDownWithSelectionByCode(
             },
             singleLine = true,
             readOnly = true,
-            placeholder = { Text(text = dropdownState.displayName.ifEmpty { stringResource(dropdownState.placeholder()) }) },
+            placeholder = { Text(text = /*dropdownState.displayName.ifEmpty {*/  stringResource(dropdownState.placeholder()) ) },
             leadingIcon = {
                 Icon(
                     imageVector = dropdownState.leadingIcon ?: ImageVector.vectorResource(dropdownState.icon()),
