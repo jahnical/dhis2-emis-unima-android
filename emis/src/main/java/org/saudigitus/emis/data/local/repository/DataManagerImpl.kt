@@ -437,4 +437,17 @@ class DataManagerImpl
                 )
             }
     }
+
+    override suspend fun getUserCaptureOrgUnits(program: String) = withContext(Dispatchers.IO) {
+        return@withContext d2.organisationUnitModule().organisationUnits()
+            .byOrganisationUnitScope(org.hisp.dhis.android.core.organisationunit.OrganisationUnit.Scope.SCOPE_DATA_CAPTURE)
+            .byProgramUids(listOf(program))
+            .blockingGet()
+            .map { ou ->
+                org.saudigitus.emis.data.model.OU(
+                    uid = ou.uid(),
+                    displayName = ou.displayName(),
+                )
+            }
+    }
 }
