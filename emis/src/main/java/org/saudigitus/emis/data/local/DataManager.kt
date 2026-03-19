@@ -82,4 +82,6 @@ interface DataManager {
     suspend fun getSubjects(stage: String): List<Subject>
 
     suspend fun getTerms(stages: List<ProgramStages>): List<DropdownItem>
+
+    suspend fun getUserCaptureOrgUnits(program: String): List<org.saudigitus.emis.data.model.OU>
 }

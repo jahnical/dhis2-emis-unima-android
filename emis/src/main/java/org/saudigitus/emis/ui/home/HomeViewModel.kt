@@ -132,6 +132,20 @@ class HomeViewModel
                         modules = modules
                     )
                 }
+
+                // Auto-select school if user has exactly one capture org unit
+                val orgUnits = repository.getUserCaptureOrgUnits(program)
+                if (orgUnits.size == 1) {
+                    val singleOu = orgUnits.first()
+                    setOU(singleOu.uid)
+                    viewModelState.update {
+                        it.copy(
+                            toolbarHeaders = updateToolbar(singleOu),
+                            school = singleOu,
+                        )
+                    }
+                }
+
                 loadFiltersSequentially()
             }
         }
