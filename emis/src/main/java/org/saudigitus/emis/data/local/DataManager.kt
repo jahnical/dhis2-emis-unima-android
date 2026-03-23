@@ -79,9 +79,12 @@ interface DataManager {
 
     suspend fun dateValidation(id: String): SchoolCalendarConfig?
 
-    suspend fun getSubjects(stage: String): List<Subject>
+    suspend fun getSubjects(stage: String, gradeOptionSetUid: String = "XDQXuXwmQwJ"): List<Subject>
 
     suspend fun getTerms(stages: List<ProgramStages>): List<DropdownItem>
 
     suspend fun getUserCaptureOrgUnits(program: String): List<org.saudigitus.emis.data.model.OU>
+
+    // new: fetch grade data elements (option-set based) for a program stage
+    suspend fun  getGradeDataElements(stage: String, gradeOptionSetUid: String = "XDQXuXwmQwJ"): List<Subject>
 }

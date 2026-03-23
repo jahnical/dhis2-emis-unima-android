@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
@@ -25,6 +26,7 @@ import org.saudigitus.emis.ui.attendance.ButtonStep
 import org.saudigitus.emis.ui.base.BaseViewModel
 import org.saudigitus.emis.ui.form.Field
 import org.saudigitus.emis.utils.DateHelper
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -62,6 +64,9 @@ class PerformanceViewModel
     private val _saveOnce = MutableStateFlow(0)
     private val saveOnce: StateFlow<Int> = _saveOnce
 
+    // mapping: subject dataElement uid -> grade dataElement uid
+    private val _subjectGradeMap = MutableStateFlow<Map<String, String>>(emptyMap())
+
     private val fieldValidationJobs = mutableMapOf<String, Job>()
 
     init {
@@ -82,10 +87,46 @@ class PerformanceViewModel
         _program.value = program
     }
 
+    private fun normalizeName(name: String?) = name?.lowercase()?.trim() ?: ""
+
+    private fun matchGradeForSubject(subjectName: String?, grades: List<org.saudigitus.emis.data.model.Subject>): org.saudigitus.emis.data.model.Subject? {
+        val normalizedSubject = normalizeName(subjectName)
+        if (normalizedSubject.isEmpty()) return null
+
+        // direct contains match
+        grades.forEach { grade ->
+            val gradeName = normalizeName(grade.displayName)
+            if (gradeName.contains(normalizedSubject) || normalizedSubject.contains(gradeName)) {
+                return grade
+            }
+        }
+
+        // fallback: strip words like "subject" and "grade" and punctuation
+        val cleaned = normalizedSubject.replace(Regex("subject|grade|,|-|\\s+"), " ").trim()
+        grades.forEach { grade ->
+            val gradeName = normalizeName(grade.displayName).replace(Regex("subject|grade|,|-|\\s+"), " ").trim()
+            if (gradeName.contains(cleaned) || cleaned.contains(gradeName)) return grade
+        }
+
+        return null
+    }
+
     fun loadSubjects(stage: String) {
         viewModelScope.launch {
+            val subjects = repository.getSubjects(stage)
+            val grades = repository.getGradeDataElements(stage)
+
+            // build mapping
+            val mapping = mutableMapOf<String, String>()
+            subjects.forEach { subj ->
+                val matched = matchGradeForSubject(subj.displayName, grades)
+                if (matched != null) mapping[subj.uid] = matched.uid
+            }
+
+            _subjectGradeMap.value = mapping
+
             viewModelState.update {
-                it.copy(subjects = repository.getSubjects(stage))
+                it.copy(subjects = subjects)
             }
         }
     }
@@ -155,8 +196,21 @@ class PerformanceViewModel
     private fun getFields(stage: String, dl: String) {
         viewModelScope.launch {
             _programStage.value = stage
+
+            val baseFields = formRepository.keyboardInputTypeByStage(program.value, stage, dl)
+            val gradeDl = _subjectGradeMap.value[dl]
+            val allFields = if (!gradeDl.isNullOrEmpty()) {
+                val gradeFields = formRepository.keyboardInputTypeByStage(program.value, stage, gradeDl)
+                (baseFields + gradeFields).distinctBy { it.uid }
+            } else {
+                baseFields
+            }
+
+            // mark readOnly fields (grade DEs)
+            val readOnly = gradeDl?.let { listOf(it) } ?: emptyList()
+
             viewModelState.update {
-                it.copy(formFields = formRepository.keyboardInputTypeByStage(program.value, stage, dl))
+                it.copy(formFields = allFields, readOnlyFields = readOnly)
             }
         }
     }
@@ -176,21 +230,47 @@ class PerformanceViewModel
         getFields(programStage.value, dl)
         viewModelScope.launch {
             _dataElement.value = dl
-            formRepository
-                .getEvents(
+            val gradeDl = _subjectGradeMap.value[dl]
+
+            val baseFlow = formRepository.getEvents(
+                ou = ou.value,
+                program = program.value,
+                programStage = programStage.value,
+                dataElement = dl,
+                teis = teiUIds.value.map { it.first },
+            )
+
+            if (gradeDl.isNullOrEmpty()) {
+                baseFlow.conflate()
+                    .distinctUntilChanged()
+                    .collectLatest { events ->
+                        Log.e("EVENTS", "$events")
+                        viewModelState.update {
+                            it.copy(formData = events)
+                        }
+                    }
+            } else {
+                val gradeFlow = formRepository.getEvents(
                     ou = ou.value,
                     program = program.value,
                     programStage = programStage.value,
-                    dataElement = dl,
+                    dataElement = gradeDl,
                     teis = teiUIds.value.map { it.first },
-                ).conflate()
-                .distinctUntilChanged()
-                .collectLatest { events ->
-                    Log.e("EVENTS", "$events")
-                    viewModelState.update {
-                        it.copy(formData = events)
-                    }
+                )
+
+                combine(baseFlow, gradeFlow) { baseList, gradeList ->
+                    val merged = (baseList + gradeList).distinctBy { it.tei + it.dataElement }
+                    merged
                 }
+                    .conflate()
+                    .distinctUntilChanged()
+                    .collectLatest { events ->
+                        Log.e("EVENTS", "$events")
+                        viewModelState.update {
+                            it.copy(formData = events)
+                        }
+                    }
+            }
         }
     }
 
@@ -250,7 +330,8 @@ class PerformanceViewModel
 
                 val stillValidating = fieldValidationJobs.any { it.value.isActive }
                 viewModelState.update { it.copy(isValidating = stillValidating) }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.tag("VALIDATION_ERROR").e(e, "Error validating field")
                 viewModelState.update { it.copy(isValidating = false) }
             }
         }

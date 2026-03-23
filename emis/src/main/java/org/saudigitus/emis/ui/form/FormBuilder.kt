@@ -42,6 +42,7 @@ fun FormBuilder(
         value: String,
         valueType: ValueType?,
     ) -> Unit,
+    readOnly: List<String> = emptyList(),
 ) {
     val formState = remember { mutableStateMapOf<String, String>() }
 
@@ -57,10 +58,13 @@ fun FormBuilder(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        fields.forEach { formField ->
+        var i = 0
+        while (i < fields.size) {
+            val formField = fields[i]
             val data = formData?.find { it.tei == key && it.dataElement == formField.uid }
+
             val selectedState = state.find { it.key == key && it.dataElement == formField.uid }
-            val selectedItem =  formField.options?.findByCode(
+            val selectedItem = formField.options?.findByCode(
                 selectedState?.value.orEmpty()
             )
 
@@ -70,13 +74,13 @@ fun FormBuilder(
                     placeholder = formField.placeholder,
                     data = formField.options ?: emptyList(),
                     selectedItem = selectedItem ?: data?.itemOptions,
-                    enabled = enabled,
+                    enabled = enabled && !readOnly.contains(formField.uid),
                     colors =
-                        TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = InputShellState.UNFOCUSED.color,
-                            disabledIndicatorColor = InputShellState.DISABLED.color,
-                        ),
+                    TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = InputShellState.UNFOCUSED.color,
+                        disabledIndicatorColor = InputShellState.DISABLED.color,
+                    ),
                 ) { item ->
                     setFormState.invoke(
                         key,
@@ -115,10 +119,12 @@ fun FormBuilder(
                                 onNext(Triple(formField.uid, fieldValue?.value, formField.type))
                             }
                         },
-                    enabled = enabled,
+                    enabled = enabled && !readOnly.contains(formField.uid),
                     colors = colors,
                 )
             }
+
+            i++
         }
     }
 }

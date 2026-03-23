@@ -407,19 +407,42 @@ class DataManagerImpl
             }
         }
 
-    override suspend fun getSubjects(stage: String) = withContext(Dispatchers.IO) {
+    override suspend fun getSubjects(stage: String, gradeOptionSetUid: String) = withContext(Dispatchers.IO) {
         return@withContext d2.programModule().programStageDataElements()
             .byProgramStage().eq(stage)
             .blockingGet()
-            .map { stageDl ->
+            .mapNotNull { stageDl ->
                 val dl = d2.dataElement(stageDl.dataElement()?.uid() ?: "")
+                if (dl?.optionSetUid() == gradeOptionSetUid){
+                    null;
+                } else {
+                    Subject(
+                        uid = dl?.uid() ?: "",
+                        code = dl?.code()?.ifEmpty { "" },
+                        color = dl?.style()?.color(),
+                        displayName = dl?.displayFormName(),
+                    )
+                }
+            }
+    }
 
-                Subject(
-                    uid = dl?.uid() ?: "",
-                    code = dl?.code()?.ifEmpty { "" },
-                    color = dl?.style()?.color(),
-                    displayName = dl?.displayFormName(),
-                )
+    // new: fetch grade data elements for a program stage
+    override suspend fun getGradeDataElements(stage: String, gradeOptionSetUid: String) = withContext(Dispatchers.IO) {
+        return@withContext d2.programModule().programStageDataElements()
+            .byProgramStage().eq(stage)
+            .blockingGet()
+            .mapNotNull { stageDl ->
+                val dl = d2.dataElement(stageDl.dataElement()?.uid() ?: "")
+                if (dl?.optionSetUid() == gradeOptionSetUid) {
+                    Subject(
+                        uid = dl.uid(),
+                        code = dl.code()?.ifEmpty { "" },
+                        color = dl.style()?.color(),
+                        displayName = dl.displayFormName(),
+                    )
+                } else {
+                    null
+                }
             }
     }
 
