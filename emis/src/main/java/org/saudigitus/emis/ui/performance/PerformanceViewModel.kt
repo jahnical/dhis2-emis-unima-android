@@ -18,6 +18,7 @@ import org.dhis2.commons.date.DateUtils
 import org.dhis2.form.model.ActionType
 import org.dhis2.form.model.RowAction
 import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.android.core.program.ProgramRuleActionType
 import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.FormRepository
 import org.saudigitus.emis.data.model.EventTuple
@@ -313,7 +314,51 @@ class PerformanceViewModel
 
         fieldValidationJobs[key] = viewModelScope.launch {
             try {
-                val error = validateDataEntry(event, value)
+                val effects = ruleRepository.evaluateDataEntryEffects(
+                    ou = ou.value,
+                    program = program.value,
+                    stage = programStage.value,
+                    dataElement = dataElement,
+                    event = event,
+                    eventDate = DateHelper.formatDate(DateUtils.getInstance().today.time).orEmpty(),
+                    value = value,
+                )
+
+                // process effects: ASSIGN actions should set other fields (grades), SHOWERROR provides validation message
+                var errorMessage: String? = null
+
+                effects.forEach { effect ->
+                    when (effect.ruleAction.type) {
+                        ProgramRuleActionType.SHOWERROR.name -> {
+                            val content = effect.ruleAction.values["content"] ?: effect.data
+                            if (!content.isNullOrBlank()) errorMessage = content
+                        }
+
+                        ProgramRuleActionType.ASSIGN.name -> {
+                            // target field id is usually in action.values["field"] and assigned value may be in effect.data or action.values
+                            val targetField = effect.ruleAction.values["field"] ?: effect.ruleAction.values["data"]
+                            val assignedValue = effect.data ?: effect.ruleAction.values["data"] ?: effect.ruleAction.values["value"]
+
+                            if (!targetField.isNullOrBlank() && !assignedValue.isNullOrBlank()) {
+                                // Avoid infinite recursion: do not re-assign back to the same field that triggered evaluation
+                                if (targetField != dataElement) {
+                                    // Update the grade field state (this will enqueue its own validation job)
+                                    fieldState(
+                                        key = key,
+                                        event = event,
+                                        dataElement = targetField,
+                                        value = assignedValue,
+                                        valueType = null,
+                                    )
+                                }
+                            }
+                        }
+
+                        else -> {
+                            // other actions can be handled later (HIDE/SHOW, DISPLAYTEXT, etc.)
+                        }
+                    }
+                }
 
                 val updatedFields = viewModelState.value.fieldsState.toMutableList()
                 val idx =
@@ -321,8 +366,8 @@ class PerformanceViewModel
 
                 if (idx >= 0) {
                     val validatedField = updatedFields[idx].copy(
-                        hasError = error != null,
-                        errorMessage = error,
+                        hasError = errorMessage != null,
+                        errorMessage = errorMessage,
                     )
                     updatedFields[idx] = validatedField
                     viewModelState.update { it.copy(fieldsState = updatedFields) }
