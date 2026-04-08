@@ -88,6 +88,17 @@ class PerformanceViewModel
         _program.value = program
     }
 
+    /**
+     * DHIS2 rule engine may return field references as expressions like #{deUid} or A{attrUid}.
+     * This extracts the raw UID. If the value is already a plain UID, it is returned as-is.
+     * Uses [{}] character classes instead of \{ to stay compatible with Android's ICU regex engine.
+     */
+    private fun extractUid(expression: String?): String? {
+        if (expression.isNullOrBlank()) return null
+        val match = UID_TOKEN_REGEX.find(expression.trim())
+        return (match?.groupValues?.getOrNull(1) ?: expression).trim()
+    }
+
     private fun normalizeName(name: String?) = name?.lowercase()?.trim() ?: ""
 
     private fun matchGradeForSubject(subjectName: String?, grades: List<org.saudigitus.emis.data.model.Subject>): org.saudigitus.emis.data.model.Subject? {
@@ -309,11 +320,21 @@ class PerformanceViewModel
 
         viewModelState.update { it.copy(fieldsState = currentFields) }
 
-        fieldValidationJobs[key]?.cancel()
+        // Checkpoint 1: confirm fieldState was called and inputs look sane
+        Timber.tag("RULE_ENGINE").d(
+            "fieldState called: de=%s event=%s ou=%s program=%s stage=%s value=%s",
+            dataElement, event, ou.value, program.value, programStage.value, value
+        )
+
+        val jobKey = "$key:$dataElement"
+        fieldValidationJobs[jobKey]?.cancel()
         viewModelState.update { it.copy(isValidating = true) }
 
-        fieldValidationJobs[key] = viewModelScope.launch {
+        fieldValidationJobs[jobKey] = viewModelScope.launch {
             try {
+                // Checkpoint 2: confirm the coroutine started
+                Timber.tag("RULE_ENGINE").d("Calling evaluateDataEntryEffects for de=%s", dataElement)
+
                 val effects = ruleRepository.evaluateDataEntryEffects(
                     ou = ou.value,
                     program = program.value,
@@ -324,38 +345,102 @@ class PerformanceViewModel
                     value = value,
                 )
 
-                // process effects: ASSIGN actions should set other fields (grades), SHOWERROR provides validation message
+                Timber.tag("RULE_ENGINE").d(
+                    "Effects for de=%s key=%s count=%d", dataElement, key, effects.size
+                )
+
                 var errorMessage: String? = null
 
                 effects.forEach { effect ->
-                    when (effect.ruleAction.type) {
+                    val action = effect.ruleAction ?: run {
+                        Timber.tag("RULE_ENGINE").w("Skipping effect with null ruleAction")
+                        return@forEach
+                    }
+                    val actionValues = action.values ?: emptyMap()
+                    val actionType = action.type ?: run {
+                        Timber.tag("RULE_ENGINE").w("Skipping effect with null action type")
+                        return@forEach
+                    }
+
+                    Timber.tag("RULE_ENGINE").d(
+                        "Effect type=%s data=%s values=%s", actionType, effect.data, actionValues
+                    )
+
+                    when (actionType) {
                         ProgramRuleActionType.SHOWERROR.name -> {
-                            val content = effect.ruleAction.values["content"] ?: effect.data
+                            val content = actionValues["content"] ?: effect.data
                             if (!content.isNullOrBlank()) errorMessage = content
                         }
 
                         ProgramRuleActionType.ASSIGN.name -> {
-                            // target field id is usually in action.values["field"] and assigned value may be in effect.data or action.values
-                            val targetField = effect.ruleAction.values["field"] ?: effect.ruleAction.values["data"]
-                            val assignedValue = effect.data ?: effect.ruleAction.values["data"] ?: effect.ruleAction.values["value"]
+                            // Extract raw UID — DHIS2 can return "#{uid}" or "A{uid}" tokens
+                            val rawTarget = actionValues["field"] ?: actionValues["data"]
+                            val targetField = extractUid(rawTarget)
+                            val assignedValue = effect.data
+                                ?: actionValues["data"]
+                                ?: actionValues["value"]
 
-                            if (!targetField.isNullOrBlank() && !assignedValue.isNullOrBlank()) {
-                                // Avoid infinite recursion: do not re-assign back to the same field that triggered evaluation
-                                if (targetField != dataElement) {
-                                    // Update the grade field state (this will enqueue its own validation job)
-                                    fieldState(
-                                        key = key,
-                                        event = event,
-                                        dataElement = targetField,
+                            Timber.tag("RULE_ENGINE").d(
+                                "ASSIGN rawTarget=%s targetField=%s assignedValue=%s",
+                                rawTarget, targetField, assignedValue
+                            )
+
+                            if (targetField.isNullOrBlank()) {
+                                Timber.tag("RULE_ENGINE").w("ASSIGN skipped: could not resolve target field from '%s'", rawTarget)
+                                return@forEach
+                            }
+                            if (assignedValue.isNullOrBlank()) {
+                                Timber.tag("RULE_ENGINE").w("ASSIGN skipped: assigned value is blank for target '%s'", targetField)
+                                return@forEach
+                            }
+                            if (targetField == dataElement) {
+                                Timber.tag("RULE_ENGINE").w("ASSIGN skipped: target equals source DE '%s'", dataElement)
+                                return@forEach
+                            }
+
+                            // 1. Update UI state for the assigned (grade) field
+                            val assignedFields = viewModelState.value.fieldsState.toMutableList()
+                            val assignedIdx = assignedFields.indexOfFirst { it.key == key && it.dataElement == targetField }
+                            val assignedField = Field(
+                                key = key,
+                                event = event,
+                                dataElement = targetField,
+                                value = assignedValue,
+                                valueType = null,
+                                hasError = false,
+                                errorMessage = null,
+                            )
+                            if (assignedIdx >= 0) assignedFields[assignedIdx] = assignedField
+                            else assignedFields.add(assignedField)
+                            viewModelState.update { it.copy(fieldsState = assignedFields) }
+
+                            // 2. Cache the assigned value so it is persisted on save()
+                            val updatedCache = _cache.value.toMutableList()
+                            updatedCache.removeIf { it.tei == key && it.rowAction.id == targetField }
+                            updatedCache.add(
+                                EventTuple(
+                                    ou = ou.value,
+                                    program = program.value,
+                                    programStage = programStage.value,
+                                    tei = key,
+                                    rowAction = RowAction(
+                                        id = targetField,
+                                        type = ActionType.ON_NEXT,
                                         value = assignedValue,
                                         valueType = null,
-                                    )
-                                }
-                            }
+                                    ),
+                                    date = eventDate.value,
+                                )
+                            )
+                            _cache.value = updatedCache
+
+                            Timber.tag("RULE_ENGINE").d(
+                                "ASSIGN applied: key=%s de=%s value=%s cached", key, targetField, assignedValue
+                            )
                         }
 
                         else -> {
-                            // other actions can be handled later (HIDE/SHOW, DISPLAYTEXT, etc.)
+                            Timber.tag("RULE_ENGINE").d("Unhandled effect type: %s", actionType)
                         }
                     }
                 }
@@ -373,10 +458,13 @@ class PerformanceViewModel
                     viewModelState.update { it.copy(fieldsState = updatedFields) }
                 }
 
-                val stillValidating = fieldValidationJobs.any { it.value.isActive }
+                val stillValidating = fieldValidationJobs.any { (k, job) -> k != jobKey && job.isActive }
                 viewModelState.update { it.copy(isValidating = stillValidating) }
             } catch (e: Exception) {
-                Timber.tag("VALIDATION_ERROR").e(e, "Error validating field")
+                Timber.tag("RULE_ENGINE").e(
+                    e, "evaluateDataEntryEffects failed: de=%s event=%s ou=%s program=%s stage=%s",
+                    dataElement, event, ou.value, program.value, programStage.value
+                )
                 viewModelState.update { it.copy(isValidating = false) }
             }
         }
@@ -396,5 +484,11 @@ class PerformanceViewModel
             value = value,
         )
         return effect?.ruleAction?.values["content"]
+    }
+
+    companion object {
+        // Matches DHIS2 token expressions: #{uid}, A{uid}, V{uid}, D{uid}, etc.
+        // Uses [{}] character classes — Android's ICU regex engine rejects \{ as an escape.
+        private val UID_TOKEN_REGEX = Regex("[#AaVvDd][{]([^}]+)[}]")
     }
 }

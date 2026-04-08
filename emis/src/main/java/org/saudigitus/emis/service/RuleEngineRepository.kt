@@ -94,19 +94,28 @@ class RuleEngineRepository @Inject constructor(
             .byProgramUid().eq(program)
             .withTrackedEntityDataValues()
             .blockingGet()
-            .map { event ->
+            .mapNotNull { event ->
+                // Skip events missing fields required by the rule engine
+                val programStage = event.programStage() ?: return@mapNotNull null
+                val eventDate = event.eventDate() ?: return@mapNotNull null
+                val status = event.status() ?: return@mapNotNull null
+                val organisationUnit = event.organisationUnit() ?: return@mapNotNull null
+                val stageName = d2.programModule().programStages()
+                    .uid(programStage).blockingGet()?.name() ?: return@mapNotNull null
+
                 RuleEvent(
                     event = event.uid(),
-                    programStage = event.programStage()!!,
-                    programStageName = d2.programModule().programStages()
-                        .uid(event.programStage())
-                        .blockingGet()!!.name()!!,
-                    status = if (event.status() == EventStatus.VISITED) {
-                        RuleEventStatus.ACTIVE
-                    } else {
-                        RuleEventStatus.valueOf(event.status()!!.name)
+                    programStage = programStage,
+                    programStageName = stageName,
+                    status = when (status) {
+                        EventStatus.VISITED -> RuleEventStatus.ACTIVE
+                        else -> try {
+                            RuleEventStatus.valueOf(status.name)
+                        } catch (e: IllegalArgumentException) {
+                            RuleEventStatus.ACTIVE
+                        }
                     },
-                    eventDate = Instant.fromEpochMilliseconds(event.eventDate()!!.time),
+                    eventDate = Instant.fromEpochMilliseconds(eventDate.time),
                     dueDate = event.dueDate()?.let {
                         Instant.fromEpochMilliseconds(it.time)
                             .toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -115,11 +124,9 @@ class RuleEngineRepository @Inject constructor(
                         Instant.fromEpochMilliseconds(it.time)
                             .toLocalDateTime(TimeZone.currentSystemDefault()).date
                     },
-                    organisationUnit = event.organisationUnit()!!,
+                    organisationUnit = organisationUnit,
                     organisationUnitCode = d2.organisationUnitModule().organisationUnits()
-                        .uid(
-                            event.organisationUnit(),
-                        ).blockingGet()?.code(),
+                        .uid(organisationUnit).blockingGet()?.code(),
                     dataValues = event.trackedEntityDataValues()?.toRuleDataValue(
                         event,
                         d2.dataElementModule().dataElements(),
