@@ -22,7 +22,9 @@ import org.hisp.dhis.android.core.program.ProgramRuleActionType
 import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.FormRepository
 import org.saudigitus.emis.data.model.EventTuple
+import org.saudigitus.emis.data.model.app_config.GradeRange
 import org.saudigitus.emis.service.RuleEngineRepository
+import org.saudigitus.emis.utils.Constants
 import org.saudigitus.emis.ui.attendance.ButtonStep
 import org.saudigitus.emis.ui.base.BaseViewModel
 import org.saudigitus.emis.ui.form.Field
@@ -65,8 +67,9 @@ class PerformanceViewModel
     private val _saveOnce = MutableStateFlow(0)
     private val saveOnce: StateFlow<Int> = _saveOnce
 
-    // mapping: subject dataElement uid -> grade dataElement uid
+    // mapping: score dataElement uid -> grade dataElement uid (populated from config)
     private val _subjectGradeMap = MutableStateFlow<Map<String, String>>(emptyMap())
+    private val _gradeRanges = MutableStateFlow<List<GradeRange>>(emptyList())
 
     private val fieldValidationJobs = mutableMapOf<String, Job>()
 
@@ -99,47 +102,24 @@ class PerformanceViewModel
         return (match?.groupValues?.getOrNull(1) ?: expression).trim()
     }
 
-    private fun normalizeName(name: String?) = name?.lowercase()?.trim() ?: ""
-
-    private fun matchGradeForSubject(subjectName: String?, grades: List<org.saudigitus.emis.data.model.Subject>): org.saudigitus.emis.data.model.Subject? {
-        val normalizedSubject = normalizeName(subjectName)
-        if (normalizedSubject.isEmpty()) return null
-
-        // direct contains match
-        grades.forEach { grade ->
-            val gradeName = normalizeName(grade.displayName)
-            if (gradeName.contains(normalizedSubject) || normalizedSubject.contains(gradeName)) {
-                return grade
-            }
-        }
-
-        // fallback: strip words like "subject" and "grade" and punctuation
-        val cleaned = normalizedSubject.replace(Regex("subject|grade|,|-|\\s+"), " ").trim()
-        grades.forEach { grade ->
-            val gradeName = normalizeName(grade.displayName).replace(Regex("subject|grade|,|-|\\s+"), " ").trim()
-            if (gradeName.contains(cleaned) || cleaned.contains(gradeName)) return grade
-        }
-
-        return null
-    }
+    private fun resolveGradeCode(score: Double): String? =
+        _gradeRanges.value.firstOrNull { score >= it.minScore && score <= it.maxScore }?.optionCode
 
     fun loadSubjects(stage: String) {
         viewModelScope.launch {
-            val subjects = repository.getSubjects(stage)
-            val grades = repository.getGradeDataElements(stage)
+            val performance = repository.getConfig(Constants.KEY)
+                ?.find { it.program == program.value }
+                ?.performance
 
-            // build mapping
-            val mapping = mutableMapOf<String, String>()
-            subjects.forEach { subj ->
-                val matched = matchGradeForSubject(subj.displayName, grades)
-                if (matched != null) mapping[subj.uid] = matched.uid
-            }
+            val configSubjects = performance?.subjects ?: emptyList()
+            _subjectGradeMap.value = configSubjects.associate { it.scoreDataElement to it.gradeDataElement }
+            _gradeRanges.value = performance?.gradeMapping?.ranges ?: emptyList()
 
-            _subjectGradeMap.value = mapping
+            val scoreDeUids = configSubjects.map { it.scoreDataElement }.toSet()
+            val allDEs = repository.getSubjects(stage)
+            val subjects = if (scoreDeUids.isNotEmpty()) allDEs.filter { it.uid in scoreDeUids } else allDEs
 
-            viewModelState.update {
-                it.copy(subjects = subjects)
-            }
+            viewModelState.update { it.copy(subjects = subjects) }
         }
     }
 
@@ -332,6 +312,42 @@ class PerformanceViewModel
 
         fieldValidationJobs[jobKey] = viewModelScope.launch {
             try {
+                // Config-based grade resolution (replaces ASSIGN rule action)
+                val gradeDeUid = _subjectGradeMap.value[dataElement]
+                if (!gradeDeUid.isNullOrEmpty()) {
+                    val score = value.toDoubleOrNull()
+                    val gradeCode = if (score != null) resolveGradeCode(score) else null
+                    val resolvedValue = gradeCode ?: ""
+
+                    val gradeField = Field(
+                        key = key, event = event, dataElement = gradeDeUid,
+                        value = resolvedValue, valueType = null, hasError = false, errorMessage = null,
+                    )
+                    val gradeFields = viewModelState.value.fieldsState.toMutableList()
+                    val gradeIdx = gradeFields.indexOfFirst { it.key == key && it.dataElement == gradeDeUid }
+                    if (gradeIdx >= 0) gradeFields[gradeIdx] = gradeField else gradeFields.add(gradeField)
+                    viewModelState.update { it.copy(fieldsState = gradeFields) }
+
+                    val updatedCache = _cache.value.toMutableList()
+                    updatedCache.removeIf { it.tei == key && it.rowAction.id == gradeDeUid }
+                    updatedCache.add(
+                        EventTuple(
+                            ou = ou.value, program = program.value,
+                            programStage = programStage.value, tei = key,
+                            rowAction = RowAction(
+                                id = gradeDeUid, type = ActionType.ON_NEXT,
+                                value = resolvedValue, valueType = null,
+                            ),
+                            date = eventDate.value,
+                        )
+                    )
+                    _cache.value = updatedCache
+
+                    Timber.tag("RULE_ENGINE").d(
+                        "Grade resolved from config: score=%s grade=%s de=%s", value, resolvedValue, gradeDeUid
+                    )
+                }
+
                 // Checkpoint 2: confirm the coroutine started
                 Timber.tag("RULE_ENGINE").d("Calling evaluateDataEntryEffects for de=%s", dataElement)
 
@@ -373,70 +389,8 @@ class PerformanceViewModel
                         }
 
                         ProgramRuleActionType.ASSIGN.name -> {
-                            // Extract raw UID — DHIS2 can return "#{uid}" or "A{uid}" tokens
-                            val rawTarget = actionValues["field"] ?: actionValues["data"]
-                            val targetField = extractUid(rawTarget)
-                            val assignedValue = effect.data
-                                ?: actionValues["data"]
-                                ?: actionValues["value"]
-
-                            Timber.tag("RULE_ENGINE").d(
-                                "ASSIGN rawTarget=%s targetField=%s assignedValue=%s",
-                                rawTarget, targetField, assignedValue
-                            )
-
-                            if (targetField.isNullOrBlank()) {
-                                Timber.tag("RULE_ENGINE").w("ASSIGN skipped: could not resolve target field from '%s'", rawTarget)
-                                return@forEach
-                            }
-                            if (assignedValue.isNullOrBlank()) {
-                                Timber.tag("RULE_ENGINE").w("ASSIGN skipped: assigned value is blank for target '%s'", targetField)
-                                return@forEach
-                            }
-                            if (targetField == dataElement) {
-                                Timber.tag("RULE_ENGINE").w("ASSIGN skipped: target equals source DE '%s'", dataElement)
-                                return@forEach
-                            }
-
-                            // 1. Update UI state for the assigned (grade) field
-                            val assignedFields = viewModelState.value.fieldsState.toMutableList()
-                            val assignedIdx = assignedFields.indexOfFirst { it.key == key && it.dataElement == targetField }
-                            val assignedField = Field(
-                                key = key,
-                                event = event,
-                                dataElement = targetField,
-                                value = assignedValue,
-                                valueType = null,
-                                hasError = false,
-                                errorMessage = null,
-                            )
-                            if (assignedIdx >= 0) assignedFields[assignedIdx] = assignedField
-                            else assignedFields.add(assignedField)
-                            viewModelState.update { it.copy(fieldsState = assignedFields) }
-
-                            // 2. Cache the assigned value so it is persisted on save()
-                            val updatedCache = _cache.value.toMutableList()
-                            updatedCache.removeIf { it.tei == key && it.rowAction.id == targetField }
-                            updatedCache.add(
-                                EventTuple(
-                                    ou = ou.value,
-                                    program = program.value,
-                                    programStage = programStage.value,
-                                    tei = key,
-                                    rowAction = RowAction(
-                                        id = targetField,
-                                        type = ActionType.ON_NEXT,
-                                        value = assignedValue,
-                                        valueType = null,
-                                    ),
-                                    date = eventDate.value,
-                                )
-                            )
-                            _cache.value = updatedCache
-
-                            Timber.tag("RULE_ENGINE").d(
-                                "ASSIGN applied: key=%s de=%s value=%s cached", key, targetField, assignedValue
-                            )
+                            // Deprecated: grade assignment now handled by config-based resolveGradeCode()
+                            Timber.tag("RULE_ENGINE").d("ASSIGN rule action skipped (deprecated)")
                         }
 
                         else -> {
