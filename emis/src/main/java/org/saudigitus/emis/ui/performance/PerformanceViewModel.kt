@@ -91,17 +91,6 @@ class PerformanceViewModel
         _program.value = program
     }
 
-    /**
-     * DHIS2 rule engine may return field references as expressions like #{deUid} or A{attrUid}.
-     * This extracts the raw UID. If the value is already a plain UID, it is returned as-is.
-     * Uses [{}] character classes instead of \{ to stay compatible with Android's ICU regex engine.
-     */
-    private fun extractUid(expression: String?): String? {
-        if (expression.isNullOrBlank()) return null
-        val match = UID_TOKEN_REGEX.find(expression.trim())
-        return (match?.groupValues?.getOrNull(1) ?: expression).trim()
-    }
-
     private fun resolveGradeCode(score: Double): String? =
         _gradeRanges.value.firstOrNull { score >= it.minScore && score <= it.maxScore }?.optionCode
 
@@ -438,11 +427,5 @@ class PerformanceViewModel
             value = value,
         )
         return effect?.ruleAction?.values["content"]
-    }
-
-    companion object {
-        // Matches DHIS2 token expressions: #{uid}, A{uid}, V{uid}, D{uid}, etc.
-        // Uses [{}] character classes — Android's ICU regex engine rejects \{ as an escape.
-        private val UID_TOKEN_REGEX = Regex("[#AaVvDd][{]([^}]+)[}]")
     }
 }
