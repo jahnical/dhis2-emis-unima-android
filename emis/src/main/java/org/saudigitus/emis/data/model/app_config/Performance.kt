@@ -11,5 +11,9 @@ data class Performance(
     @JsonProperty("lastUpdate")
     val lastUpdate: String?,
     @JsonProperty("programStages")
-    val programStages: List<ProgramStages?>?
+    val programStages: List<ProgramStages?>?,
+    @JsonProperty("subjects")
+    val subjects: List<SubjectMapping>?,
+    @JsonProperty("gradeMapping")
+    val gradeMapping: GradeMapping?
 )
