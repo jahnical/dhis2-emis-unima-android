@@ -26,11 +26,18 @@ class SubjectViewModel
     private val _programStage = MutableStateFlow("")
     val programStage: StateFlow<String> = _programStage
 
+    private val gradeDEUids = mutableSetOf<String>()
+
     override fun setConfig(program: String) {
         viewModelScope.launch {
             val config = repository.getConfig(Constants.KEY)?.find { it.program == program }
 
             if (config?.performance != null) {
+                gradeDEUids.clear()
+                gradeDEUids.addAll(
+                    config.performance.subjects?.map { it.gradeDataElement } ?: emptyList()
+                )
+
                 val stages = config.performance.programStages
                     ?.filterNotNull()
                     ?: emptyList()
@@ -60,7 +67,7 @@ class SubjectViewModel
         _programStage.value = stage
         viewModelScope.launch {
             _uiState.update {
-                it.copy(subjects = repository.getSubjects(stage))
+                it.copy(subjects = repository.getSubjects(stage).filter { it.uid !in gradeDEUids })
             }
         }
     }

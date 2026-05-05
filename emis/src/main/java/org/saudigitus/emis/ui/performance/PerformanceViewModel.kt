@@ -104,9 +104,9 @@ class PerformanceViewModel
             _subjectGradeMap.value = configSubjects.associate { it.scoreDataElement to it.gradeDataElement }
             _gradeRanges.value = performance?.gradeMapping?.ranges ?: emptyList()
 
-            val scoreDeUids = configSubjects.map { it.scoreDataElement }.toSet()
+            val gradeDEUids = configSubjects.map { it.gradeDataElement }.toSet()
             val allDEs = repository.getSubjects(stage)
-            val subjects = if (scoreDeUids.isNotEmpty()) allDEs.filter { it.uid in scoreDeUids } else allDEs
+            val subjects = allDEs.filter { it.uid !in gradeDEUids }
 
             viewModelState.update { it.copy(subjects = subjects) }
         }
