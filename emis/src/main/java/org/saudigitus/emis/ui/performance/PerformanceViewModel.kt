@@ -162,13 +162,14 @@ class PerformanceViewModel
         val data = mutableListOf<EventTuple>()
         data.addAll(cache.value)
 
+        val scoreDeUid = dataElement.value.ifEmpty { fieldData.first }
         val eventTuple = EventTuple(
             ou,
             program.value,
             programStage.value,
             tei,
             RowAction(
-                id = dataElement.value.ifEmpty { fieldData.first },
+                id = scoreDeUid,
                 type = ActionType.ON_NEXT,
                 value = fieldData.second,
                 valueType = fieldData.third,
@@ -176,7 +177,7 @@ class PerformanceViewModel
             eventDate.value,
         )
 
-        data.removeIf { it.tei == tei }
+        data.removeIf { it.tei == tei && it.rowAction.id == scoreDeUid }
 
         data.add(eventTuple)
 
