@@ -1,6 +1,5 @@
 package org.saudigitus.emis.ui.performance
 
-import android.util.Log
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -236,7 +235,6 @@ class PerformanceViewModel
                 baseFlow.conflate()
                     .distinctUntilChanged()
                     .collectLatest { events ->
-                        Log.e("EVENTS", "$events")
                         viewModelState.update {
                             it.copy(formData = events)
                         }
@@ -257,7 +255,6 @@ class PerformanceViewModel
                     .conflate()
                     .distinctUntilChanged()
                     .collectLatest { events ->
-                        Log.e("EVENTS", "$events")
                         viewModelState.update {
                             it.copy(formData = events)
                         }
@@ -300,19 +297,12 @@ class PerformanceViewModel
 
         viewModelState.update { it.copy(fieldsState = currentFields) }
 
-        // Checkpoint 1: confirm fieldState was called and inputs look sane
-        Timber.tag("RULE_ENGINE").d(
-            "fieldState called: de=%s event=%s ou=%s program=%s stage=%s value=%s",
-            dataElement, event, ou.value, program.value, programStage.value, value
-        )
-
         val jobKey = "$key:$dataElement"
         fieldValidationJobs[jobKey]?.cancel()
         viewModelState.update { it.copy(isValidating = true) }
 
         fieldValidationJobs[jobKey] = viewModelScope.launch {
             try {
-                // Config-based grade resolution (replaces ASSIGN rule action)
                 val gradeDeUid = _subjectGradeMap.value[dataElement]
                 if (!gradeDeUid.isNullOrEmpty()) {
                     val score = value.toDoubleOrNull()
@@ -342,14 +332,7 @@ class PerformanceViewModel
                         )
                     )
                     _cache.value = updatedCache
-
-                    Timber.tag("RULE_ENGINE").d(
-                        "Grade resolved from config: score=%s grade=%s de=%s", value, resolvedValue, gradeDeUid
-                    )
                 }
-
-                // Checkpoint 2: confirm the coroutine started
-                Timber.tag("RULE_ENGINE").d("Calling evaluateDataEntryEffects for de=%s", dataElement)
 
                 val effects = ruleRepository.evaluateDataEntryEffects(
                     ou = ou.value,
@@ -361,40 +344,17 @@ class PerformanceViewModel
                     value = value,
                 )
 
-                Timber.tag("RULE_ENGINE").d(
-                    "Effects for de=%s key=%s count=%d", dataElement, key, effects.size
-                )
-
                 var errorMessage: String? = null
 
                 effects.forEach { effect ->
-                    val action = effect.ruleAction ?: run {
-                        Timber.tag("RULE_ENGINE").w("Skipping effect with null ruleAction")
-                        return@forEach
-                    }
+                    val action = effect.ruleAction ?: return@forEach
                     val actionValues = action.values ?: emptyMap()
-                    val actionType = action.type ?: run {
-                        Timber.tag("RULE_ENGINE").w("Skipping effect with null action type")
-                        return@forEach
-                    }
-
-                    Timber.tag("RULE_ENGINE").d(
-                        "Effect type=%s data=%s values=%s", actionType, effect.data, actionValues
-                    )
+                    val actionType = action.type ?: return@forEach
 
                     when (actionType) {
                         ProgramRuleActionType.SHOWERROR.name -> {
                             val content = actionValues["content"] ?: effect.data
                             if (!content.isNullOrBlank()) errorMessage = content
-                        }
-
-                        ProgramRuleActionType.ASSIGN.name -> {
-                            // Deprecated: grade assignment now handled by config-based resolveGradeCode()
-                            Timber.tag("RULE_ENGINE").d("ASSIGN rule action skipped (deprecated)")
-                        }
-
-                        else -> {
-                            Timber.tag("RULE_ENGINE").d("Unhandled effect type: %s", actionType)
                         }
                     }
                 }
@@ -424,19 +384,4 @@ class PerformanceViewModel
         }
     }
 
-    private suspend fun validateDataEntry(
-        event: String,
-        value: String,
-    ): String? {
-        val effect = ruleRepository.evaluateDataEntry(
-            ou = ou.value,
-            program = program.value,
-            stage = programStage.value,
-            dataElement = dataElement.value,
-            event = event,
-            eventDate = DateHelper.formatDate(DateUtils.getInstance().today.time).orEmpty(),
-            value = value,
-        )
-        return effect?.ruleAction?.values["content"]
-    }
 }
