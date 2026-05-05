@@ -28,6 +28,7 @@ class SubjectViewModel
 
     private val gradeDEUids = mutableSetOf<String>()
     private val scoreDeUids = mutableSetOf<String>()
+    private var gradeOptionSetUid: String? = null
 
     override fun setConfig(program: String) {
         viewModelScope.launch {
@@ -42,6 +43,7 @@ class SubjectViewModel
                 scoreDeUids.addAll(
                     config.performance.subjects?.map { it.scoreDataElement } ?: emptyList()
                 )
+                gradeOptionSetUid = config.performance.gradeMapping?.gradeOptionSet
 
                 val stages = config.performance.programStages
                     ?.filterNotNull()
@@ -75,7 +77,10 @@ class SubjectViewModel
             val filtered = if (Constants.CONFIGURED_SUBJECT_FILTERING) {
                 all.filter { it.uid in scoreDeUids }
             } else {
-                all.filter { it.uid !in gradeDEUids }
+                all.filter { de ->
+                    (gradeOptionSetUid.isNullOrEmpty() || de.optionSetUid != gradeOptionSetUid) &&
+                        de.uid !in gradeDEUids
+                }
             }
             _uiState.update { it.copy(subjects = filtered) }
         }

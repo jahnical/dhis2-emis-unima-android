@@ -419,6 +419,7 @@ class DataManagerImpl
                         code = it.code()?.ifEmpty { "" },
                         color = it.style()?.color(),
                         displayName = it.displayFormName(),
+                        optionSetUid = it.optionSet()?.uid(),
                     )
                 }
             }
