@@ -27,6 +27,7 @@ class SubjectViewModel
     val programStage: StateFlow<String> = _programStage
 
     private val gradeDEUids = mutableSetOf<String>()
+    private val scoreDeUids = mutableSetOf<String>()
 
     override fun setConfig(program: String) {
         viewModelScope.launch {
@@ -36,6 +37,10 @@ class SubjectViewModel
                 gradeDEUids.clear()
                 gradeDEUids.addAll(
                     config.performance.subjects?.map { it.gradeDataElement } ?: emptyList()
+                )
+                scoreDeUids.clear()
+                scoreDeUids.addAll(
+                    config.performance.subjects?.map { it.scoreDataElement } ?: emptyList()
                 )
 
                 val stages = config.performance.programStages
@@ -66,9 +71,13 @@ class SubjectViewModel
     fun performOnFilterClick(stage: String) {
         _programStage.value = stage
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(subjects = repository.getSubjects(stage).filter { it.uid !in gradeDEUids })
+            val all = repository.getSubjects(stage)
+            val filtered = if (Constants.CONFIGURED_SUBJECT_FILTERING) {
+                all.filter { it.uid in scoreDeUids }
+            } else {
+                all.filter { it.uid !in gradeDEUids }
             }
+            _uiState.update { it.copy(subjects = filtered) }
         }
     }
 }

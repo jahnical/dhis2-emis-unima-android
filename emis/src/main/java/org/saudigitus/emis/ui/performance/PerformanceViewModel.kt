@@ -28,6 +28,7 @@ import org.saudigitus.emis.utils.Constants
 import org.saudigitus.emis.ui.attendance.ButtonStep
 import org.saudigitus.emis.ui.base.BaseViewModel
 import org.saudigitus.emis.ui.form.Field
+import org.saudigitus.emis.utils.Constants.CONFIGURED_SUBJECT_FILTERING
 import org.saudigitus.emis.utils.DateHelper
 import timber.log.Timber
 import javax.inject.Inject
@@ -105,8 +106,13 @@ class PerformanceViewModel
             _gradeRanges.value = performance?.gradeMapping?.ranges ?: emptyList()
 
             val gradeDEUids = configSubjects.map { it.gradeDataElement }.toSet()
+            val scoreDeUids = configSubjects.map { it.scoreDataElement }.toSet()
             val allDEs = repository.getSubjects(stage)
-            val subjects = allDEs.filter { it.uid !in gradeDEUids }
+            val subjects = if (CONFIGURED_SUBJECT_FILTERING) {
+                allDEs.filter { it.uid in scoreDeUids }
+            } else {
+                allDEs.filter { it.uid !in gradeDEUids }
+            }
 
             viewModelState.update { it.copy(subjects = subjects) }
         }
