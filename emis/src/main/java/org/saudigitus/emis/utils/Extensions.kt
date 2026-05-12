@@ -95,8 +95,8 @@ fun DropdownState.icon() = when (this.filterType) {
 
 fun DropdownState.placeholder() = when (this.filterType) {
     FilterType.ACADEMIC_YEAR -> R.string.academic_year
-    FilterType.GRADE -> R.string.grade
-    FilterType.SECTION -> R.string.cls
+    FilterType.GRADE -> R.string.standard
+    FilterType.SECTION -> R.string.stream
     FilterType.SCHOOL -> R.string.school
     FilterType.NONE -> R.string.none
 }
