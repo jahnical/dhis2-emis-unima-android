@@ -15,4 +15,6 @@ data class PerformanceUiState(
     val formFields: List<FormField> = emptyList(),
     val formData: List<FormData>? = emptyList(),
     val isValidating: Boolean ,
+    // list of dataElement uids that should be rendered read-only (e.g. grade DEs)
+    val readOnlyFields: List<String> = emptyList(),
 )

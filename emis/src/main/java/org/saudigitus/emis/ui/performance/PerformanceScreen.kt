@@ -314,6 +314,7 @@ fun PerformanceScreen(
                                         )
                                     },
                                     setFormState = setPerformanceState,
+                                    renderTextFieldsInRow = true,
                                 )
                             }
                         }

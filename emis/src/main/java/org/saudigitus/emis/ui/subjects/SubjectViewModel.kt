@@ -26,11 +26,25 @@ class SubjectViewModel
     private val _programStage = MutableStateFlow("")
     val programStage: StateFlow<String> = _programStage
 
+    private val gradeDEUids = mutableSetOf<String>()
+    private val scoreDeUids = mutableSetOf<String>()
+    private var gradeOptionSetUid: String? = null
+
     override fun setConfig(program: String) {
         viewModelScope.launch {
             val config = repository.getConfig(Constants.KEY)?.find { it.program == program }
 
             if (config?.performance != null) {
+                gradeDEUids.clear()
+                gradeDEUids.addAll(
+                    config.performance.subjects?.map { it.gradeDataElement } ?: emptyList()
+                )
+                scoreDeUids.clear()
+                scoreDeUids.addAll(
+                    config.performance.subjects?.map { it.scoreDataElement } ?: emptyList()
+                )
+                gradeOptionSetUid = config.performance.gradeMapping?.gradeOptionSet
+
                 val stages = config.performance.programStages
                     ?.filterNotNull()
                     ?: emptyList()
@@ -59,9 +73,16 @@ class SubjectViewModel
     fun performOnFilterClick(stage: String) {
         _programStage.value = stage
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(subjects = repository.getSubjects(stage))
+            val all = repository.getSubjects(stage)
+            val filtered = if (Constants.CONFIGURED_SUBJECT_FILTERING) {
+                all.filter { it.uid in scoreDeUids }
+            } else {
+                all.filter { de ->
+                    (gradeOptionSetUid.isNullOrEmpty() || de.optionSetUid != gradeOptionSetUid) &&
+                        de.uid !in gradeDEUids
+                }
             }
+            _uiState.update { it.copy(subjects = filtered) }
         }
     }
 }

@@ -411,15 +411,17 @@ class DataManagerImpl
         return@withContext d2.programModule().programStageDataElements()
             .byProgramStage().eq(stage)
             .blockingGet()
-            .map { stageDl ->
+            .mapNotNull { stageDl ->
                 val dl = d2.dataElement(stageDl.dataElement()?.uid() ?: "")
-
-                Subject(
-                    uid = dl?.uid() ?: "",
-                    code = dl?.code()?.ifEmpty { "" },
-                    color = dl?.style()?.color(),
-                    displayName = dl?.displayFormName(),
-                )
+                dl?.let {
+                    Subject(
+                        uid = it.uid(),
+                        code = it.code()?.ifEmpty { "" },
+                        color = it.style()?.color(),
+                        displayName = it.displayFormName(),
+                        optionSetUid = it.optionSet()?.uid(),
+                    )
+                }
             }
     }
 

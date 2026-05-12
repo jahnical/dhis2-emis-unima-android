@@ -28,4 +28,10 @@ object Constants {
 
     const val CARD_VALUE = "CARD_VALUE"
     const val SINGLE_VALUE = "SINGLE_VALUE"
+
+    /**
+     * When true: only DEs with an explicIt core mapping are shown (strict/configured-only-mode
+     * When false: all non-grade DEs are shown (permissive/all-inclusive-mode)
+     * */
+    const val CONFIGURED_SUBJECT_FILTERING = true
 }
