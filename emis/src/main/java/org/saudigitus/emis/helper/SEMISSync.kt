@@ -39,6 +39,43 @@ class SEMISSync
         dataElementIds: List<String>,
         dataValues: List<String>,
     ): List<String> {
+        var repository = d2.trackedEntityModule().trackedEntitySearch()
+
+        repository = if (networkUtils.isOnline()) {
+            repository.onlineFirst().allowOnlineCache().eq(true)
+                .byOrgUnits().eq(ou)
+                .byOrgUnitMode().eq(OrganisationUnitMode.DESCENDANTS)
+                .byProgram().eq(program)
+        } else {
+            repository.offlineOnly().allowOnlineCache().eq(false)
+                .byOrgUnits().eq(ou)
+                .byProgram().eq(program)
+        }
+
+        val filterCount = minOf(dataElementIds.size, dataValues.size)
+
+        for (i in 0 until filterCount) {
+            val id = dataElementIds[i]
+            val value = dataValues[i]
+
+            if (id.isNotEmpty() && value.isNotEmpty()) {
+                repository = repository.byDataValue(id).eq(value)
+            }
+        }
+
+        return try {
+            repository.blockingGet().map { tei -> tei.uid() }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /*private fun searchTrackedEntityInstances(
+        ou: String,
+        program: String,
+        dataElementIds: List<String>,
+        dataValues: List<String>,
+    ): List<String> {
         val repository = d2.trackedEntityModule().trackedEntitySearch()
 
         Log.e("DATA_ELEMENTS_IDS", dataElementIds.toString())
@@ -66,5 +103,5 @@ class SEMISSync
                 .flatMap { tei -> listOf(tei) }
                 .map { tei -> tei.uid() }
         }
-    }
+    }*/
 }

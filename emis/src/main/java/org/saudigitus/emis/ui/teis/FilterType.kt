@@ -5,5 +5,6 @@ enum class FilterType {
     SCHOOL,
     GRADE,
     SECTION,
+    POST_TITTLE,
     NONE,
 }
