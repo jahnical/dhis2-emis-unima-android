@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -35,6 +36,8 @@ import org.saudigitus.emis.ui.performance.PerformanceScreen
 import org.saudigitus.emis.ui.performance.PerformanceViewModel
 import org.saudigitus.emis.ui.subjects.SubjectScreen
 import org.saudigitus.emis.ui.subjects.SubjectViewModel
+import org.saudigitus.emis.ui.studentsummary.StudentSummaryScreen
+import org.saudigitus.emis.ui.studentsummary.StudentSummaryViewModel
 import org.saudigitus.emis.ui.teis.TeiScreen
 import org.saudigitus.emis.ui.teis.mapper.TEICardMapper
 import org.saudigitus.emis.ui.theme.EMISAndroidTheme
@@ -223,8 +226,12 @@ class MainActivity : FragmentActivity() {
                             val state by subjectViewModel.uiState.collectAsStateWithLifecycle()
                             val stage by subjectViewModel.programStage.collectAsStateWithLifecycle()
                             val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
-                            subjectViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
+                            val teis by viewModel.teis.collectAsStateWithLifecycle()
                             val ou = it.arguments?.getString("ou") ?: ""
+
+                            subjectViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
+                            subjectViewModel.setOU(ou)
+                            subjectViewModel.setTeis(teis)
 
                             SubjectScreen(
                                 state = state,
@@ -235,9 +242,50 @@ class MainActivity : FragmentActivity() {
                                     navController.navigate("${AppRoutes.PERFORMANCE_ROUTE}/$ou/$stage/$subjectId/$subjectName")
                                 },
                                 sync = ::syncProgram,
+                                teiCardMapper = teiCardMapper,
+                                onTabSelected = subjectViewModel::onTabSelected,
+                                onStudentClick = { tei, name ->
+                                    navController.navigate(AppRoutes.studentSummaryRoute(ou, stage, tei, name))
+                                },
                             )
                         }
-                    }
+                        composable(
+                            route = "${AppRoutes.STUDENT_SUMMARY_ROUTE}/{ou}/{stage}/{tei}/{studentName}",
+                            arguments = listOf(
+                                navArgument("ou") { type = NavType.StringType },
+                                navArgument("stage") { type = NavType.StringType },
+                                navArgument("tei") { type = NavType.StringType },
+                                navArgument("studentName") { type = NavType.StringType },
+                            ),
+                        ) {
+                            val summaryViewModel = hiltViewModel<StudentSummaryViewModel>()
+                            val uiState by summaryViewModel.uiState.collectAsStateWithLifecycle()
+                            val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
+                            val teis by viewModel.teis.collectAsStateWithLifecycle()
+
+                            val ou = it.arguments?.getString("ou") ?: ""
+                            val stage = it.arguments?.getString("stage") ?: ""
+                            val tei = it.arguments?.getString("tei") ?: ""
+                            val studentName = it.arguments?.getString("studentName") ?: ""
+
+                            summaryViewModel.setOU(ou)
+                            summaryViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
+                            summaryViewModel.setStage(stage)
+                            summaryViewModel.setTeis(teis)
+
+                            LaunchedEffect(tei) {
+                                summaryViewModel.setSelectedStudent(tei, studentName)
+                            }
+
+                            StudentSummaryScreen(
+                                state = uiState,
+                                infoCard = infoCard,
+                                teiCardMapper = teiCardMapper,
+                                onBack = navController::navigateUp,
+                                onStudentSelected = summaryViewModel::setSelectedStudent,
+                            )
+                        }
+                    }   
                 }
             }
         }
