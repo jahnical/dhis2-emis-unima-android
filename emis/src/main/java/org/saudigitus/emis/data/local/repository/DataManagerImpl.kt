@@ -22,6 +22,7 @@ import org.saudigitus.emis.data.model.app_config.EMISConfig
 import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.Subject
+import org.saudigitus.emis.data.model.SubjectResult
 import org.saudigitus.emis.data.model.app_config.ProgramStages
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.data.model.dto.withBtnSettings
@@ -423,6 +424,73 @@ class DataManagerImpl
                     )
                 }
             }
+    }
+
+    override suspend fun getStudentSubjectResults(
+        tei: String,
+        program: String,
+        stage: String
+    ): List<SubjectResult> = withContext(Dispatchers.IO) {
+        val performance = getConfig(Constants.KEY)
+            ?.find { it.program == program }
+            ?.performance
+        val configSubjects = performance?.subjects ?: emptyList()
+        val subjectGradeMap = configSubjects.associate { it.scoreDataElement to it.gradeDataElement }
+        val gradeDEUids = configSubjects.map { it.gradeDataElement }.toSet()
+        val scoreDEUids = configSubjects.map { it.scoreDataElement }.toSet()
+        val gradeOptionsSetUid = performance?.gradeMapping?.gradeOptionSet
+
+        val allDEs = getSubjects(stage)
+        val subjects = if (Constants.CONFIGURED_SUBJECT_FILTERING) {
+            allDEs.filter { it.uid in scoreDEUids }
+        } else {
+            allDEs.filter { de ->
+                (gradeOptionsSetUid.isNullOrEmpty() || de.optionSetUid != gradeOptionsSetUid) &&
+                    de.uid !in gradeDEUids
+            }
+        }
+
+        val mostRecentEvent = d2.eventModule().events()
+            .byTrackedEntityInstanceUids(listOf(tei))
+            .byProgramUid().eq(program)
+            .byProgramStageUid().eq(stage)
+            .byDeleted().isFalse
+            .withTrackedEntityDataValues()
+            .blockingGet()
+            .sortedByDescending { it.eventDate() }
+            .firstOrNull()
+
+        subjects.map { subject ->
+            val gradeDeUid = subjectGradeMap[subject.uid]
+
+            val scoreValue = mostRecentEvent
+                ?.trackedEntityDataValues()
+                ?.find { it.dataElement() == subject.uid }
+                ?.value()
+
+            val gradeCode = if (!gradeDeUid.isNullOrEmpty()) {
+                mostRecentEvent
+                    ?.trackedEntityDataValues()
+                    ?.find { it.dataElement() == gradeDeUid }
+                    ?.value()
+            } else null
+
+            val gradeDisplayName = if (!gradeOptionsSetUid.isNullOrEmpty() && !gradeCode.isNullOrEmpty()) {
+                d2.optionModule().options()
+                    .byOptionSetUid().eq(gradeOptionsSetUid)
+                    .byCode().eq(gradeCode)
+                    .one().blockingGet()
+                    ?.displayName()
+            } else null
+
+            SubjectResult(
+                subjectUid = subject.uid,
+                subjectName = subject.displayName ?: "",
+                score = scoreValue,
+                gradeCode = gradeCode,
+                gradeDisplayName = gradeDisplayName
+            )
+        }
     }
 
     override suspend fun getTerms(stages: List<ProgramStages>) = withContext(Dispatchers.IO) {

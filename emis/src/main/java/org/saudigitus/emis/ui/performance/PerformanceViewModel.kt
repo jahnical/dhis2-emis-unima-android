@@ -118,6 +118,11 @@ class PerformanceViewModel
             }
 
             viewModelState.update { it.copy(subjects = subjects) }
+
+            val currentDl = _dataElement.value
+            if (currentDl.isNotEmpty()) {
+                getFields(_programStage.value, currentDl)
+            }
         }
     }
 
@@ -184,25 +189,22 @@ class PerformanceViewModel
         viewModelState.update { it.copy(isValidating = false) }
     }
 
-    private fun getFields(stage: String, dl: String) {
-        viewModelScope.launch {
-            _programStage.value = stage
+    private suspend fun getFields(stage: String, dl: String) {
+        _programStage.value = stage
 
-            val baseFields = formRepository.keyboardInputTypeByStage(program.value, stage, dl)
-            val gradeDl = _subjectGradeMap.value[dl]
-            val allFields = if (!gradeDl.isNullOrEmpty()) {
-                val gradeFields = formRepository.keyboardInputTypeByStage(program.value, stage, gradeDl)
-                (baseFields + gradeFields).distinctBy { it.uid }
-            } else {
-                baseFields
-            }
+        val baseFields = formRepository.keyboardInputTypeByStage(program.value, stage, dl)
+        val gradeDl = _subjectGradeMap.value[dl]
+        val allFields = if (!gradeDl.isNullOrEmpty()) {
+            val gradeFields = formRepository.keyboardInputTypeByStage(program.value, stage, gradeDl)
+            (baseFields + gradeFields).distinctBy { it.uid }
+        } else {
+            baseFields
+        }
 
-            // mark readOnly fields (grade DEs)
-            val readOnly = gradeDl?.let { listOf(it) } ?: emptyList()
+        val readOnly = gradeDl?.let { listOf(it) } ?: emptyList()
 
-            viewModelState.update {
-                it.copy(formFields = allFields, readOnlyFields = readOnly)
-            }
+        viewModelState.update {
+            it.copy(formFields = allFields, readOnlyFields = readOnly)
         }
     }
 
@@ -212,15 +214,16 @@ class PerformanceViewModel
     ) {
         if (saveOnce.value == 0) {
             _saveOnce.value = 1
-            getFields(stage, dl)
+            _programStage.value = stage
+            _dataElement.value = dl
             updateDataFields(dl)
         }
     }
 
     fun updateDataFields(dl: String) {
-        getFields(programStage.value, dl)
         viewModelScope.launch {
             _dataElement.value = dl
+            getFields(_programStage.value, dl)
             val gradeDl = _subjectGradeMap.value[dl]
 
             val baseFlow = formRepository.getEvents(

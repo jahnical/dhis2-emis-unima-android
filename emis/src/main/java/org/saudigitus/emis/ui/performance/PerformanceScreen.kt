@@ -314,6 +314,7 @@ fun PerformanceScreen(
                                         )
                                     },
                                     setFormState = setPerformanceState,
+                                    readOnly = state.readOnlyFields,
                                     renderTextFieldsInRow = true,
                                 )
                             }

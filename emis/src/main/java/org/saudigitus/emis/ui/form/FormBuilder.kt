@@ -185,7 +185,8 @@ private fun PairedMixedFields(
     setFormState: (key: String, event: String, dataElement: String, value: String, valueType: ValueType?) -> Unit,
     onNext: (Triple<String, String?, ValueType?>) -> Unit,
 ) {
-    val isNarrow = LocalConfiguration.current.screenWidthDp.dp < 480.dp
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val isNarrow = screenWidth< 390.dp
     val dropdownSelectedState = state.find { it.key == key && it.dataElement == dropdownField.uid }
     val dropdownSelectedItem = dropdownField.options?.findByCode(dropdownSelectedState?.value.orEmpty())
     val dropdownColors = TextFieldDefaults.colors(
