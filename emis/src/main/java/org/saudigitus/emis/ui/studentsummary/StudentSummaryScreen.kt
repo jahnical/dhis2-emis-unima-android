@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -118,6 +119,10 @@ fun StudentSummaryScreen(
                     },
                 )
 
+                if (state.termRemark != null) {
+                    TermRemarkBanner(termRemark = state.termRemark)
+                }
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp),
@@ -128,9 +133,68 @@ fun StudentSummaryScreen(
                     items(state.results) { result ->
                         SubjectResultRow(result = result)
                     }
+                    if (state.totalScore != null) {
+                        item {
+                            TotalScoreRow(totalScore = state.totalScore)
+                        }
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TermRemarkBanner(termRemark: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFE3F2FD))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = stringResource(R.string.term_remark),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black.copy(.7f),
+        )
+        Text(
+            text = termRemark,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF2C98F0),
+        )
+    }
+}
+
+@Composable
+private fun TotalScoreRow(totalScore: String) {
+    Divider(thickness = 1.dp, color = Color.LightGray.copy(.5f))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.LightGray.copy(.1f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier = Modifier.weight(1f),
+            text = stringResource(R.string.total_score),
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = Color.Black.copy(.85f),
+        )
+        Text(
+            modifier = Modifier.width(72.dp),
+            text = totalScore,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = Color(0xFF2C98F0),
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.width(80.dp))
     }
 }
 
