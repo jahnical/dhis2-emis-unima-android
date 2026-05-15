@@ -9,4 +9,6 @@ data class StudentSummaryUiState(
     val results: List<SubjectResult> = emptyList(),
     val students: List<SearchTeiModel> = emptyList(),
     val selectedTei: String = "",
+    val totalScore: String? = null,
+    val termRemark: String? = null,
 )

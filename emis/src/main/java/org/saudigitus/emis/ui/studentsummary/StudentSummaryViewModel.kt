@@ -63,7 +63,19 @@ class StudentSummaryViewModel
                 program = program.value,
                 stage = _stage.value,
             )
-            _uiState.update { it.copy(results = results) }
+            val termSummary = repository.computeAndSaveTermSummary(
+                tei = tei,
+                program = program.value,
+                stage = _stage.value,
+                results = results,
+            )
+            _uiState.update {
+                it.copy(
+                    results = results,
+                    totalScore = termSummary?.totalScore,
+                    termRemark = termSummary?.termRemarkDisplayName,
+                )
+            }
         }
     }
 }
