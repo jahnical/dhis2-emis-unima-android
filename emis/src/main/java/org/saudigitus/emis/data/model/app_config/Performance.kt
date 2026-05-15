@@ -15,5 +15,9 @@ data class Performance(
     @JsonProperty("subjects")
     val subjects: List<SubjectMapping>?,
     @JsonProperty("gradeMapping")
-    val gradeMapping: GradeMapping?
+    val gradeMapping: GradeMapping?,
+    @JsonProperty("maxSubjectScore")
+    val maxSubjectScore: Double?,
+    @JsonProperty("termRemarksMapping")
+    val termRemarksMapping: TermRemarksMapping?
 )
