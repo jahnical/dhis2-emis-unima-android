@@ -23,6 +23,7 @@ import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.Subject
 import org.saudigitus.emis.data.model.SubjectResult
+import org.saudigitus.emis.data.model.TermSummary
 import org.saudigitus.emis.data.model.app_config.ProgramStages
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.data.model.dto.withBtnSettings
@@ -491,6 +492,60 @@ class DataManagerImpl
                 gradeDisplayName = gradeDisplayName
             )
         }
+    }
+
+    override suspend fun computeAndSaveTermSummary(
+        tei: String,
+        program: String,
+        stage: String,
+        results: List<SubjectResult>,
+    ): TermSummary? = withContext(Dispatchers.IO) {
+        if (results.isEmpty()) return@withContext null
+
+        val performance = getConfig(Constants.KEY)
+            ?.find { it.program == program }
+            ?.performance ?: return@withContext null
+
+        val maxSubjectScore = performance.maxSubjectScore ?: 100.0
+        val termRemarksMapping = performance.termRemarksMapping ?: return@withContext null
+
+        val totalScore = results.sumOf { it.score?.toDoubleOrNull() ?: 0.0 }
+        val percentage = totalScore / (results.size * maxSubjectScore) * 100.0
+
+        val matchedCode = termRemarksMapping.ranges
+            ?.find { percentage >= it.minPercentage && percentage <= it.maxPercentage }
+            ?.optionCode
+
+        val remarkDisplayName = if (!matchedCode.isNullOrEmpty() && !termRemarksMapping.optionSet.isNullOrEmpty()) {
+            d2.optionModule().options()
+                .byOptionSetUid().eq(termRemarksMapping.optionSet)
+                .byCode().eq(matchedCode)
+                .one().blockingGet()
+                ?.displayName()
+        } else null
+
+        if (!matchedCode.isNullOrEmpty() && !termRemarksMapping.dataElement.isNullOrEmpty()) {
+            val eventUid = d2.eventModule().events()
+                .byTrackedEntityInstanceUids(listOf(tei))
+                .byProgramUid().eq(program)
+                .byProgramStageUid().eq(stage)
+                .byDeleted().isFalse
+                .blockingGet()
+                .sortedByDescending { it.eventDate() }
+                .firstOrNull()
+                ?.uid()
+
+            if (!eventUid.isNullOrEmpty()) {
+                d2.trackedEntityModule().trackedEntityDataValues()
+                    .value(eventUid, termRemarksMapping.dataElement)
+                    .blockingSet(matchedCode)
+            }
+        }
+
+        val scoreDisplay = if (totalScore % 1.0 == 0.0) totalScore.toLong().toString()
+        else "%.1f".format(totalScore)
+
+        TermSummary(totalScore = scoreDisplay, termRemarkDisplayName = remarkDisplayName)
     }
 
     override suspend fun getTerms(stages: List<ProgramStages>) = withContext(Dispatchers.IO) {
