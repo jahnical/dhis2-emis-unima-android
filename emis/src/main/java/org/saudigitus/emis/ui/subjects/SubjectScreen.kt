@@ -105,6 +105,22 @@ fun SubjectScreen(
                 verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top),
                 horizontalAlignment = Alignment.Start,
             ) {
+
+                DetailsWithOptions(
+                    modifier = Modifier.fillMaxWidth(),
+                    infoCard = infoCard,
+                    placeholder = stringResource(R.string.select_term),
+                    leadingIcon = Icons.Default.Event,
+                    data = state.filters,
+                    defaultSelection = displayName.ifEmpty {
+                        state.filters.getOrNull(0)?.itemName ?: ""
+                    },
+                    onItemClick = {
+                        displayName = it.itemName
+                        onFilterClick.invoke(it.id)
+                    },
+                )
+
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -129,21 +145,6 @@ fun SubjectScreen(
                         )
                     }
                 }
-
-                DetailsWithOptions(
-                    modifier = Modifier.fillMaxWidth(),
-                    infoCard = infoCard,
-                    placeholder = stringResource(R.string.select_term),
-                    leadingIcon = Icons.Default.Event,
-                    data = state.filters,
-                    defaultSelection = displayName.ifEmpty {
-                        state.filters.getOrNull(0)?.itemName ?: ""
-                    },
-                    onItemClick = {
-                        displayName = it.itemName
-                        onFilterClick.invoke(it.id)
-                    },
-                )
 
                 when (state.selectedTab) {
                     SubjectTab.SUBJECTS -> {
