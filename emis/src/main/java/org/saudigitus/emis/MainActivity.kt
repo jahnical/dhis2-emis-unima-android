@@ -228,10 +228,17 @@ class MainActivity : FragmentActivity() {
                             val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
                             val teis by viewModel.teis.collectAsStateWithLifecycle()
                             val ou = it.arguments?.getString("ou") ?: ""
+                            val program = intent?.extras?.getString(Constants.PROGRAM_UID) ?: ""
 
-                            subjectViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
-                            subjectViewModel.setOU(ou)
-                            subjectViewModel.setTeis(teis)
+                            LaunchedEffect(program) {
+                                subjectViewModel.setProgram(program)
+                            }
+                            LaunchedEffect(ou) {
+                                subjectViewModel.setOU(ou)
+                            }
+                            LaunchedEffect(teis) {
+                                subjectViewModel.setTeis(teis)
+                            }
 
                             SubjectScreen(
                                 state = state,
