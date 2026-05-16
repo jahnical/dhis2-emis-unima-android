@@ -104,8 +104,8 @@ fun ExpandableSearchRow(
                             .padding(end = 8.dp),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
-                        prefix = {
-                            Icons.Outlined.Search
+                        leadingIcon = {
+                            Icon(Icons.Outlined.Search, contentDescription = "")
                         },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
