@@ -53,10 +53,12 @@ import org.hisp.dhis.mobile.ui.designsystem.component.InputShellState
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardColumn
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import kotlinx.coroutines.delay
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.attendance.ButtonStep
 import org.saudigitus.emis.ui.components.DetailsWithOptions
+import org.saudigitus.emis.ui.components.ExpandableSearchRow
 import org.saudigitus.emis.ui.components.InfoCard
 import org.saudigitus.emis.ui.components.Toolbar
 import org.saudigitus.emis.ui.components.ToolbarActionState
@@ -99,6 +101,31 @@ fun PerformanceScreen(
     val context = LocalContext.current
 
     var selectedSubject by remember { mutableStateOf(defaultSelection) }
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length >= 2) {
+            delay(300)
+            debouncedQuery = searchQuery
+        } else {
+            debouncedQuery = ""
+        }
+    }
+
+    val studentEntries = remember(state.students) {
+        state.students.map { student ->
+            student to student.map(teiCardMapper, showSync = false)
+        }
+    }
+
+    val filteredStudentEntries = remember(studentEntries, debouncedQuery) {
+        if (debouncedQuery.isEmpty()) studentEntries
+        else studentEntries.filter { (_, card) ->
+            card.title.contains(debouncedQuery, ignoreCase = true)
+        }
+    }
 
     if (performanceStep == ButtonStep.SAVING) {
         PerformanceSummaryDialog(
@@ -225,25 +252,39 @@ fun PerformanceScreen(
                 verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top),
                 horizontalAlignment = Alignment.Start,
             ) {
-                DetailsWithOptions(
+                ExpandableSearchRow(
                     modifier = Modifier.fillMaxWidth(),
-                    infoCard = infoCard,
-                    placeholder = stringResource(R.string.subject),
-                    leadingIcon = ImageVector.vectorResource(R.drawable.ic_category),
-                    trailingIcon = Icons.TwoTone.Edit,
-                    data = state.subjects,
-                    defaultSelection = selectedSubject,
-                    onItemClick = {
-                        selectedSubject = it.displayName ?: ""
-                        onFilterClick.invoke(it.uid)
+                    isSearchActive = isSearchActive,
+                    searchQuery = searchQuery,
+                    searchPlaceholder = stringResource(R.string.search_students),
+                    collapsedPrimaryIcon = painterResource(R.drawable.ic_category),
+                    collapsedPrimaryContentDescription = stringResource(R.string.subject),
+                    onSearchActiveChange = { active: Boolean ->
+                        isSearchActive = active
+                        if (!active) searchQuery = ""
+                    },
+                    onSearchQueryChange = { searchQuery = it },
+                    primaryContent = {
+                        DetailsWithOptions(
+                            modifier = Modifier.fillMaxWidth(),
+                            infoCard = infoCard,
+                            placeholder = stringResource(R.string.subject),
+                            leadingIcon = ImageVector.vectorResource(R.drawable.ic_category),
+                            trailingIcon = Icons.TwoTone.Edit,
+                            data = state.subjects,
+                            defaultSelection = selectedSubject,
+                            onItemClick = {
+                                selectedSubject = it.displayName ?: ""
+                                onFilterClick.invoke(it.uid)
+                            },
+                        )
                     },
                 )
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 108.dp),
                 ) {
-                    items(state.students) { student ->
-                        val card = student.map(teiCardMapper, showSync = false)
+                    items(filteredStudentEntries) { (student, card) ->
                         val isInactive = student.enrollments.getOrNull(0)?.status() == EnrollmentStatus.CANCELLED
 
                         Column(
