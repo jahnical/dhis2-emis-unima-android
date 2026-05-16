@@ -451,7 +451,7 @@ class DataManagerImpl
             }
         }
 
-        val mostRecentEvent = d2.eventModule().events()
+        val allEvents = d2.eventModule().events()
             .byTrackedEntityInstanceUids(listOf(tei))
             .byProgramUid().eq(program)
             .byProgramStageUid().eq(stage)
@@ -459,21 +459,22 @@ class DataManagerImpl
             .withTrackedEntityDataValues()
             .blockingGet()
             .sortedByDescending { it.eventDate() }
-            .firstOrNull()
 
         subjects.map { subject ->
             val gradeDeUid = subjectGradeMap[subject.uid]
 
-            val scoreValue = mostRecentEvent
-                ?.trackedEntityDataValues()
-                ?.find { it.dataElement() == subject.uid }
-                ?.value()
+            val scoreValue = allEvents.firstNotNullOfOrNull { event ->
+                event.trackedEntityDataValues()
+                    ?.find { it.dataElement() == subject.uid && !it.value().isNullOrEmpty() }
+                    ?.value()
+            }
 
             val gradeCode = if (!gradeDeUid.isNullOrEmpty()) {
-                mostRecentEvent
-                    ?.trackedEntityDataValues()
-                    ?.find { it.dataElement() == gradeDeUid }
-                    ?.value()
+                allEvents.firstNotNullOfOrNull { event ->
+                    event.trackedEntityDataValues()
+                        ?.find { it.dataElement() == gradeDeUid && !it.value().isNullOrEmpty() }
+                        ?.value()
+                }
             } else null
 
             val gradeDisplayName = if (!gradeOptionsSetUid.isNullOrEmpty() && !gradeCode.isNullOrEmpty()) {
@@ -530,9 +531,13 @@ class DataManagerImpl
                 .byProgramUid().eq(program)
                 .byProgramStageUid().eq(stage)
                 .byDeleted().isFalse
+                .withTrackedEntityDataValues()
                 .blockingGet()
                 .sortedByDescending { it.eventDate() }
-                .firstOrNull()
+                .firstOrNull { event ->
+                    event.trackedEntityDataValues()
+                        ?.any { !it.value().isNullOrEmpty() } == true
+                }
                 ?.uid()
 
             if (!eventUid.isNullOrEmpty()) {
