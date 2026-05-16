@@ -12,7 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -22,6 +23,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,8 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.dhis2.commons.resources.ColorUtils
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
@@ -39,6 +44,7 @@ import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.components.DetailsWithOptions
+import org.saudigitus.emis.ui.components.ExpandableSearchRow
 import org.saudigitus.emis.ui.components.InfoCard
 import org.saudigitus.emis.ui.components.Toolbar
 import org.saudigitus.emis.ui.components.ToolbarActionState
@@ -58,6 +64,48 @@ fun SubjectScreen(
     onStudentClick: (tei: String, name: String) -> Unit,
 ) {
     var displayName by remember { mutableStateOf("") }
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length >= 2) {
+            delay(300)
+            debouncedQuery = searchQuery
+        } else {
+            debouncedQuery = ""
+        }
+    }
+
+    val filteredSubjects = remember(state.subjects, debouncedQuery) {
+        if (debouncedQuery.isEmpty()) state.subjects
+        else state.subjects.filter {
+            it.displayName?.contains(debouncedQuery, ignoreCase = true) == true
+        }
+    }
+
+    val studentEntries = remember(state.students) {
+        state.students.map { student ->
+            student to student.map(teiCardMapper, showSync = false)
+        }
+    }
+
+    val filteredStudentEntries = remember(studentEntries, debouncedQuery) {
+        if (debouncedQuery.isEmpty()) studentEntries
+        else studentEntries.filter { (_, card) ->
+            card.title.contains(debouncedQuery, ignoreCase = true)
+        }
+    }
+
+    val collapsedTabIcon = when (state.selectedTab) {
+        SubjectTab.SUBJECTS -> painterResource(R.drawable.subject_icon)
+        SubjectTab.STUDENTS -> rememberVectorPainter(Icons.Outlined.Person)
+    }
+
+    val searchPlaceholder = when (state.selectedTab) {
+        SubjectTab.SUBJECTS -> stringResource(R.string.search_subjects)
+        SubjectTab.STUDENTS -> stringResource(R.string.search_students)
+    }
 
     Scaffold(
         topBar = {
@@ -105,7 +153,6 @@ fun SubjectScreen(
                 verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top),
                 horizontalAlignment = Alignment.Start,
             ) {
-
                 DetailsWithOptions(
                     modifier = Modifier.fillMaxWidth(),
                     infoCard = infoCard,
@@ -121,30 +168,47 @@ fun SubjectScreen(
                     },
                 )
 
-                SingleChoiceSegmentedButtonRow(
+                ExpandableSearchRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                ) {
-                    SubjectTab.entries.forEachIndexed { index, tab ->
-                        SegmentedButton(
-                            selected = state.selectedTab == tab,
-                            onClick = { onTabSelected(tab) },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = SubjectTab.entries.size,
-                            ),
-                            label = {
-                                Text(
-                                    text = when (tab) {
-                                        SubjectTab.SUBJECTS -> stringResource(R.string.subject)
-                                        SubjectTab.STUDENTS -> stringResource(R.string.students)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    isSearchActive = isSearchActive,
+                    searchQuery = searchQuery,
+                    searchPlaceholder = searchPlaceholder,
+                    collapsedPrimaryIcon = collapsedTabIcon,
+                    collapsedPrimaryContentDescription = state.selectedTab.name,
+                    onSearchActiveChange = { active: Boolean ->
+                        isSearchActive = active
+                        if (!active) searchQuery = ""
+                    },
+                    onSearchQueryChange = { searchQuery = it },
+                    primaryContent = {
+                        SingleChoiceSegmentedButtonRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                        ) {
+                            SubjectTab.entries.forEachIndexed { index, tab ->
+                                SegmentedButton(
+                                    selected = state.selectedTab == tab,
+                                    onClick = { onTabSelected(tab) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = SubjectTab.entries.size,
+                                    ),
+                                    label = {
+                                        Text(
+                                            text = when (tab) {
+                                                SubjectTab.SUBJECTS -> stringResource(R.string.subject)
+                                                SubjectTab.STUDENTS -> stringResource(R.string.students)
+                                            },
+                                        )
                                     },
                                 )
-                            },
-                        )
-                    }
-                }
+                            }
+                        }
+                    },
+                )
 
                 when (state.selectedTab) {
                     SubjectTab.SUBJECTS -> {
@@ -153,7 +217,7 @@ fun SubjectScreen(
                                 .fillMaxSize()
                                 .padding(vertical = 12.dp),
                         ) {
-                            items(state.subjects) { subject ->
+                            items(filteredSubjects) { subject ->
                                 SubjectItem(
                                     displayName = subject.displayName ?: "-",
                                     attrValue = displayName,
@@ -175,14 +239,13 @@ fun SubjectScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 16.dp),
                         ) {
-                            items(state.students) { student ->
-                                val cardModel = student.map(teiCardMapper, showSync = false)
+                            items(filteredStudentEntries) { (student, card) ->
                                 val isInactive =
                                     student.enrollments.getOrNull(0)?.status() ==
                                         EnrollmentStatus.CANCELLED
-                                val card = cardModel.copy(
+                                val cardWithClick = card.copy(
                                     onCardCLick = {
-                                        onStudentClick(student.uid(), cardModel.title)
+                                        onStudentClick(student.uid(), card.title)
                                     },
                                 )
                                 ListCardColumn(
@@ -202,13 +265,13 @@ fun SubjectScreen(
                                                 Color.White
                                             },
                                         ),
-                                        listAvatar = card.avatar,
-                                        title = ListCardTitleModel(text = card.title),
-                                        additionalInfoList = card.additionalInfo,
+                                        listAvatar = cardWithClick.avatar,
+                                        title = ListCardTitleModel(text = cardWithClick.title),
+                                        additionalInfoList = cardWithClick.additionalInfo,
                                         actionButton = {},
-                                        expandLabelText = card.expandLabelText,
-                                        shrinkLabelText = card.shrinkLabelText,
-                                        onCardClick = card.onCardCLick,
+                                        expandLabelText = cardWithClick.expandLabelText,
+                                        shrinkLabelText = cardWithClick.shrinkLabelText,
+                                        onCardClick = cardWithClick.onCardCLick,
                                     )
                                 }
                             }

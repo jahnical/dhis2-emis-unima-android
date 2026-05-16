@@ -29,6 +29,8 @@
     <string name="score">Score</string>
     <string name="total_score">Total Score</string>
     <string name="term_remark">Term Remark</string>
+    <string name="search_subjects">Search subjects</string>
+    <string name="search_students">Search students</string>
     <string name="performance_summary">Performance summary</string>
     <string name="marks_saved">Performance saved successfully</string>
     <string name="bulk_assing">Bulk assign</string>
