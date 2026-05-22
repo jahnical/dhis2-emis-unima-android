@@ -227,13 +227,13 @@ fun HomeUI(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Sync,
+                            imageVector = Icons.Default.Download,
                             contentDescription = stringResource(
                                 R.string.dowload_teis,
                                 uiState.trackedEntityType
                             ),
                         )
-                        Text(stringResource(R.string.dowload_teis, uiState.trackedEntityType))
+                        Text(stringResource(R.string.fetch_ties, uiState.trackedEntityType))
                     }
                 }
             }

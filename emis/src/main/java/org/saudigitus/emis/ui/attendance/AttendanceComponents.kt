@@ -81,7 +81,6 @@ fun AttendanceButtons(
         color: Color,
     ) -> Unit,
 ) {
-    var btnCode by remember { mutableStateOf("") }
     var selectedIndex by remember { mutableIntStateOf(-1) }
 
     Row(
@@ -93,8 +92,6 @@ fun AttendanceButtons(
         actions.forEachIndexed { index, action ->
             IconButton(
                 onClick = {
-                    btnCode = action.code ?: ""
-                    selectedIndex = index
 
                     onClick.invoke(
                         index,

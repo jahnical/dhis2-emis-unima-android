@@ -187,7 +187,8 @@ class HomeViewModel
 
                 val academicYearDe = schoolCalendar.value?.academicYear
 
-                val configFilterDeIds = filter.value?.dataElements?.mapNotNull { it?.dataElement } ?: emptyList()
+                val configFilterDeIds =
+                    filter.value?.dataElements?.mapNotNull { it?.dataElement } ?: emptyList()
 
                 val dataElements = listOfNotNull(academicYearDe) + configFilterDeIds
 

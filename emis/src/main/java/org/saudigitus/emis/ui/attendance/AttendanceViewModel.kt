@@ -153,6 +153,9 @@ class AttendanceViewModel
         date: String? = DateHelper.formatDate(DateUtils.getInstance().today.time),
     ) {
         viewModelScope.launch {
+            _attendanceBtnState.value = emptyList()
+            _attendanceStatus.value = emptyList()
+
             try {
                 _attendanceStatus.value = async {
                     repository.getAttendanceEvent(
@@ -183,6 +186,7 @@ class AttendanceViewModel
         date: String? = DateHelper.formatDate(DateUtils.getInstance().today.time),
     ) {
         viewModelScope.launch {
+            _attendanceBtnState.value = emptyList()
             _isLoading.value = true
             val config = repository.getConfig(KEY)?.find { it.program == program.value }
             val registration = config?.registration
@@ -293,7 +297,7 @@ class AttendanceViewModel
             attendanceBtnStateCache.add(uiCacheItem)
         }
 
-        return attendanceBtnStateCache
+        return attendanceBtnStateCache.toMutableList()
     }
 
     fun bulkAttendance(
@@ -302,7 +306,6 @@ class AttendanceViewModel
         reasonOfAbsence: String? = null,
         color: Color? = null,
     ) {
-        // Update cache directly without coroutine wrapper for immediate UI update
         val updatedBtnStates = mutableListOf<AttendanceActionButtonState>()
 
         teiUIds.value.forEach { (tei, enrollment) ->
@@ -386,8 +389,6 @@ class AttendanceViewModel
             val formDataItem = data.find { it.tei == tei }
             if (formDataItem != null) {
                 data.remove(formDataItem)
-                _formData.value = data
-
                 repository.deleteEvent(tei, enrollment, eventDate.value)
             }
 

@@ -22,7 +22,6 @@ import org.hisp.dhis.mobile.ui.designsystem.component.ButtonStyle
 import org.hisp.dhis.mobile.ui.designsystem.theme.TextColor
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.SearchTeiModel
-import org.saudigitus.emis.utils.Utils.isStringCastableToInt
 import java.io.File
 
 class TEICardMapper(
@@ -79,7 +78,6 @@ class TEICardMapper(
     private fun getTitle(item: SearchTeiModel): String {
         val attr1 = item.attributeValues?.values?.toList()?.getOrNull(1)?.value()?.trim() ?: ""
         val attr2 = item.attributeValues?.values?.toList()?.getOrNull(2)?.value()?.trim() ?: ""
-
         return "$attr1 $attr2"
     }
 
