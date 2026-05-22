@@ -47,19 +47,19 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
 import org.hisp.dhis.mobile.ui.designsystem.component.InputShellState
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardColumn
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
-import kotlinx.coroutines.delay
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.attendance.ButtonStep
 import org.saudigitus.emis.ui.components.DetailsWithOptions
-import org.saudigitus.emis.ui.components.ExpandableSearchRow
 import org.saudigitus.emis.ui.components.InfoCard
+import org.saudigitus.emis.ui.components.SearchInputBox
 import org.saudigitus.emis.ui.components.Toolbar
 import org.saudigitus.emis.ui.components.ToolbarActionState
 import org.saudigitus.emis.ui.form.FormBuilder
@@ -101,7 +101,6 @@ fun PerformanceScreen(
     val context = LocalContext.current
 
     var selectedSubject by remember { mutableStateOf(defaultSelection) }
-    var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var debouncedQuery by remember { mutableStateOf("") }
 
@@ -252,40 +251,37 @@ fun PerformanceScreen(
                 verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top),
                 horizontalAlignment = Alignment.Start,
             ) {
-                ExpandableSearchRow(
+                DetailsWithOptions(
                     modifier = Modifier.fillMaxWidth(),
-                    isSearchActive = isSearchActive,
-                    searchQuery = searchQuery,
-                    searchPlaceholder = stringResource(R.string.search_students),
-                    collapsedPrimaryIcon = painterResource(R.drawable.ic_category),
-                    collapsedPrimaryContentDescription = stringResource(R.string.subject),
-                    onSearchActiveChange = { active: Boolean ->
-                        isSearchActive = active
-                        if (!active) searchQuery = ""
-                    },
-                    onSearchQueryChange = { searchQuery = it },
-                    primaryContent = {
-                        DetailsWithOptions(
-                            modifier = Modifier.fillMaxWidth(),
-                            infoCard = infoCard,
-                            placeholder = stringResource(R.string.subject),
-                            leadingIcon = ImageVector.vectorResource(R.drawable.ic_category),
-                            trailingIcon = Icons.TwoTone.Edit,
-                            data = state.subjects,
-                            defaultSelection = selectedSubject,
-                            onItemClick = {
-                                selectedSubject = it.displayName ?: ""
-                                onFilterClick.invoke(it.uid)
-                            },
-                        )
+                    infoCard = infoCard,
+                    placeholder = stringResource(R.string.subject),
+                    leadingIcon = ImageVector.vectorResource(R.drawable.ic_category),
+                    trailingIcon = Icons.TwoTone.Edit,
+                    data = state.subjects,
+                    defaultSelection = selectedSubject,
+                    onItemClick = {
+                        selectedSubject = it.displayName ?: ""
+                        onFilterClick.invoke(it.uid)
                     },
                 )
+
+                SearchInputBox(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = { searchQuery = it },
+                    searchPlaceholder = stringResource(R.string.search_students),
+                    keyboard = null,
+                )
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 108.dp),
                 ) {
                     items(filteredStudentEntries) { (student, card) ->
-                        val isInactive = student.enrollments.getOrNull(0)?.status() == EnrollmentStatus.CANCELLED
+                        val isInactive =
+                            student.enrollments.getOrNull(0)?.status() == EnrollmentStatus.CANCELLED
 
                         Column(
                             modifier = Modifier

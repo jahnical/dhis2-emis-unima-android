@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
@@ -93,27 +94,13 @@ fun ExpandableSearchRow(
                 label = "searchContent",
             ) { searchActive ->
                 if (searchActive) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        placeholder = { Text(searchPlaceholder) },
-                        singleLine = true,
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 8.dp),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Search, contentDescription = "")
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { onSearchQueryChange("") }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear")
-                                }
-                            }
-                        },
+                    SearchInputBox( Modifier
+                        .fillMaxWidth()
+                        .padding(end = 8.dp),
+                        searchQuery,
+                        onSearchQueryChange,
+                        searchPlaceholder,
+                        keyboard
                     )
                 } else {
                     IconButton(onClick = { onSearchActiveChange(true) }) {
@@ -123,4 +110,34 @@ fun ExpandableSearchRow(
             }
         }
     }
+}
+
+@Composable
+fun SearchInputBox(
+    modifier: Modifier = Modifier,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    searchPlaceholder: String,
+    keyboard: SoftwareKeyboardController?
+) {
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        placeholder = { Text(searchPlaceholder) },
+        singleLine = true,
+        shape = CircleShape,
+        modifier = modifier,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
+        leadingIcon = {
+            Icon(Icons.Outlined.Search, contentDescription = "")
+        },
+        trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = { onSearchQueryChange("") }) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                }
+            }
+        },
+    )
 }
