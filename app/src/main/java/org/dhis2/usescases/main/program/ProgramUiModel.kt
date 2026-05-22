@@ -23,7 +23,17 @@ data class ProgramUiModel(
     val isSEMIS: Boolean = false,
     val lastUpdated: Date,
 ) {
-    fun countDescription() = "%s %s".format(count, typeName)
+    //fun countDescription(): String = "%s %s".format(count, typeName.pluralize(count))
+    fun countDescription(): String {
+        val pluralizableItems = listOf("Learner", "Student", "Teacher", "Household")
+        val label = if (count > 1 && !typeName.endsWith("s", ignoreCase = true) && (typeName in (pluralizableItems))) {
+            "${typeName}s"
+        } else {
+            typeName
+        }
+        return "%s %s".format(count, label)
+    }
+
 
     fun isDownloading() = downloadActive || downloadState == ProgramDownloadState.DOWNLOADING
 

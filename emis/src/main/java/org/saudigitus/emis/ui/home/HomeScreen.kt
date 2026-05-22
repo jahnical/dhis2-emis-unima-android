@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -190,6 +191,7 @@ fun HomeUI(
                     val defaultSelection = when (filter.filterType) {
                         FilterType.GRADE -> uiState.filterSelection.second
                         FilterType.SECTION -> uiState.filterSelection.third
+                        FilterType.POST_TITTLE -> uiState.postTitle
                         else -> null
                     }
 
@@ -231,7 +233,7 @@ fun HomeUI(
                                 uiState.trackedEntityType
                             ),
                         )
-                        Text(stringResource(R.string.dowload_teis, uiState.trackedEntityType))
+                        Text(stringResource(R.string.fetch_ties, uiState.trackedEntityType))
                     }
                 }
             }

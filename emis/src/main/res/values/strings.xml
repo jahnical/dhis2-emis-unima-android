@@ -16,6 +16,7 @@
     <string name="calendar">Calendar</string>
     <string name="attendance_date">Select attendance date</string>
     <string name="update">Update</string>
+    <string name="edit">Edit</string>
     <string name="attendance">Attendance</string>
     <string name="summary">Summary</string>
     <string name="section">Class/Section</string>
@@ -64,6 +65,8 @@
     <string name="programs">Programs:</string>
     <string name="sync_offline_check_connection">Looks like you\\\'re offline. Please check you connection</string>
     <string name="none">None</string>
+    <string name="post_title">Post Title</string>
     <string name="dowload_teis">Sync %s</string>
+    <string name="fetch_ties">Fetch %s</string>
     <string name="no_attendance_school_days">Attendance is only available on school days. Please select a valid school day.</string>
 </resources>

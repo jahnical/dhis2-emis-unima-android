@@ -78,9 +78,15 @@ abstract class BaseViewModel(
 
     fun setTeis(teis: List<SearchTeiModel>) {
         viewModelScope.launch {
-            _teis.value = teis
+            // Sort TEIs alphabetically by their display name (extracted from attributeValues)
+            val sortedTeis = teis.sortedBy { tei ->
+                val attr1 = tei.attributeValues?.values?.toList()?.getOrNull(1)?.value()?.trim() ?: ""
+                val attr2 = tei.attributeValues?.values?.toList()?.getOrNull(2)?.value()?.trim() ?: ""
+                "$attr1 $attr2"
+            }
+            _teis.value = sortedTeis
             _teiUIds.value = withContext(Dispatchers.IO) {
-                teis.filter {
+                sortedTeis.filter {
                     it.enrollments.getOrNull(0)?.status() != EnrollmentStatus.CANCELLED
                 }
                     .map { Pair(it.tei.uid(), it.enrollments.getOrNull(0)?.uid() ?: "") }
