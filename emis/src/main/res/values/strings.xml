@@ -28,7 +28,13 @@
     <string name="select_term">Select term</string>
     <string name="absenteeism">Absenteeism</string>
     <string name="performance">Performance</string>
-    <string name="subject">Subject</string>
+    <string name="subject">Subjects</string>
+    <string name="students">Students</string>
+    <string name="score">Score</string>
+    <string name="total_score">Total Score</string>
+    <string name="term_remark">Term Remark</string>
+    <string name="search_subjects">Search subjects</string>
+    <string name="search_students">Search students</string>
     <string name="performance_summary">Performance summary</string>
     <string name="marks_saved">Performance saved successfully</string>
     <string name="bulk_assing">Bulk assign</string>

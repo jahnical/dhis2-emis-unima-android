@@ -30,6 +30,14 @@ class SubjectViewModel
     private val scoreDeUids = mutableSetOf<String>()
     private var gradeOptionSetUid: String? = null
 
+    init {
+        viewModelScope.launch {
+            teis.collect { list ->
+                _uiState.update { it.copy(students = list) }
+            }
+        }
+    }
+
     override fun setConfig(program: String) {
         viewModelScope.launch {
             val config = repository.getConfig(Constants.KEY)?.find { it.program == program }
@@ -69,6 +77,10 @@ class SubjectViewModel
     override fun setDate(date: String) {}
 
     override fun save() {}
+
+    fun onTabSelected(tab: SubjectTab) {
+        _uiState.update { it.copy(selectedTab = tab) }
+    }
 
     fun performOnFilterClick(stage: String) {
         _programStage.value = stage
