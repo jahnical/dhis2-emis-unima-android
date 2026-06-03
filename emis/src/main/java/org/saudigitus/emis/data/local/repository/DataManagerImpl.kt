@@ -22,6 +22,8 @@ import org.saudigitus.emis.data.model.app_config.EMISConfig
 import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.Subject
+import org.saudigitus.emis.data.model.SubjectResult
+import org.saudigitus.emis.data.model.TermSummary
 import org.saudigitus.emis.data.model.app_config.ProgramStages
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.data.model.dto.withBtnSettings
@@ -423,6 +425,132 @@ class DataManagerImpl
                     )
                 }
             }
+    }
+
+    override suspend fun getStudentSubjectResults(
+        tei: String,
+        program: String,
+        stage: String
+    ): List<SubjectResult> = withContext(Dispatchers.IO) {
+        val performance = getConfig(Constants.KEY)
+            ?.find { it.program == program }
+            ?.performance
+        val configSubjects = performance?.subjects ?: emptyList()
+        val subjectGradeMap = configSubjects.associate { it.scoreDataElement to it.gradeDataElement }
+        val gradeDEUids = configSubjects.map { it.gradeDataElement }.toSet()
+        val scoreDEUids = configSubjects.map { it.scoreDataElement }.toSet()
+        val gradeOptionsSetUid = performance?.gradeMapping?.gradeOptionSet
+
+        val allDEs = getSubjects(stage)
+        val subjects = if (Constants.CONFIGURED_SUBJECT_FILTERING) {
+            allDEs.filter { it.uid in scoreDEUids }
+        } else {
+            allDEs.filter { de ->
+                (gradeOptionsSetUid.isNullOrEmpty() || de.optionSetUid != gradeOptionsSetUid) &&
+                    de.uid !in gradeDEUids
+            }
+        }
+
+        val allEvents = d2.eventModule().events()
+            .byTrackedEntityInstanceUids(listOf(tei))
+            .byProgramUid().eq(program)
+            .byProgramStageUid().eq(stage)
+            .byDeleted().isFalse
+            .withTrackedEntityDataValues()
+            .blockingGet()
+            .sortedByDescending { it.eventDate() }
+
+        subjects.map { subject ->
+            val gradeDeUid = subjectGradeMap[subject.uid]
+
+            val scoreValue = allEvents.firstNotNullOfOrNull { event ->
+                event.trackedEntityDataValues()
+                    ?.find { it.dataElement() == subject.uid && !it.value().isNullOrEmpty() }
+                    ?.value()
+            }
+
+            val gradeCode = if (!gradeDeUid.isNullOrEmpty()) {
+                allEvents.firstNotNullOfOrNull { event ->
+                    event.trackedEntityDataValues()
+                        ?.find { it.dataElement() == gradeDeUid && !it.value().isNullOrEmpty() }
+                        ?.value()
+                }
+            } else null
+
+            val gradeDisplayName = if (!gradeOptionsSetUid.isNullOrEmpty() && !gradeCode.isNullOrEmpty()) {
+                d2.optionModule().options()
+                    .byOptionSetUid().eq(gradeOptionsSetUid)
+                    .byCode().eq(gradeCode)
+                    .one().blockingGet()
+                    ?.displayName()
+            } else null
+
+            SubjectResult(
+                subjectUid = subject.uid,
+                subjectName = subject.displayName ?: "",
+                score = scoreValue,
+                gradeCode = gradeCode,
+                gradeDisplayName = gradeDisplayName
+            )
+        }
+    }
+
+    override suspend fun computeAndSaveTermSummary(
+        tei: String,
+        program: String,
+        stage: String,
+        results: List<SubjectResult>,
+    ): TermSummary? = withContext(Dispatchers.IO) {
+        if (results.isEmpty()) return@withContext null
+
+        val performance = getConfig(Constants.KEY)
+            ?.find { it.program == program }
+            ?.performance ?: return@withContext null
+
+        val maxSubjectScore = performance.maxSubjectScore ?: 100.0
+        val termRemarksMapping = performance.termRemarksMapping ?: return@withContext null
+
+        val totalScore = results.sumOf { it.score?.toDoubleOrNull() ?: 0.0 }
+        val percentage = totalScore / (results.size * maxSubjectScore) * 100.0
+
+        val matchedCode = termRemarksMapping.ranges
+            ?.find { percentage >= it.minPercentage && percentage <= it.maxPercentage }
+            ?.optionCode
+
+        val remarkDisplayName = if (!matchedCode.isNullOrEmpty() && !termRemarksMapping.optionSet.isNullOrEmpty()) {
+            d2.optionModule().options()
+                .byOptionSetUid().eq(termRemarksMapping.optionSet)
+                .byCode().eq(matchedCode)
+                .one().blockingGet()
+                ?.displayName()
+        } else null
+
+        if (!matchedCode.isNullOrEmpty() && !termRemarksMapping.dataElement.isNullOrEmpty()) {
+            val eventUid = d2.eventModule().events()
+                .byTrackedEntityInstanceUids(listOf(tei))
+                .byProgramUid().eq(program)
+                .byProgramStageUid().eq(stage)
+                .byDeleted().isFalse
+                .withTrackedEntityDataValues()
+                .blockingGet()
+                .sortedByDescending { it.eventDate() }
+                .firstOrNull { event ->
+                    event.trackedEntityDataValues()
+                        ?.any { !it.value().isNullOrEmpty() } == true
+                }
+                ?.uid()
+
+            if (!eventUid.isNullOrEmpty()) {
+                d2.trackedEntityModule().trackedEntityDataValues()
+                    .value(eventUid, termRemarksMapping.dataElement)
+                    .blockingSet(matchedCode)
+            }
+        }
+
+        val scoreDisplay = if (totalScore % 1.0 == 0.0) totalScore.toLong().toString()
+        else "%.1f".format(totalScore)
+
+        TermSummary(totalScore = scoreDisplay, termRemarkDisplayName = remarkDisplayName)
     }
 
     override suspend fun getTerms(stages: List<ProgramStages>) = withContext(Dispatchers.IO) {
