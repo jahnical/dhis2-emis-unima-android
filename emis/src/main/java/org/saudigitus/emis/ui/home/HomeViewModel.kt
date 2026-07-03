@@ -65,7 +65,8 @@ class HomeViewModel
     private suspend fun loadFiltersSequentially() {
         val filterType = mapOf(
             "grade" to FilterType.GRADE,
-            "class" to FilterType.SECTION
+            "class" to FilterType.SECTION,
+            "postTitle" to FilterType.POST_TITTLE,
         )
 
         val results = mutableListOf<DropdownState>()
@@ -132,6 +133,20 @@ class HomeViewModel
                         modules = modules
                     )
                 }
+
+                // Auto-select school if user has exactly one capture org unit
+                val orgUnits = repository.getUserCaptureOrgUnits(program)
+                if (orgUnits.size == 1) {
+                    val singleOu = orgUnits.first()
+                    setOU(singleOu.uid)
+                    viewModelState.update {
+                        it.copy(
+                            toolbarHeaders = updateToolbar(singleOu),
+                            school = singleOu,
+                        )
+                    }
+                }
+
                 loadFiltersSequentially()
             }
         }
@@ -163,11 +178,19 @@ class HomeViewModel
     private fun getTeis() {
         viewModelScope.launch {
             if (!viewModelState.value.isNull) {
-                val dataElements = listOfNotNull(
+
+                /*val dataElements = listOfNotNull(
                     schoolCalendar.value?.academicYear,
                     registration.value?.grade,
                     registration.value?.section,
-                )
+                )*/
+
+                val academicYearDe = schoolCalendar.value?.academicYear
+
+                val configFilterDeIds =
+                    filter.value?.dataElements?.mapNotNull { it?.dataElement } ?: emptyList()
+
+                val dataElements = listOfNotNull(academicYearDe) + configFilterDeIds
 
                 repository.getTeisBy(
                     ou = "${viewModelState.value.school?.uid}",
@@ -309,6 +332,13 @@ class HomeViewModel
         invokeInFilters()
     }
 
+    private fun setPostTitle(postTitle: DropdownItem?){
+        viewModelState.update {
+            it.copy(postTitle = postTitle)
+        }
+        invokeInFilters()
+    }
+
     private suspend fun options(uid: String) = repository.getOptions(
         ou = viewModelState.value.school?.uid,
         program = program.value,
@@ -348,6 +378,10 @@ class HomeViewModel
                 setSchool(filterItem as OU)
             }
 
+            FilterType.POST_TITTLE -> {
+                setPostTitle(filterItem as DropdownItem)
+            }
+
             FilterType.NONE -> {}
         }
     }
@@ -364,11 +398,18 @@ class HomeViewModel
 
             is HomeUiEvent.OnDownloadStudent -> {
                 viewModelScope.launch {
-                    val dataElementIds = listOf(
+
+                    /*val dataElementIds = listOf(
                         schoolCalendar.value?.academicYear,
                         registration.value?.grade,
                         registration.value?.section,
-                    ).mapNotNull { it }
+                    ).mapNotNull { it }*/
+
+                    val academicYearDe = schoolCalendar.value?.academicYear
+
+                    val configFilterDeIds = filter.value?.dataElements?.mapNotNull { it?.dataElement } ?: emptyList()
+
+                    val dataElementIds = listOfNotNull(academicYearDe) + configFilterDeIds
 
                     val dataValues = viewModelState.value.options
 

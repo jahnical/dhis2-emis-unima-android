@@ -20,6 +20,8 @@ data class Transfer(
     val penddingCode: String?,
     @JsonProperty("programStage")
     val programStage: String?,
+    @JsonProperty("reason")
+    val reason: String?,
     @JsonProperty("reprovedCode")
     val reprovedCode: String?,
     @JsonProperty("status")

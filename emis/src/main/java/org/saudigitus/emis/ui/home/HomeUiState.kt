@@ -26,6 +26,7 @@ data class HomeUiState(
     val programSettings: Bundle? = null,
     val infoCard: InfoCard = InfoCard(),
     val modules: List<Module> = emptyList(),
+    val postTitle: DropdownItem? = null,
 ) {
     val isNull: Boolean
         get() = academicYear == null && school == null
@@ -39,6 +40,7 @@ data class HomeUiState(
                 academicYear.code,
                 grade?.code,
                 section?.code,
+                postTitle?.code,
             )
         } else {
             emptyList()

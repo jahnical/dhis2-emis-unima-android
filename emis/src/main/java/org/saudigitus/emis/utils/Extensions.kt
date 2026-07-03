@@ -90,14 +90,16 @@ fun DropdownState.icon() = when (this.filterType) {
     FilterType.GRADE -> R.drawable.ic_school
     FilterType.SECTION -> R.drawable.ic_category
     FilterType.SCHOOL -> R.drawable.ic_location_on
+    FilterType.POST_TITTLE -> R.drawable.ic_assignment
     FilterType.NONE -> R.drawable.filter_none
 }
 
 fun DropdownState.placeholder() = when (this.filterType) {
     FilterType.ACADEMIC_YEAR -> R.string.academic_year
-    FilterType.GRADE -> R.string.grade
-    FilterType.SECTION -> R.string.cls
+    FilterType.GRADE -> R.string.standard
+    FilterType.SECTION -> R.string.stream
     FilterType.SCHOOL -> R.string.school
+    FilterType.POST_TITTLE -> R.string.post_title
     FilterType.NONE -> R.string.none
 }
 

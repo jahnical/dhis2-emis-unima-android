@@ -25,6 +25,7 @@ import org.hisp.dhis.rules.models.RuleDataValue
 import org.hisp.dhis.rules.models.RuleEvent
 import org.hisp.dhis.rules.models.RuleEventStatus
 import org.hisp.dhis.rules.models.RuleVariable
+import org.hisp.dhis.rules.models.RuleEffect
 import org.saudigitus.emis.utils.DateHelper
 import java.util.Collections
 import javax.inject.Inject
@@ -93,19 +94,28 @@ class RuleEngineRepository @Inject constructor(
             .byProgramUid().eq(program)
             .withTrackedEntityDataValues()
             .blockingGet()
-            .map { event ->
+            .mapNotNull { event ->
+                // Skip events missing fields required by the rule engine
+                val programStage = event.programStage() ?: return@mapNotNull null
+                val eventDate = event.eventDate() ?: return@mapNotNull null
+                val status = event.status() ?: return@mapNotNull null
+                val organisationUnit = event.organisationUnit() ?: return@mapNotNull null
+                val stageName = d2.programModule().programStages()
+                    .uid(programStage).blockingGet()?.name() ?: return@mapNotNull null
+
                 RuleEvent(
                     event = event.uid(),
-                    programStage = event.programStage()!!,
-                    programStageName = d2.programModule().programStages()
-                        .uid(event.programStage())
-                        .blockingGet()!!.name()!!,
-                    status = if (event.status() == EventStatus.VISITED) {
-                        RuleEventStatus.ACTIVE
-                    } else {
-                        RuleEventStatus.valueOf(event.status()!!.name)
+                    programStage = programStage,
+                    programStageName = stageName,
+                    status = when (status) {
+                        EventStatus.VISITED -> RuleEventStatus.ACTIVE
+                        else -> try {
+                            RuleEventStatus.valueOf(status.name)
+                        } catch (e: IllegalArgumentException) {
+                            RuleEventStatus.ACTIVE
+                        }
                     },
-                    eventDate = Instant.fromEpochMilliseconds(event.eventDate()!!.time),
+                    eventDate = Instant.fromEpochMilliseconds(eventDate.time),
                     dueDate = event.dueDate()?.let {
                         Instant.fromEpochMilliseconds(it.time)
                             .toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -114,11 +124,9 @@ class RuleEngineRepository @Inject constructor(
                         Instant.fromEpochMilliseconds(it.time)
                             .toLocalDateTime(TimeZone.currentSystemDefault()).date
                     },
-                    organisationUnit = event.organisationUnit()!!,
+                    organisationUnit = organisationUnit,
                     organisationUnitCode = d2.organisationUnitModule().organisationUnits()
-                        .uid(
-                            event.organisationUnit(),
-                        ).blockingGet()?.code(),
+                        .uid(organisationUnit).blockingGet()?.code(),
                     dataValues = event.trackedEntityDataValues()?.toRuleDataValue(
                         event,
                         d2.dataElementModule().dataElements(),
@@ -203,6 +211,85 @@ class RuleEngineRepository @Inject constructor(
         )
     }
 
+    private fun buildRuleEventForNewEntry(
+        ou: String,
+        stage: String,
+        dataValues: List<RuleDataValue> = emptyList(),
+        eventDate: String,
+    ): RuleEvent {
+        val eventInstant = Instant.fromEpochSeconds(DateHelper.dateStringToSeconds(eventDate))
+        val programStageName = d2.programModule().programStages().uid(stage).blockingGet()?.name()
+
+        return RuleEvent(
+            event = "",
+            programStage = stage,
+            programStageName = programStageName ?: "",
+            status = RuleEventStatus.ACTIVE,
+            eventDate = eventInstant,
+            dueDate = null,
+            completedDate = null,
+            organisationUnit = ou,
+            organisationUnitCode = d2.organisationUnit(ou)?.code(),
+            dataValues = dataValues,
+        )
+    }
+
+    private fun dataEntry(
+        event: String,
+        stage: String,
+        dataElement: String,
+        value: String,
+    ) = RuleDataValue(
+        eventDate = Instant.fromEpochSeconds(DateHelper.dateStringToSeconds(event)),
+        programStage = stage,
+        dataElement = dataElement,
+        value = value
+    )
+
+    /**
+     * Evaluate rules for a single data entry and return all rule effects. This will construct a
+     * temporary RuleEvent for unsaved/new entries (when event is blank) to avoid NPEs.
+     */
+    suspend fun evaluateDataEntryEffects(
+        ou: String,
+        program: String,
+        stage: String,
+        dataElement: String,
+        event: String,
+        eventDate: String,
+        value: String,
+    ): List<RuleEffect> = withContext(Dispatchers.IO) {
+        val dataValues = Collections.singletonList(
+            dataEntry(
+                eventDate,
+                stage,
+                dataElement,
+                value
+            )
+        )
+
+        val ruleEngineContextData = ruleEngineContextData(ou, program)
+        val events = ruleEngineContextData.ruleEvents.filter { it.event != event }
+
+        val targetEvent = if (event.isNotBlank()) {
+            try {
+                getRuleEvent(event, dataValues)
+            } catch (e: Exception) {
+                // fall back to constructed event if lookup fails
+                buildRuleEventForNewEntry(ou, stage, dataValues, eventDate)
+            }
+        } else {
+            buildRuleEventForNewEntry(ou, stage, dataValues, eventDate)
+        }
+
+        return@withContext ruleEngine.evaluate(
+            target = targetEvent,
+            ruleEnrollment = ruleEngineContextData.ruleEnrollment,
+            ruleEvents = events,
+            executionContext = ruleEngineContextData.ruleEngineContext,
+        )
+    }
+
     suspend fun applyOptionRules(
         ou: String? = null,
         program: String,
@@ -231,18 +318,11 @@ class RuleEngineRepository @Inject constructor(
             .toList()
     }
 
-    private fun dataEntry(
-        event: String,
-        stage: String,
-        dataElement: String,
-        value: String,
-    ) = RuleDataValue(
-        eventDate = Instant.fromEpochSeconds(DateHelper.dateStringToSeconds(event)),
-        programStage = stage,
-        dataElement = dataElement,
-        value = value
-    )
-
+    /**
+     * Evaluate rules for a single data entry and return the first rule effect that shows an error.
+     * This will construct a temporary RuleEvent for unsaved/new entries (when event is blank) to
+     * avoid NPEs.
+     */
     suspend fun evaluateDataEntry(
         ou: String,
         program: String,
@@ -251,18 +331,14 @@ class RuleEngineRepository @Inject constructor(
         event: String,
         eventDate: String,
         value: String
-    ) = evaluate(
+    ) = evaluateDataEntryEffects(
         ou,
         program,
+        stage,
+        dataElement,
         event,
-        Collections.singletonList(
-            dataEntry(
-                eventDate,
-                stage,
-                dataElement,
-                value
-            )
-        )
+        eventDate,
+        value,
     ).find { effect ->
         effect.ruleAction.type == ProgramRuleActionType.SHOWERROR.name
     }

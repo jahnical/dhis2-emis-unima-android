@@ -2,22 +2,28 @@ package org.saudigitus.emis.data.model.app_config
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.saudigitus.emis.utils.Mapper
+import timber.log.Timber
 
-class EMISConfig {
+open class EMISConfig {
     private fun toJson(): String = Mapper.translateJsonToObject().writeValueAsString(this)
 
     companion object {
-        fun fromJson(json: String?): List<EMISConfigItem>? = if (json != null) {
+        open fun fromJson(json: String?): List<EMISConfigItem>? = if (json != null) {
             val mapper = ObjectMapper()
 
-            Mapper.translateJsonToObject()
-                .readValue(
-                    json,
-                    mapper.typeFactory.constructCollectionType(
-                        List::class.java,
-                        EMISConfigItem::class.java,
-                    ),
-                )
+            try {
+                Mapper.translateJsonToObject()
+                    .readValue(
+                        json,
+                        mapper.typeFactory.constructCollectionType(
+                            List::class.java,
+                            EMISConfigItem::class.java,
+                        ),
+                    )
+            } catch (ex: Exception) {
+                Timber.e(ex, "Failed to parse EMISConfig from JSON")
+                null
+            }
         } else {
             null
         }

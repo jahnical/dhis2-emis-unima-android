@@ -7,6 +7,10 @@ object AppRoutes {
     const val ABSENTEEISM_ROUTE = "ABSENTEEISM_ROUTE"
     const val PERFORMANCE_ROUTE = "PERFORMANCE_ROUTE"
     const val SUBJECT_ROUTE = "SUBJECT_ROUTE"
+    const val STUDENT_SUMMARY_ROUTE = "STUDENT_SUMMARY_ROUTE"
+
+    fun studentSummaryRoute(ou: String, stage: String, tei: String, studentName: String) =
+        "$STUDENT_SUMMARY_ROUTE/$ou/$stage/$tei/$studentName"
 
     fun absenteeismRoute(
         academicYear: String?,

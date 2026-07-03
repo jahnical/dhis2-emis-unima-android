@@ -74,10 +74,11 @@ fun AttendanceOptionContainer(
         fieldData: Triple<String, String?, ValueType?>,
     ) -> Unit,
 ) {
-    var isAbsent by rememberSaveable { mutableStateOf(false) }
-    var has2BVisible by rememberSaveable {
-        mutableStateOf(formData.isVisible(student.tei.uid()))
-    }
+    val teUid = student.tei.uid()
+    var isAbsent = attendanceBtnState
+        .find { it.btnId == teUid }
+        ?.buttonState?.buttonType?.lowercase() == ABSENT
+
 
     Column(
         modifier = Modifier
@@ -119,18 +120,14 @@ fun AttendanceOptionContainer(
                     setAttendance(
                         index,
                         student.tei.organisationUnit().orEmpty(),
-                        tei ?: student.tei.uid(),
+                        tei ?: teUid,
                         attendance,
                         null,
                         color,
                         true,
                     )
                     if (key.lowercase() == ABSENT) {
-                        isAbsent = true
                         setTEIAbsence(index, tei ?: student.tei.uid(), attendance, color)
-                    } else {
-                        isAbsent = false
-                        has2BVisible = false
                     }
                 }
             }

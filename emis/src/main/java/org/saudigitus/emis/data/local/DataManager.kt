@@ -5,6 +5,8 @@ import org.hisp.dhis.android.core.dataelement.DataElement
 import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.Subject
+import org.saudigitus.emis.data.model.SubjectResult
+import org.saudigitus.emis.data.model.TermSummary
 import org.saudigitus.emis.data.model.app_config.ProgramStages
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendarConfig
@@ -81,5 +83,20 @@ interface DataManager {
 
     suspend fun getSubjects(stage: String): List<Subject>
 
+    suspend fun getStudentSubjectResults(
+        tei: String,
+        program: String,
+        stage: String,
+    ): List<SubjectResult>
+
+    suspend fun computeAndSaveTermSummary(
+        tei: String,
+        program: String,
+        stage: String,
+        results: List<SubjectResult>,
+    ): TermSummary?
+
     suspend fun getTerms(stages: List<ProgramStages>): List<DropdownItem>
+
+    suspend fun getUserCaptureOrgUnits(program: String): List<org.saudigitus.emis.data.model.OU>
 }

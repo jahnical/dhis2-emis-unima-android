@@ -253,7 +253,7 @@ dependencies {
     implementation(project(":stock-usecase"))
     implementation(project(":dhis2-mobile-program-rules"))
     implementation(project(":tracker"))
-    implementation(project(":emis"))
+    implementation(project(":unima-emis"))
 
     implementation(libs.security.conscrypt)
     implementation(libs.security.rootbeer)

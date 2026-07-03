@@ -47,6 +47,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
 import org.hisp.dhis.mobile.ui.designsystem.component.InputShellState
@@ -58,6 +59,7 @@ import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.attendance.ButtonStep
 import org.saudigitus.emis.ui.components.DetailsWithOptions
 import org.saudigitus.emis.ui.components.InfoCard
+import org.saudigitus.emis.ui.components.SearchInputBox
 import org.saudigitus.emis.ui.components.Toolbar
 import org.saudigitus.emis.ui.components.ToolbarActionState
 import org.saudigitus.emis.ui.form.FormBuilder
@@ -99,6 +101,30 @@ fun PerformanceScreen(
     val context = LocalContext.current
 
     var selectedSubject by remember { mutableStateOf(defaultSelection) }
+    var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length >= 2) {
+            delay(300)
+            debouncedQuery = searchQuery
+        } else {
+            debouncedQuery = ""
+        }
+    }
+
+    val studentEntries = remember(state.students) {
+        state.students.map { student ->
+            student to student.map(teiCardMapper, showSync = false)
+        }
+    }
+
+    val filteredStudentEntries = remember(studentEntries, debouncedQuery) {
+        if (debouncedQuery.isEmpty()) studentEntries
+        else studentEntries.filter { (_, card) ->
+            card.title.contains(debouncedQuery, ignoreCase = true)
+        }
+    }
 
     if (performanceStep == ButtonStep.SAVING) {
         PerformanceSummaryDialog(
@@ -238,13 +264,24 @@ fun PerformanceScreen(
                         onFilterClick.invoke(it.uid)
                     },
                 )
+
+                SearchInputBox(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = { searchQuery = it },
+                    searchPlaceholder = stringResource(R.string.search_students),
+                    keyboard = null,
+                )
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 108.dp),
                 ) {
-                    items(state.students) { student ->
-                        val card = student.map(teiCardMapper, showSync = false)
-                        val isInactive = student.enrollments.getOrNull(0)?.status() == EnrollmentStatus.CANCELLED
+                    items(filteredStudentEntries) { (student, card) ->
+                        val isInactive =
+                            student.enrollments.getOrNull(0)?.status() == EnrollmentStatus.CANCELLED
 
                         Column(
                             modifier = Modifier
@@ -314,6 +351,8 @@ fun PerformanceScreen(
                                         )
                                     },
                                     setFormState = setPerformanceState,
+                                    readOnly = state.readOnlyFields,
+                                    renderTextFieldsInRow = true,
                                 )
                             }
                         }

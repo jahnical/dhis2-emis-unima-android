@@ -4,7 +4,10 @@
     <string name="filter">Filter</string>
     <string name="back">Back</string>
     <string name="cls">Class...</string>
+    <string name="stream">Stream...</string>
+    <string name="grdClass">Grade/Class...</string>
     <string name="grade">Grade...</string>
+    <string name="standard">Standard...</string>
     <string name="school">School...</string>
     <string name="academic_year">Academic year...</string>
     <string name="search_no_results">There are no results for this search</string>
@@ -13,6 +16,7 @@
     <string name="calendar">Calendar</string>
     <string name="attendance_date">Select attendance date</string>
     <string name="update">Update</string>
+    <string name="edit">Edit</string>
     <string name="attendance">Attendance</string>
     <string name="summary">Summary</string>
     <string name="section">Class/Section</string>
@@ -24,7 +28,13 @@
     <string name="select_term">Select term</string>
     <string name="absenteeism">Absenteeism</string>
     <string name="performance">Performance</string>
-    <string name="subject">Subject</string>
+    <string name="subject">Subjects</string>
+    <string name="students">Students</string>
+    <string name="score">Score</string>
+    <string name="total_score">Total Score</string>
+    <string name="term_remark">Term Remark</string>
+    <string name="search_subjects">Search subjects</string>
+    <string name="search_students">Search students</string>
     <string name="performance_summary">Performance summary</string>
     <string name="marks_saved">Performance saved successfully</string>
     <string name="bulk_assing">Bulk assign</string>
@@ -61,6 +71,8 @@
     <string name="programs">Programs:</string>
     <string name="sync_offline_check_connection">Looks like you\\\'re offline. Please check you connection</string>
     <string name="none">None</string>
+    <string name="post_title">Post Title</string>
     <string name="dowload_teis">Sync %s</string>
+    <string name="fetch_ties">Fetch %s</string>
     <string name="no_attendance_school_days">Attendance is only available on school days. Please select a valid school day.</string>
 </resources>

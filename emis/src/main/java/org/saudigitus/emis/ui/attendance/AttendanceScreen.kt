@@ -1,5 +1,6 @@
 package org.saudigitus.emis.ui.attendance
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -365,6 +366,7 @@ fun AttendanceScreen(
 }
 
 
+@SuppressLint("SuspiciousIndentation")
 private fun validateCalendar(
     longDate: Long,
     schoolCalendar: SchoolCalendarConfig?,

@@ -235,6 +235,13 @@ class SyncPresenterImpl(
                     .byDomainType().eq(FileResourceDomainType.ICON)
                     .download(),
             ),
+        ).andThen(
+            Completable.fromObservable(
+                d2.dataStoreModule().dataStoreDownloader().download(),
+            ).onErrorComplete { e ->
+                Timber.tag("SYNC_DATASTORE").e(e, "DataStore download failed, skipping")
+                true
+            },
         ).blockingAwait()
     }
 

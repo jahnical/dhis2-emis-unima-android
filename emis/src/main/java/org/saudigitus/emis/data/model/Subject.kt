@@ -5,6 +5,7 @@ data class Subject(
     val code: String?,
     val color: String?,
     val displayName: String?,
+    val optionSetUid: String? = null,
 ) {
     override fun toString() = displayName ?: ""
 }
