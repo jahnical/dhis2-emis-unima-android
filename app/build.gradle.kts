@@ -146,7 +146,7 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
+                getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
@@ -222,13 +222,20 @@ android {
             val flavorName = variant.flavorName
             variant.outputs.forEach { output ->
                 if (output is VariantOutputImpl) {
-                    val suffix = when {
-                        buildType == "debug" && flavorName == "dhis" -> "-training"
-                        buildType == "release" && flavorName == "dhisPlayServices" -> "-googlePlay"
-                        else -> ""
+                    val fileName = when {
+                        buildType == "release" && flavorName == "dhisPlayServices" ->
+                            "SEMIS-v${libs.versions.vName.get()}-googlePlay.apk"
+
+                        buildType == "release" ->
+                            "SEMIS-v${libs.versions.vName.get()}.apk"
+
+                        buildType == "debug" && flavorName == "dhis" ->
+                            "dhis2-v${libs.versions.vName.get()}-training.apk"
+
+                        else -> "dhis2-v${libs.versions.vName.get()}.apk"
                     }
 
-                    output.outputFileName = "dhis2-v${libs.versions.vName.get()}$suffix.apk"
+                    output.outputFileName = fileName
                 }
             }
 
