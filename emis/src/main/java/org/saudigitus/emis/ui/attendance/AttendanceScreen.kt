@@ -353,8 +353,12 @@ fun AttendanceScreen(
                                 },
                                 setAbsenceState = viewModel::fieldState,
                                 onNext = { tei, ou, fieldData ->
-                                    viewModel.setAbsence(reasonOfAbsence = fieldData.second)
-                                    viewModel.save()
+                                    viewModel.setAbsence(
+                                        tei = tei,
+                                        ou = ou,
+                                        enrollment = student.selectedEnrollment.uid().orEmpty(),
+                                        reasonOfAbsence = fieldData.second)
+                                    //viewModel.save()
                                 },
                             )
                         }
