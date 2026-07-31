@@ -87,12 +87,14 @@ interface DataManager {
         tei: String,
         program: String,
         stage: String,
+        enrollment: String,
     ): List<SubjectResult>
 
     suspend fun computeAndSaveTermSummary(
         tei: String,
         program: String,
         stage: String,
+        enrollment: String,
         results: List<SubjectResult>,
     ): TermSummary?
 

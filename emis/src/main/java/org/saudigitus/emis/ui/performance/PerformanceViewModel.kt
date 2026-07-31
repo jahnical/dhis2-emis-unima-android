@@ -167,18 +167,20 @@ class PerformanceViewModel
         data.addAll(cache.value)
 
         val scoreDeUid = dataElement.value.ifEmpty { fieldData.first }
+        val enrollment = teiUIds.value.find { it.first == tei }?.second.orEmpty()
         val eventTuple = EventTuple(
-            ou,
-            program.value,
-            programStage.value,
-            tei,
-            RowAction(
+            ou = ou,
+            program = program.value,
+            programStage = programStage.value,
+            enrollment = enrollment,
+            tei = tei,
+            rowAction = RowAction(
                 id = scoreDeUid,
                 type = ActionType.ON_NEXT,
                 value = fieldData.second,
                 valueType = fieldData.third,
             ),
-            eventDate.value,
+            date = eventDate.value,
         )
 
         data.removeIf { it.tei == tei && it.rowAction.id == scoreDeUid }
@@ -231,7 +233,7 @@ class PerformanceViewModel
                 program = program.value,
                 programStage = programStage.value,
                 dataElement = dl,
-                teis = teiUIds.value.map { it.first },
+                enrollments = teiUIds.value.map { it.second },
             )
 
             if (gradeDl.isNullOrEmpty()) {
@@ -248,7 +250,7 @@ class PerformanceViewModel
                     program = program.value,
                     programStage = programStage.value,
                     dataElement = gradeDl,
-                    teis = teiUIds.value.map { it.first },
+                    enrollments = teiUIds.value.map { it.second },
                 )
 
                 combine(baseFlow, gradeFlow) { baseList, gradeList ->
@@ -326,7 +328,9 @@ class PerformanceViewModel
                     updatedCache.add(
                         EventTuple(
                             ou = ou.value, program = program.value,
-                            programStage = programStage.value, tei = key,
+                            programStage = programStage.value,
+                            enrollment = teiUIds.value.find { it.first == key }?.second.orEmpty(),
+                            tei = key,
                             rowAction = RowAction(
                                 id = gradeDeUid, type = ActionType.ON_NEXT,
                                 value = resolvedValue, valueType = null,
