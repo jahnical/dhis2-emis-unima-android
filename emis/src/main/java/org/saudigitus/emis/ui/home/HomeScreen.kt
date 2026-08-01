@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -238,10 +239,22 @@ fun HomeUI(
                 }
             }
         }
-        if (!uiState.infoCard.hasData()) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-            )
+        when {
+            uiState.academicYearState == null -> {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            !uiState.infoCard.hasData() -> {
+                Text(
+                    text = stringResource(R.string.start_search),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    textAlign = TextAlign.Center,
+                    color = Color.White,
+                )
+            }
         }
         Column(
             modifier = Modifier
