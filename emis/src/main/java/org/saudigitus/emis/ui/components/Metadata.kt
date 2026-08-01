@@ -230,7 +230,8 @@ data class InfoCard(
 ) {
     fun hasData(): Boolean {
         return academicYear.isNotEmpty() &&
-            orgUnitName.isNotEmpty()
+            orgUnitName.isNotEmpty() &&
+            (isStaff || grade.isNotEmpty())
     }
 }
 
