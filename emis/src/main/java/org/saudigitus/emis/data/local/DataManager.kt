@@ -88,6 +88,7 @@ interface DataManager {
         program: String,
         stage: String,
         enrollment: String,
+        grade: String,
     ): List<SubjectResult>
 
     suspend fun computeAndSaveTermSummary(

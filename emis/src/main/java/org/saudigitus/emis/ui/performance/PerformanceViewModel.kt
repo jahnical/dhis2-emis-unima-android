@@ -29,6 +29,7 @@ import org.saudigitus.emis.ui.base.BaseViewModel
 import org.saudigitus.emis.ui.form.Field
 import org.saudigitus.emis.utils.Constants.CONFIGURED_SUBJECT_FILTERING
 import org.saudigitus.emis.utils.DateHelper
+import org.saudigitus.emis.utils.subjectsForGrade
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -117,7 +118,14 @@ class PerformanceViewModel
                 }
             }
 
-            viewModelState.update { it.copy(subjects = subjects) }
+            val groupSubjectUids = performance?.subjectsForGrade(grade.value)
+            val bySubjectGroup = if (groupSubjectUids != null) {
+                subjects.filter { it.uid in groupSubjectUids }
+            } else {
+                subjects
+            }
+
+            viewModelState.update { it.copy(subjects = bySubjectGroup) }
 
             val currentDl = _dataElement.value
             if (currentDl.isNotEmpty()) {
