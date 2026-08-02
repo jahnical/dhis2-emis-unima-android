@@ -111,14 +111,21 @@ class DataManagerImpl
                     .value(uid, attendance.dataElement)
                     .blockingSet(attendance.value)
 
-                if (attendance.reasonDataElement != null && attendance.reasonOfAbsence != null) {
+                attendance.reasonDataElement?.let {
+                    d2.trackedEntityModule().trackedEntityDataValues()
+                        .value(uid, it)
+                        .blockingSet(attendance.reasonOfAbsence)
+                }
+
+
+                /*if (attendance.reasonDataElement != null && attendance.reasonOfAbsence != null) {
                     attendance.reasonOfAbsence.let {
                         if (it.isNotEmpty() && it.isNotBlank()) {
                             d2.trackedEntityModule().trackedEntityDataValues()
                                 .value(uid, attendance.reasonDataElement).blockingSet(it)
                         }
                     }
-                }
+                }*/
 
                 val repository = d2.eventModule().events().uid(uid)
                 repository.setEventDate(Date.valueOf(attendance.date))

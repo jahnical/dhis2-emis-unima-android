@@ -289,15 +289,6 @@ class AttendanceViewModel
             containerColor = color ?: Color.LightGray,
         )
 
-        /*if (uiCache == null) {
-            attendanceBtnStateCache.add(uiCacheItem)
-        } else {
-            attendanceBtnStateCache.remove(uiCache)
-            attendanceBtnStateCache.add(uiCacheItem)
-        }
-
-        return attendanceBtnStateCache.toMutableList()*/
-
         val list = attendanceBtnStateCache.toMutableList()
 
         val existing = list.indexOfFirst { it.btnId == tei }
@@ -319,10 +310,8 @@ class AttendanceViewModel
         reasonOfAbsence: String? = null,
         color: Color? = null,
     ) {
-        //val updatedBtnStates = mutableListOf<AttendanceActionButtonState>()
 
         teiUIds.value.forEach { (tei, enrollment) ->
-            // Update formData if necessary (remove existing for this TEI)
             val data = formData.value.toMutableList()
             val formDataItem = data.find { it.tei == tei }
             if (formDataItem != null) {
@@ -363,15 +352,6 @@ class AttendanceViewModel
                 attendanceCache.add(attendance)
             }
 
-            // Create UI button state
-            /*val uiCacheItem = attendanceActionButtonMapper(
-                index = index,
-                tei = tei,
-                attendanceValue = value,
-                containerColor = color ?: Color.LightGray,
-            )
-            updatedBtnStates.add(uiCacheItem)*/
-
             // Update formData for absences
             if (reasonOfAbsence != null) {
                 val formField = formFields.value.firstOrNull()
@@ -402,34 +382,7 @@ class AttendanceViewModel
                 )
         }
 
-        // Update UI state with new list to trigger StateFlow emission immediately
-        /*ttendanceBtnStateCache = updatedBtnStates
-        _attendanceBtnState.value = updatedBtnStates
-*/
-
     }
-
-    /* fun bulkAttendance(
-         index: Int,
-         value: String,
-         reasonOfAbsence: String? = null,
-         color: Color? = null,
-     ) {
-         viewModelScope.launch(Dispatchers.Default) {
-             teiUIds.value.forEach {
-                 setAttendance(
-                     index = index,
-                     ou = ou.value,
-                     tei = it.first,
-                     enrollment = it.second,
-                     value = value,
-                     reasonOfAbsence = reasonOfAbsence,
-                     color = color,
-                     hasPersisted = true,
-                 )
-             }
-         }
-     }*/
 
     fun setAttendance(
         index: Int,
@@ -457,11 +410,7 @@ class AttendanceViewModel
                 clearAbsenceState(tei)
             }
 
-            //_attendanceBtnState.value = getAttendanceUiState(index, tei, value, color)
-
             val event = attendanceCache.find { it.tei == tei }?.event
-
-
 
             val attendance = AttendanceEntity(
                 tei = tei,
@@ -477,15 +426,6 @@ class AttendanceViewModel
                 date = eventDate.value,
                 event = event
             )
-
-            /*val cacheItem = attendanceCache.find { it.tei == attendance.tei }
-
-            if (cacheItem == null) {
-                attendanceCache.add(attendance)
-            } else {
-                attendanceCache.remove(cacheItem)
-                attendanceCache.add(attendance)
-            }*/
 
             attendanceCache.removeIf { it.tei == attendance.tei }
             attendanceCache.add(attendance)
@@ -608,38 +548,11 @@ class AttendanceViewModel
         } else {
             currentFields.add(field)
         }
-/*
-        val updatedBtnStates = mutableListOf<AttendanceActionButtonState>()
-
-        val uiCacheItem = attendanceActionButtonMapper(
-            index = absenceState.value.index,
-            tei = absenceState.value.tei,
-            attendanceValue = absenceState.value.value,
-            containerColor = absenceState.value.color ?: Color.LightGray,
-        )
-
-        updatedBtnStates.add(uiCacheItem)
-*/
-
 
         _fieldState.value = currentFields
-        //_attendanceBtnState.value = updatedBtnStates
     }
 
     override fun save() {
-       /* setAttendance(
-            index = absenceState.value.index,
-            ou = absenceState.value.ou,
-            enrollment = absenceState.value.enrollment,
-            tei = absenceState.value.tei,
-            value = absenceState.value.value,
-            color = absenceState.value.color,
-            reasonOfAbsence = absenceState.value.reasonOfAbsence,
-        )
-
-        val cache = mutableListOf<Absence>()
-
-        cache.addAll(absenceStateCache.value)*/
 
         val cache  = absenceStateCache.value.toMutableList()
         cache.removeAll{
@@ -697,7 +610,10 @@ class AttendanceViewModel
     fun clearCache() {
         attendanceCache.clear()
         attendanceBtnStateCache.clear()
+
         _absenceStateCache.value = emptyList()
+        _formData.value = emptyList()
+        _fieldState.value = emptyList()
     }
 
     fun refreshOnSave() {
@@ -709,13 +625,6 @@ class AttendanceViewModel
         }
     }
 
-    fun refreshAttendance() {
-        if (isOnlyAbsence.value) {
-            geTeiByAttendanceStatus(eventDate.value)
-        } else {
-            attendanceEvents(eventDate.value)
-        }
-    }
 
     fun updateAbsenceReason(
         tei: String,
@@ -725,13 +634,13 @@ class AttendanceViewModel
         val attendance = attendanceCache.find { it.tei == tei }
             ?: return
 
+        val updatedAttendance = attendance.copy(
+            reasonOfAbsence = reason
+        )
+
         attendanceCache.remove(attendance)
 
-        attendanceCache.add(
-            attendance.copy(
-                reasonOfAbsence = reason
-            )
-        )
+        attendanceCache.add(updatedAttendance)
 
         // Update formData so the UI shows the selected reason
         val formField = formFields.value.firstOrNull() ?: return
@@ -756,6 +665,15 @@ class AttendanceViewModel
         )
 
         _formData.value = forms
+
+        viewModelScope.launch {
+
+        repository.save(
+            ou = ou.value,
+            program = program.value,
+            programStage = datastoreAttendance.value?.programStage.orEmpty(),
+            attendance = updatedAttendance
+        )}
     }
 
     private fun clearAbsenceState(tei: String) {
