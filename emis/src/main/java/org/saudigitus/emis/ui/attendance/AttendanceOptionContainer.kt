@@ -133,7 +133,7 @@ fun AttendanceOptionContainer(
             }
         }
         AbsenceForm(
-            visibility = isAbsent || formData.isVisible(student.tei.uid()),
+            visibility = isAbsent, //|| formData.isVisible(student.tei.uid()),
             enabled = attendanceStep == ButtonStep.HOLD_SAVING,
             student = student,
             formFields = formFields,
