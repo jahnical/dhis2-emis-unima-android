@@ -20,7 +20,6 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -230,7 +229,8 @@ data class InfoCard(
 ) {
     fun hasData(): Boolean {
         return academicYear.isNotEmpty() &&
-            orgUnitName.isNotEmpty()
+                orgUnitName.isNotEmpty() &&
+                (isStaff || grade.isNotEmpty())
     }
 }
 
@@ -261,7 +261,8 @@ fun ShowCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .weight(1f),
                 ) {
                     Icon(
@@ -279,7 +280,11 @@ fun ShowCard(
                             fontSize = 17.sp,
                         )
                         Text(
-                            text = String.format("%s | %s", infoCard.academicYear, infoCard.orgUnitName),
+                            text = String.format(
+                                "%s | %s",
+                                infoCard.academicYear,
+                                infoCard.orgUnitName
+                            ),
                             fontSize = 14.sp,
                             overflow = TextOverflow.Ellipsis,
                             softWrap = true,
@@ -330,7 +335,8 @@ fun ShowCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .weight(1f),
                 ) {
                     Icon(
@@ -348,7 +354,11 @@ fun ShowCard(
                             fontSize = 17.sp,
                         )
                         Text(
-                            text = String.format("%s | %s", infoCard.academicYear, infoCard.orgUnitName),
+                            text = String.format(
+                                "%s | %s",
+                                infoCard.academicYear,
+                                infoCard.orgUnitName
+                            ),
                             fontSize = 14.sp,
                             overflow = TextOverflow.Ellipsis,
                             softWrap = true,

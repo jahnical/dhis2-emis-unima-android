@@ -1,6 +1,5 @@
 package org.saudigitus.emis.data.local.repository
 
-import android.R.attr.valueType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -37,22 +36,18 @@ class FormRepositoryImpl
             .byDisplayName().eq(Constants.DEFAULT).one().blockingGet()?.uid()
 
     private fun createEventProjection(
-        tei: String,
         ou: String,
         program: String,
         programStage: String,
+        enrollment: String,
     ): String {
-        val enrollment = d2.enrollmentModule().enrollments()
-            .byTrackedEntityInstance().eq(tei)
-            .one().blockingGet()
-
         return d2.eventModule().events()
             .blockingAdd(
                 EventCreateProjection.builder()
                     .organisationUnit(ou)
                     .program(program).programStage(programStage)
                     .attributeOptionCombo(getAttributeOptionCombo())
-                    .enrollment(enrollment?.uid()).build(),
+                    .enrollment(enrollment).build(),
             )
     }
 
@@ -61,9 +56,11 @@ class FormRepositoryImpl
         ou: String,
         program: String,
         programStage: String,
+        enrollment: String,
     ): String? {
         return d2.eventModule().events()
             .byTrackedEntityInstanceUids(listOf(tei))
+            .byEnrollmentUid().eq(enrollment)
             .byProgramUid().eq(program)
             .byOrganisationUnitUid().eq(ou)
             .byProgramStageUid().eq(programStage)
@@ -79,11 +76,12 @@ class FormRepositoryImpl
                 eventTuple.ou,
                 eventTuple.program,
                 eventTuple.programStage,
+                enrollment = eventTuple.enrollment,
             ) ?: createEventProjection(
-                eventTuple.tei,
                 eventTuple.ou,
                 eventTuple.program,
                 eventTuple.programStage,
+                eventTuple.enrollment,
             )
 
             d2.trackedEntityModule().trackedEntityDataValues()
@@ -144,11 +142,11 @@ class FormRepositoryImpl
         program: String,
         programStage: String,
         dataElement: String,
-        teis: List<String>,
+        enrollments: List<String>,
     ): Flow<List<FormData>> = flow {
         emit(
             d2.eventModule().events()
-                .byTrackedEntityInstanceUids(teis)
+                .byEnrollmentUid().`in`(enrollments)
                 .byProgramUid().eq(program)
                 .byProgramStageUid().eq(programStage)
                 .withTrackedEntityDataValues()

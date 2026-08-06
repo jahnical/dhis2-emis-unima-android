@@ -7,9 +7,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.saudigitus.emis.data.local.DataManager
+import org.saudigitus.emis.data.model.app_config.Performance
 import org.saudigitus.emis.ui.base.BaseViewModel
 import org.saudigitus.emis.ui.components.ToolbarHeaders
 import org.saudigitus.emis.utils.Constants
+import org.saudigitus.emis.utils.subjectsForGrade
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,6 +31,7 @@ class SubjectViewModel
     private val gradeDEUids = mutableSetOf<String>()
     private val scoreDeUids = mutableSetOf<String>()
     private var gradeOptionSetUid: String? = null
+    private var performanceConfig: Performance? = null
 
     init {
         viewModelScope.launch {
@@ -43,6 +46,7 @@ class SubjectViewModel
             val config = repository.getConfig(Constants.KEY)?.find { it.program == program }
 
             if (config?.performance != null) {
+                performanceConfig = config.performance
                 gradeDEUids.clear()
                 gradeDEUids.addAll(
                     config.performance.subjects?.map { it.gradeDataElement } ?: emptyList()
@@ -94,7 +98,15 @@ class SubjectViewModel
                         de.uid !in gradeDEUids
                 }
             }
-            _uiState.update { it.copy(subjects = filtered) }
+
+            val groupSubjectUids = performanceConfig?.subjectsForGrade(grade.value)
+            val bySubjectGroup = if (groupSubjectUids != null) {
+                filtered.filter { it.uid in groupSubjectUids }
+            } else {
+                filtered
+            }
+
+            _uiState.update { it.copy(subjects = bySubjectGroup) }
         }
     }
 }

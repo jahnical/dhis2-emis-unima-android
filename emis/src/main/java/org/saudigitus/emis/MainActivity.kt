@@ -184,12 +184,14 @@ class MainActivity : FragmentActivity() {
                             val stats by performanceViewModel.cache.collectAsStateWithLifecycle()
                             val teis by viewModel.teis.collectAsStateWithLifecycle()
                             val performanceStep by performanceViewModel.buttonStep.collectAsStateWithLifecycle()
+                            val homeUiState by viewModel.uiState.collectAsStateWithLifecycle()
 
                             val stage = it.arguments?.getString("stage") ?: ""
                             val dl = it.arguments?.getString("dataElement") ?: ""
                             val ou = it.arguments?.getString("ou") ?: ""
 
                             performanceViewModel.setOU(ou)
+                            performanceViewModel.setGrade(homeUiState.grade?.code.orEmpty())
                             performanceViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
                             performanceViewModel.loadSubjects(stage)
                             performanceViewModel.setTeis(teis, performanceViewModel::updateTEISList)
@@ -227,6 +229,7 @@ class MainActivity : FragmentActivity() {
                             val stage by subjectViewModel.programStage.collectAsStateWithLifecycle()
                             val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
                             val teis by viewModel.teis.collectAsStateWithLifecycle()
+                            val homeUiState by viewModel.uiState.collectAsStateWithLifecycle()
                             val ou = it.arguments?.getString("ou") ?: ""
                             val program = intent?.extras?.getString(Constants.PROGRAM_UID) ?: ""
 
@@ -238,6 +241,9 @@ class MainActivity : FragmentActivity() {
                             }
                             LaunchedEffect(teis) {
                                 subjectViewModel.setTeis(teis)
+                            }
+                            LaunchedEffect(homeUiState.grade) {
+                                subjectViewModel.setGrade(homeUiState.grade?.code.orEmpty())
                             }
 
                             SubjectScreen(
@@ -269,6 +275,7 @@ class MainActivity : FragmentActivity() {
                             val uiState by summaryViewModel.uiState.collectAsStateWithLifecycle()
                             val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
                             val teis by viewModel.teis.collectAsStateWithLifecycle()
+                            val homeUiState by viewModel.uiState.collectAsStateWithLifecycle()
 
                             val ou = it.arguments?.getString("ou") ?: ""
                             val stage = it.arguments?.getString("stage") ?: ""
@@ -276,6 +283,7 @@ class MainActivity : FragmentActivity() {
                             val studentName = it.arguments?.getString("studentName") ?: ""
 
                             summaryViewModel.setOU(ou)
+                            summaryViewModel.setGrade(homeUiState.grade?.code.orEmpty())
                             summaryViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
                             summaryViewModel.setStage(stage)
                             summaryViewModel.setTeis(teis)

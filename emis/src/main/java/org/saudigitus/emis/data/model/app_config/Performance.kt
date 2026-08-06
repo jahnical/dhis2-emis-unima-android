@@ -19,5 +19,7 @@ data class Performance(
     @JsonProperty("maxSubjectScore")
     val maxSubjectScore: Double?,
     @JsonProperty("termRemarksMapping")
-    val termRemarksMapping: TermRemarksMapping?
+    val termRemarksMapping: TermRemarksMapping?,
+    @JsonProperty("standardGroupMapping")
+    val standardGroupMapping: StandardGroupMapping?
 )

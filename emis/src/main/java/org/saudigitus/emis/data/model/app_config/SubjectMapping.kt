@@ -8,5 +8,7 @@ data class SubjectMapping(
     @JsonProperty("scoreDataElement")
     val scoreDataElement: String,
     @JsonProperty("gradeDataElement")
-    val gradeDataElement: String
+    val gradeDataElement: String,
+    @JsonProperty("universal")
+    val universal: Boolean?
 )

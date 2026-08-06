@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -131,11 +130,13 @@ fun StudentSummaryScreen(
                     items(state.results) { result ->
                         SubjectResultRow(result = result)
                     }
-                    if (state.totalScore != null && state.termRemark != null) {
-                        item {
-                            TotalScoreRow(totalScore = state.totalScore, termRemark = state.termRemark)
-                        }
+                    item {
+                        TotalScoreRow(
+                            totalScore = state.totalScore,
+                            termRemark = state.termRemark
+                        )
                     }
+
                 }
             }
         }
@@ -168,7 +169,7 @@ private fun TermRemarkBanner(termRemark: String) {
 }
 
 @Composable
-private fun TotalScoreRow(totalScore: String, termRemark: String) {
+private fun TotalScoreRow(totalScore: String?, termRemark: String?) {
     Divider(thickness = 1.dp, color = Color.LightGray.copy(.5f))
     Row(
         modifier = Modifier
@@ -186,7 +187,7 @@ private fun TotalScoreRow(totalScore: String, termRemark: String) {
         )
         Text(
             modifier = Modifier.width(72.dp),
-            text = totalScore,
+            text = totalScore ?: "-",
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
             color = Color(0xFF2C98F0),
@@ -194,13 +195,12 @@ private fun TotalScoreRow(totalScore: String, termRemark: String) {
         )
         Text(
             modifier = Modifier.width(80.dp),
-            text = termRemark,
+            text = termRemark ?: "-",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2C98F0),
             textAlign = TextAlign.Center,
         )
-//        Spacer(modifier = Modifier.width(80.dp))
     }
 }
 

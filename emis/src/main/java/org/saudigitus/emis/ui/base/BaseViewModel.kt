@@ -51,6 +51,9 @@ abstract class BaseViewModel(
     protected val _ou = MutableStateFlow("")
     val ou: StateFlow<String> = _ou
 
+    protected val _grade = MutableStateFlow("")
+    val grade: StateFlow<String> = _grade
+
     private val _infoCard = MutableStateFlow(InfoCard())
     val infoCard: StateFlow<InfoCard> = _infoCard
 
@@ -74,6 +77,10 @@ abstract class BaseViewModel(
 
     fun setOU(ou: String) {
         _ou.value = ou
+    }
+
+    fun setGrade(grade: String) {
+        _grade.value = grade
     }
 
     fun setTeis(teis: List<SearchTeiModel>) {

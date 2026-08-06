@@ -58,15 +58,19 @@ class StudentSummaryViewModel
 
     private fun loadResults(tei: String) {
         viewModelScope.launch {
+            val enrollment = teiUIds.value.find { it.first == tei }?.second.orEmpty()
             val results = repository.getStudentSubjectResults(
                 tei = tei,
                 program = program.value,
                 stage = _stage.value,
+                enrollment = enrollment,
+                grade = grade.value,
             )
             val termSummary = repository.computeAndSaveTermSummary(
                 tei = tei,
                 program = program.value,
                 stage = _stage.value,
+                enrollment = enrollment,
                 results = results,
             )
             _uiState.update {

@@ -40,6 +40,7 @@ import org.saudigitus.emis.utils.optionByOptionSet
 import org.saudigitus.emis.utils.optionsByOptionSetAndCode
 import org.saudigitus.emis.utils.optionsNotInOptionGroup
 import org.saudigitus.emis.utils.optionsNotInOptionsSets
+import org.saudigitus.emis.utils.subjectsForGrade
 import timber.log.Timber
 import java.sql.Date
 import javax.inject.Inject
@@ -437,7 +438,9 @@ class DataManagerImpl
     override suspend fun getStudentSubjectResults(
         tei: String,
         program: String,
-        stage: String
+        stage: String,
+        enrollment: String,
+        grade: String,
     ): List<SubjectResult> = withContext(Dispatchers.IO) {
         val performance = getConfig(Constants.KEY)
             ?.find { it.program == program }
@@ -449,7 +452,7 @@ class DataManagerImpl
         val gradeOptionsSetUid = performance?.gradeMapping?.gradeOptionSet
 
         val allDEs = getSubjects(stage)
-        val subjects = if (Constants.CONFIGURED_SUBJECT_FILTERING) {
+        val configFiltered = if (Constants.CONFIGURED_SUBJECT_FILTERING) {
             allDEs.filter { it.uid in scoreDEUids }
         } else {
             allDEs.filter { de ->
@@ -458,8 +461,16 @@ class DataManagerImpl
             }
         }
 
+        val groupSubjectUids = performance?.subjectsForGrade(grade)
+        val subjects = if (groupSubjectUids != null) {
+            configFiltered.filter { it.uid in groupSubjectUids }
+        } else {
+            configFiltered
+        }
+
         val allEvents = d2.eventModule().events()
             .byTrackedEntityInstanceUids(listOf(tei))
+            .byEnrollmentUid().eq(enrollment)
             .byProgramUid().eq(program)
             .byProgramStageUid().eq(stage)
             .byDeleted().isFalse
@@ -506,6 +517,7 @@ class DataManagerImpl
         tei: String,
         program: String,
         stage: String,
+        enrollment: String,
         results: List<SubjectResult>,
     ): TermSummary? = withContext(Dispatchers.IO) {
         if (results.isEmpty()) return@withContext null
@@ -535,6 +547,7 @@ class DataManagerImpl
         if (!matchedCode.isNullOrEmpty() && !termRemarksMapping.dataElement.isNullOrEmpty()) {
             val eventUid = d2.eventModule().events()
                 .byTrackedEntityInstanceUids(listOf(tei))
+                .byEnrollmentUid().eq(enrollment)
                 .byProgramUid().eq(program)
                 .byProgramStageUid().eq(stage)
                 .byDeleted().isFalse

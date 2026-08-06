@@ -15,6 +15,6 @@ interface FormRepository {
         program: String,
         programStage: String,
         dataElement: String,
-        teis: List<String>,
+        enrollments: List<String>,
     ): Flow<List<FormData>>
 }
