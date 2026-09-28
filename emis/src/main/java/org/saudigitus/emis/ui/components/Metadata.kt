@@ -275,13 +275,20 @@ fun ShowCard(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            text = String.format("%s, %s", infoCard.grade, infoCard.section),
+                            //text = String.format("%s, %s", infoCard.grade, infoCard.section),
+
+                            text = joinNonBlank(
+                                separator = ", ",
+                                infoCard.grade,
+                                infoCard.section
+                            ),
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
                         )
                         Text(
-                            text = String.format(
-                                "%s | %s",
+                            //text = String.format("%s | %s", infoCard.academicYear, infoCard.orgUnitName)
+                            text = joinNonBlank(
+                                separator = " | ",
                                 infoCard.academicYear,
                                 infoCard.orgUnitName
                             ),
@@ -310,6 +317,9 @@ fun ShowCard(
             }
         }
     }
+}
+fun joinNonBlank(separator: String, vararg parts: String?): String {
+    return parts.filterNot { it.isNullOrBlank() }.joinToString(separator)
 }
 
 @Composable
