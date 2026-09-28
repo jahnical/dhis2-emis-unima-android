@@ -224,6 +224,7 @@ data class InfoCard(
     val section: String = "",
     val academicYear: String = "",
     val orgUnitName: String = "",
+    val postTittle: String = "",
     val teiCount: Int = 0,
     val isStaff: Boolean = false,
 ) {
@@ -280,7 +281,8 @@ fun ShowCard(
                             text = joinNonBlank(
                                 separator = ", ",
                                 infoCard.grade,
-                                infoCard.section
+                                infoCard.section,
+                                infoCard.postTittle
                             ),
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
@@ -359,15 +361,20 @@ fun ShowCard(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            text = String.format("%s, %s", infoCard.grade, infoCard.section),
+                            text = joinNonBlank(
+                                separator = ", ",
+                                infoCard.grade,
+                                infoCard.section,
+                                infoCard.postTittle,
+                            ),
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
                         )
                         Text(
-                            text = String.format(
-                                "%s | %s",
+                            text = joinNonBlank(
+                                separator = " | ",
                                 infoCard.academicYear,
-                                infoCard.orgUnitName
+                                infoCard.orgUnitName,
                             ),
                             fontSize = 14.sp,
                             overflow = TextOverflow.Ellipsis,

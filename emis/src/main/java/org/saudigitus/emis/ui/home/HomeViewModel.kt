@@ -121,6 +121,7 @@ class HomeViewModel
             val config = repository.getConfig(Constants.KEY)?.find { it.program == program }
 
             if (config != null) {
+                val moduleChanged = viewModelState.value.key != config.key
                 _registration.value = config.registration
                 _filter.value = config.filters
 
@@ -130,8 +131,18 @@ class HomeViewModel
                     it.copy(
                         key = config.key,
                         trackedEntityType = repository.getTrackedEntityType(program).orEmpty(),
-                        modules = modules
+                        modules = modules,
+                        grade = if (moduleChanged) null else it.grade,
+                        section = if (moduleChanged) null else it.section,
+                        postTitle = if (moduleChanged) null else it.postTitle,
+                        dataElementFilters = if (moduleChanged) emptyList() else it.dataElementFilters,
+                        infoCard = if (moduleChanged) InfoCard() else it.infoCard,
                     )
+                }
+
+                if (moduleChanged) {
+                    setTeis(emptyList())
+                    setInfoCard(InfoCard())
                 }
 
                 // Auto-select school if user has exactly one capture org unit
@@ -207,10 +218,13 @@ class HomeViewModel
                         it.copy(
                             isLoading = false,
                             infoCard = InfoCard(
-                                grade = viewModelState.value.grade?.itemName.orEmpty(),
-                                section = viewModelState.value.section?.itemName.orEmpty(),
+                                grade = if (viewModelState.value.isStaff) "" else
+                                    viewModelState.value.grade?.itemName.orEmpty(),
+                                section = if (viewModelState.value.isStaff) "" else
+                                    viewModelState.value.section?.itemName.orEmpty(),
                                 academicYear = viewModelState.value.academicYear?.itemName.orEmpty(),
                                 orgUnitName = viewModelState.value.school?.displayName.orEmpty(),
+                                postTittle = viewModelState.value.postTitle?.itemName.orEmpty(),
                                 teiCount = teis.value.size,
                                 isStaff = viewModelState.value.isStaff,
                             ),
