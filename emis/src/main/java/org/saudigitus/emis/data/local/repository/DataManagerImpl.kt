@@ -16,6 +16,7 @@ import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.dataelement.DataElement
 import org.hisp.dhis.android.core.event.EventCreateProjection
 import org.hisp.dhis.android.core.event.EventStatus
+import org.hisp.dhis.android.core.maintenance.D2Error
 import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.util.SqlRaw
 import org.saudigitus.emis.data.model.app_config.EMISConfig
@@ -561,9 +562,20 @@ class DataManagerImpl
                 ?.uid()
 
             if (!eventUid.isNullOrEmpty()) {
-                d2.trackedEntityModule().trackedEntityDataValues()
-                    .value(eventUid, termRemarksMapping.dataElement)
-                    .blockingSet(matchedCode)
+                try {
+                    d2.trackedEntityModule().trackedEntityDataValues()
+                        .value(eventUid, termRemarksMapping.dataElement)
+                        .blockingSet(matchedCode)
+                        Timber.tag("TERM_SUMMARY").d("The operation was successful")
+                } catch (e: D2Error) {
+                    Timber.tag("TERM_SUMMARY").e(
+                        "Failed to save term remark (dataElement=%s, event=%s): %s [%s]",
+                        termRemarksMapping.dataElement,
+                        eventUid,
+                        e.errorDescription(),
+                        e.originalException()?.message,
+                    )
+                }
             }
         }
 
