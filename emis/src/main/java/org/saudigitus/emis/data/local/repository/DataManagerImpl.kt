@@ -239,8 +239,7 @@ class DataManagerImpl
         ou: String,
         program: String,
         stage: String,
-        dataElementIds: List<String>,
-        dataValues: List<String>,
+        filters: List<Pair<String, String>>,
     ): Flow<List<SearchTeiModel>> = flow {
         emit(
             d2.eventsWithTrackedDataValues(
@@ -252,8 +251,7 @@ class DataManagerImpl
                     it.trackedEntityDataValues()?.associate { trackedEntityDataValue ->
                         Pair(trackedEntityDataValue.dataElement(), trackedEntityDataValue.value())
                     }
-                dataElements?.keys?.containsAll(dataElementIds) == true &&
-                    dataElements.values.containsAll(dataValues)
+                filters.all { (dataElement, value) -> dataElements?.get(dataElement) == value }
             }.mapNotNull {
                 d2.enrollment("${it.enrollment()}")
             }.map {

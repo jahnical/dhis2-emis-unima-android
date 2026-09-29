@@ -48,12 +48,16 @@ interface DataManager {
 
     suspend fun getDataElement(uid: String): DataElement?
 
+    /**
+     * @param filters list of (dataElement uid to expected value) pairs. Only filters that
+     * actually have a selected value should be passed in - an event must match every pair,
+     * but is not required to carry values for any *other* configured filter field.
+     */
     fun getTeisBy(
         ou: String,
         program: String,
         stage: String,
-        dataElementIds: List<String>,
-        dataValues: List<String>,
+        filters: List<Pair<String, String>>,
     ): Flow<List<SearchTeiModel>>
 
     suspend fun getAttendanceEvent(
