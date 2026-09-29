@@ -17,4 +17,12 @@ data class PerformanceUiState(
     val isValidating: Boolean ,
     // list of dataElement uids that should be rendered read-only (e.g. grade DEs)
     val readOnlyFields: List<String> = emptyList(),
-)
+    // Subjects list and a subject's marks load independently (separate coroutines/flows).
+    // Tracked separately so one finishing early doesn't clear the loading indicator while
+    // the other is still in flight - isLoading only clears once both are done.
+    val isSubjectsLoading: Boolean = false,
+    val isMarksLoading: Boolean = false,
+) {
+    val isLoading: Boolean
+        get() = isSubjectsLoading || isMarksLoading
+}

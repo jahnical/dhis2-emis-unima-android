@@ -193,7 +193,9 @@ class MainActivity : FragmentActivity() {
                             performanceViewModel.setOU(ou)
                             performanceViewModel.setGrade(homeUiState.grade?.code.orEmpty())
                             performanceViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
-                            performanceViewModel.loadSubjects(stage)
+                            LaunchedEffect(stage) {
+                                performanceViewModel.loadSubjects(stage)
+                            }
                             performanceViewModel.setTeis(teis, performanceViewModel::updateTEISList)
                             performanceViewModel.setInfoCard(viewModel.infoCard.collectAsStateWithLifecycle().value)
                             performanceViewModel.setDefault(stage, dl)
