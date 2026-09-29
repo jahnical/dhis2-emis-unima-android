@@ -35,15 +35,10 @@ data class HomeUiState(
         get() = key == Constants.STAFF
 
     val options: List<String>
-        get() = if (academicYear != null && school != null) {
-            listOfNotNull(
-                academicYear.code,
-                grade?.code,
-                section?.code,
-                postTitle?.code,
-            )
-        } else {
-            emptyList()
+        get() = when {
+            academicYear == null || school == null -> emptyList()
+            isStaff -> listOfNotNull(academicYear.code, postTitle?.code)
+            else -> listOfNotNull(academicYear.code, grade?.code, section?.code)
         }
 
     val filterSelection: Triple<DropdownItem?, DropdownItem?, DropdownItem?>
