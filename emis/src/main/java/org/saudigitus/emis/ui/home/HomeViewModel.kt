@@ -186,29 +186,38 @@ class HomeViewModel
     private suspend fun getDataElementName(uid: String) =
         repository.getDataElement(uid)?.displayFormName().orEmpty()
 
+    /**
+     * Pairs each configured filter data element with the value actually selected for it in
+     * the UI. Filters with no value selected are left out entirely, instead of requiring an
+     * event to carry a value for every configured filter field regardless of selection.
+     */
+    private fun selectedFilterPairs(): List<Pair<String, String>> {
+        val academicYearPair = schoolCalendar.value?.academicYear?.let { de ->
+            viewModelState.value.academicYear?.code?.let { code -> de to code }
+        }
+
+        val configPairs = filter.value?.dataElements?.mapNotNull { item ->
+            val de = item?.dataElement ?: return@mapNotNull null
+            val code = when (item.code) {
+                "grade" -> viewModelState.value.grade?.code
+                "class" -> viewModelState.value.section?.code
+                "postTitle" -> viewModelState.value.postTitle?.code
+                else -> null
+            }
+            code?.let { de to it }
+        } ?: emptyList()
+
+        return listOfNotNull(academicYearPair) + configPairs
+    }
+
     private fun getTeis() {
         viewModelScope.launch {
             if (!viewModelState.value.isNull) {
-
-                /*val dataElements = listOfNotNull(
-                    schoolCalendar.value?.academicYear,
-                    registration.value?.grade,
-                    registration.value?.section,
-                )*/
-
-                val academicYearDe = schoolCalendar.value?.academicYear
-
-                val configFilterDeIds =
-                    filter.value?.dataElements?.mapNotNull { it?.dataElement } ?: emptyList()
-
-                val dataElements = listOfNotNull(academicYearDe) + configFilterDeIds
-
                 repository.getTeisBy(
                     ou = "${viewModelState.value.school?.uid}",
                     program = "${uiState.value.programSettings?.getString(PROGRAM_UID)}",
                     stage = "${registration.value?.programStage}",
-                    dataElementIds = dataElements,
-                    dataValues = viewModelState.value.options,
+                    filters = selectedFilterPairs(),
                 ).collect { teiList ->
                     setTeis(teiList)
                 }

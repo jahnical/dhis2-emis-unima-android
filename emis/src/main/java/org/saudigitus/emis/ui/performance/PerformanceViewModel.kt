@@ -96,6 +96,7 @@ class PerformanceViewModel
         _gradeRanges.value.firstOrNull { score >= it.minScore && score <= it.maxScore }?.optionCode
 
     fun loadSubjects(stage: String) {
+        viewModelState.update { it.copy(isSubjectsLoading = true) }
         viewModelScope.launch {
             val performance = repository.getConfig(Constants.KEY)
                 ?.find { it.program == program.value }
@@ -131,6 +132,8 @@ class PerformanceViewModel
             if (currentDl.isNotEmpty()) {
                 getFields(_programStage.value, currentDl)
             }
+
+            viewModelState.update { it.copy(isSubjectsLoading = false) }
         }
     }
 
@@ -231,6 +234,7 @@ class PerformanceViewModel
     }
 
     fun updateDataFields(dl: String) {
+        viewModelState.update { it.copy(isMarksLoading = true) }
         viewModelScope.launch {
             _dataElement.value = dl
             getFields(_programStage.value, dl)
@@ -249,7 +253,7 @@ class PerformanceViewModel
                     .distinctUntilChanged()
                     .collectLatest { events ->
                         viewModelState.update {
-                            it.copy(formData = events)
+                            it.copy(formData = events, isMarksLoading = false)
                         }
                     }
             } else {
@@ -269,7 +273,7 @@ class PerformanceViewModel
                     .distinctUntilChanged()
                     .collectLatest { events ->
                         viewModelState.update {
-                            it.copy(formData = events)
+                            it.copy(formData = events, isMarksLoading = false)
                         }
                     }
             }

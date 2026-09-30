@@ -19,6 +19,7 @@ import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -37,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -171,6 +173,7 @@ fun PerformanceScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
+                modifier = Modifier.alpha(if (state.isLoading) 0.5f else 1f),
                 text = {
                     Text(
                         text = if (performanceStep == ButtonStep.EDITING) {
@@ -195,7 +198,7 @@ fun PerformanceScreen(
                         tint = Color(0xFF2C98F0),
                     )
                 },
-                onClick = onSave,
+                onClick = { if (!state.isLoading) onSave() },
             )
         },
         snackbarHost = {
@@ -274,6 +277,10 @@ fun PerformanceScreen(
                     searchPlaceholder = stringResource(R.string.search_students),
                     keyboard = null,
                 )
+
+                if (state.isLoading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
