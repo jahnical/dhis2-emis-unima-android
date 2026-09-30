@@ -161,6 +161,23 @@ class PerformanceViewModel
                             formRepository.save(item)
                         }
 
+                        cache.value.distinctBy { it.tei }.forEach { item ->
+                            val results = repository.getStudentSubjectResults(
+                                tei = item.tei,
+                                program = item.program,
+                                stage = item.programStage,
+                                enrollment = item.enrollment,
+                                grade = grade.value,
+                            )
+                            repository.computeAndSaveTermSummary(
+                                tei = item.tei,
+                                program = item.program,
+                                stage = item.programStage,
+                                enrollment = item.enrollment,
+                                results = results,
+                            )
+                        }
+
                         _cache.value = emptyList()
                         setButtonStep(ButtonStep.EDITING)
                     }
