@@ -250,6 +250,7 @@ class MainActivity : FragmentActivity() {
 
                             SubjectScreen(
                                 state = state,
+                                selectedStage = stage,
                                 onBack = navController::navigateUp,
                                 onFilterClick = subjectViewModel::performOnFilterClick,
                                 infoCard = infoCard,

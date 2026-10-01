@@ -54,6 +54,7 @@ import org.saudigitus.emis.ui.teis.mapper.TEICardMapper
 @Composable
 fun SubjectScreen(
     state: SubjectUIState,
+    selectedStage: String,
     onBack: () -> Unit,
     onFilterClick: (String) -> Unit,
     infoCard: InfoCard,
@@ -63,7 +64,10 @@ fun SubjectScreen(
     onTabSelected: (SubjectTab) -> Unit,
     onStudentClick: (tei: String, name: String) -> Unit,
 ) {
-    var displayName by remember { mutableStateOf("") }
+    // Derived from the ViewModel's selection so it survives navigating away and back.
+    val selectedTermName = state.filters.find { it.id == selectedStage }?.itemName
+        ?: state.filters.getOrNull(0)?.itemName
+        ?: ""
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var debouncedQuery by remember { mutableStateOf("") }
@@ -159,11 +163,8 @@ fun SubjectScreen(
                     placeholder = stringResource(R.string.select_term),
                     leadingIcon = Icons.Default.Event,
                     data = state.filters,
-                    defaultSelection = displayName.ifEmpty {
-                        state.filters.getOrNull(0)?.itemName ?: ""
-                    },
+                    defaultSelection = selectedTermName,
                     onItemClick = {
-                        displayName = it.itemName
                         onFilterClick.invoke(it.id)
                     },
                 )
@@ -220,7 +221,7 @@ fun SubjectScreen(
                             items(filteredSubjects) { subject ->
                                 SubjectItem(
                                     displayName = subject.displayName ?: "-",
-                                    attrValue = displayName,
+                                    attrValue = selectedTermName,
                                     color = if (subject.color != null) {
                                         Color(ColorUtils().parseColor(subject.color))
                                     } else {
