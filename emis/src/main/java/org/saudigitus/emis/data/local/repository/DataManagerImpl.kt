@@ -512,21 +512,25 @@ class DataManagerImpl
         }
     }
 
-    override suspend fun computeAndSaveTermSummary(
-        tei: String,
+    private data class TermRemarkComputation(
+        val scoreDisplay: String,
+        val matchedCode: String?,
+        val remarkDisplayName: String?,
+        val termRemarksMapping: org.saudigitus.emis.data.model.app_config.TermRemarksMapping,
+    )
+
+    private suspend fun computeTermRemark(
         program: String,
-        stage: String,
-        enrollment: String,
         results: List<SubjectResult>,
-    ): TermSummary? = withContext(Dispatchers.IO) {
-        if (results.isEmpty()) return@withContext null
+    ): TermRemarkComputation? {
+        if (results.isEmpty()) return null
 
         val performance = getConfig(Constants.KEY)
             ?.find { it.program == program }
-            ?.performance ?: return@withContext null
+            ?.performance ?: return null
 
         val maxSubjectScore = performance.maxSubjectScore ?: 100.0
-        val termRemarksMapping = performance.termRemarksMapping ?: return@withContext null
+        val termRemarksMapping = performance.termRemarksMapping ?: return null
 
         val totalScore = results.sumOf { it.score?.toDoubleOrNull() ?: 0.0 }
         val percentage = totalScore / (results.size * maxSubjectScore) * 100.0
@@ -543,7 +547,30 @@ class DataManagerImpl
                 ?.displayName()
         } else null
 
-        if (!matchedCode.isNullOrEmpty() && !termRemarksMapping.dataElement.isNullOrEmpty()) {
+        val scoreDisplay = if (totalScore % 1.0 == 0.0) totalScore.toLong().toString()
+        else "%.1f".format(totalScore)
+
+        return TermRemarkComputation(scoreDisplay, matchedCode, remarkDisplayName, termRemarksMapping)
+    }
+
+    override suspend fun computeTermSummary(
+        program: String,
+        results: List<SubjectResult>,
+    ): TermSummary? = withContext(Dispatchers.IO) {
+        val computation = computeTermRemark(program, results) ?: return@withContext null
+        TermSummary(totalScore = computation.scoreDisplay, termRemarkDisplayName = computation.remarkDisplayName)
+    }
+
+    override suspend fun computeAndSaveTermSummary(
+        tei: String,
+        program: String,
+        stage: String,
+        enrollment: String,
+        results: List<SubjectResult>,
+    ): TermSummary? = withContext(Dispatchers.IO) {
+        val computation = computeTermRemark(program, results) ?: return@withContext null
+
+        if (!computation.matchedCode.isNullOrEmpty() && !computation.termRemarksMapping.dataElement.isNullOrEmpty()) {
             val eventUid = d2.eventModule().events()
                 .byTrackedEntityInstanceUids(listOf(tei))
                 .byEnrollmentUid().eq(enrollment)
@@ -562,13 +589,13 @@ class DataManagerImpl
             if (!eventUid.isNullOrEmpty()) {
                 try {
                     d2.trackedEntityModule().trackedEntityDataValues()
-                        .value(eventUid, termRemarksMapping.dataElement)
-                        .blockingSet(matchedCode)
-                        Timber.tag("TERM_SUMMARY").d("The operation was successful")
+                        .value(eventUid, computation.termRemarksMapping.dataElement)
+                        .blockingSet(computation.matchedCode)
+                    Timber.tag("TERM_SUMMARY").d("The operation was successful")
                 } catch (e: D2Error) {
                     Timber.tag("TERM_SUMMARY").e(
                         "Failed to save term remark (dataElement=%s, event=%s): %s [%s]",
-                        termRemarksMapping.dataElement,
+                        computation.termRemarksMapping.dataElement,
                         eventUid,
                         e.errorDescription(),
                         e.originalException()?.message,
@@ -577,10 +604,7 @@ class DataManagerImpl
             }
         }
 
-        val scoreDisplay = if (totalScore % 1.0 == 0.0) totalScore.toLong().toString()
-        else "%.1f".format(totalScore)
-
-        TermSummary(totalScore = scoreDisplay, termRemarkDisplayName = remarkDisplayName)
+        TermSummary(totalScore = computation.scoreDisplay, termRemarkDisplayName = computation.remarkDisplayName)
     }
 
     override suspend fun getTerms(stages: List<ProgramStages>) = withContext(Dispatchers.IO) {

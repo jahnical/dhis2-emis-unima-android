@@ -66,11 +66,8 @@ class StudentSummaryViewModel
                 enrollment = enrollment,
                 grade = grade.value,
             )
-            val termSummary = repository.computeAndSaveTermSummary(
-                tei = tei,
+            val termSummary = repository.computeTermSummary(
                 program = program.value,
-                stage = _stage.value,
-                enrollment = enrollment,
                 results = results,
             )
             _uiState.update {
