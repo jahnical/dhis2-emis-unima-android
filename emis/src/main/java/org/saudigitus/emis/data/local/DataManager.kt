@@ -95,11 +95,7 @@ interface DataManager {
         grade: String,
     ): List<SubjectResult>
 
-    /**
-     * Computes the term summary for display only - does not persist anything. Use for
-     * screens that merely show the summary (e.g. Student Summary); the authoritative write
-     * happens once, at mark-entry save time, via [computeAndSaveTermSummary].
-     */
+    /** Computes the term summary for display only - the write happens via computeAndSaveTermSummary. */
     suspend fun computeTermSummary(
         program: String,
         results: List<SubjectResult>,
