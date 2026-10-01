@@ -62,10 +62,9 @@ fun <T> DropdownField(
         isExpanded = !isExpanded
     }
 
-    if (data.indexOfFirst { it == selectedItem } != -1) {
-        selectedIndex = data.indexOfFirst { it == selectedItem }
-        selectedText = "$selectedItem"
-    }
+    val matchedIndex = data.indexOfFirst { it == selectedItem }
+    selectedIndex = matchedIndex
+    selectedText = if (matchedIndex != -1) "$selectedItem" else ""
 
     val paddingValue = if (selectedIndex >= 0) {
         4.dp
