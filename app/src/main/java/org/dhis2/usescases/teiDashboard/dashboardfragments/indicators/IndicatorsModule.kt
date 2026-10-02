@@ -6,7 +6,7 @@ import dhis2.org.analytics.charts.Charts
 import org.dhis2.commons.di.dagger.PerFragment
 import org.dhis2.commons.network.NetworkUtils
 import org.dhis2.commons.resources.ResourceManager
-import org.dhis2.commons.schedulers.SchedulerProvider
+import org.dhis2.commons.viewmodel.DispatcherProvider
 import org.dhis2.mobileProgramRules.RuleEngineHelper
 import org.hisp.dhis.android.core.D2
 import org.saudigitus.emis.data.local.AnalyticsRepository
@@ -27,15 +27,12 @@ class IndicatorsModule(
     val view: IndicatorsView,
     private val visualizationType: VisualizationType,
 ) {
-
     @Provides
     @PerFragment
     fun providesPresenter(
-        schedulerProvider: SchedulerProvider,
+        dispatcherProvider: DispatcherProvider,
         indicatorRepository: IndicatorRepository,
-    ): IndicatorsPresenter {
-        return IndicatorsPresenter(schedulerProvider, view, indicatorRepository)
-    }
+    ): IndicatorsPresenter = IndicatorsPresenter(dispatcherProvider, view, indicatorRepository)
 
     @Provides
     @PerFragment
@@ -44,8 +41,8 @@ class IndicatorsModule(
         ruleEngineHelper: RuleEngineHelper?,
         charts: Charts?,
         resourceManager: ResourceManager,
-    ): IndicatorRepository {
-        return if (visualizationType == VisualizationType.TRACKER) {
+    ): IndicatorRepository =
+        if (visualizationType == VisualizationType.TRACKER) {
             TrackerAnalyticsRepository(
                 d2,
                 ruleEngineHelper,
@@ -63,7 +60,6 @@ class IndicatorsModule(
                 resourceManager,
             )
         }
-    }
 
     @Provides
     @PerFragment
@@ -87,16 +83,14 @@ class IndicatorsModule(
     fun providesAnalyticsRepository(
         d2: D2,
         dataManager: DataManager,
-        resourceManager: ResourceManager
+        resourceManager: ResourceManager,
     ): AnalyticsRepository = AnalyticsRepositoryImpl(d2, dataManager, resourceManager)
 
     @Provides
     @PerFragment
     fun provideAnalyticsViewModelFactory(
-        repository: AnalyticsRepository
-    ): AnalyticsViewModelFactory {
-        return AnalyticsViewModelFactory(repository)
-    }
+        repository: AnalyticsRepository,
+    ): AnalyticsViewModelFactory = AnalyticsViewModelFactory(repository)
 
     @Provides
     @PerFragment

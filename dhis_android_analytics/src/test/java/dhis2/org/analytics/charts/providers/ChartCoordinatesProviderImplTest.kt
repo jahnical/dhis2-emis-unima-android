@@ -12,6 +12,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import kotlinx.coroutines.test.runTest
 import java.util.Date
 
 class ChartCoordinatesProviderImplTest {
@@ -22,60 +23,64 @@ class ChartCoordinatesProviderImplTest {
         ChartCoordinatesProviderImpl(d2, periodStepProvider, resourceManager)
 
     @Test
-    fun `Should get coordinates for data elements`() {
+    fun `Should get coordinates for data elements`() = runTest {
         mockedLineListResponse(false)
-        val result = coordinatesProvider.dataElementCoordinates(
-            "stageUid",
-            "teiUid",
-            "dataElementUid",
-            null,
-            null,
-        )
+        val result =
+            coordinatesProvider.dataElementCoordinates(
+                "stageUid",
+                "teiUid",
+                "dataElementUid",
+                null,
+                null,
+            )
         assertTrue(
             result.isNotEmpty(),
         )
     }
 
     @Test
-    fun `Should return empty coordinates for data elements`() {
+    fun `Should return empty coordinates for data elements`() = runTest {
         mockedLineListResponse(true)
-        val result = coordinatesProvider.dataElementCoordinates(
-            "stageUid",
-            "teiUid",
-            "dataElementUid",
-            null,
-            null,
-        )
+        val result =
+            coordinatesProvider.dataElementCoordinates(
+                "stageUid",
+                "teiUid",
+                "dataElementUid",
+                null,
+                null,
+            )
         assertTrue(
             result.isEmpty(),
         )
     }
 
     @Test
-    fun `Should get coordinates for indicators`() {
+    fun `Should get coordinates for indicators`() = runTest {
         mockedIndicatorLineListResponse(false)
-        val result = coordinatesProvider.indicatorCoordinates(
-            "stageUid",
-            "teiUid",
-            "indicatorUid",
-            null,
-            null,
-        )
+        val result =
+            coordinatesProvider.indicatorCoordinates(
+                "stageUid",
+                "teiUid",
+                "indicatorUid",
+                null,
+                null,
+            )
         assertTrue(
             result.isNotEmpty(),
         )
     }
 
     @Test
-    fun `Should return empty coordinates for indicator`() {
+    fun `Should return empty coordinates for indicator`() = runTest {
         mockedIndicatorLineListResponse(true)
-        val result = coordinatesProvider.indicatorCoordinates(
-            "stageUid",
-            "teiUid",
-            "indicatorUid",
-            null,
-            null,
-        )
+        val result =
+            coordinatesProvider.indicatorCoordinates(
+                "stageUid",
+                "teiUid",
+                "indicatorUid",
+                null,
+                null,
+            )
         assertTrue(
             result.isEmpty(),
         )
@@ -83,123 +88,177 @@ class ChartCoordinatesProviderImplTest {
 
     private fun mockedLineListResponse(emptyList: Boolean) {
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid"),
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid"),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
                 .byTrackedEntityInstance(),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
-                .byTrackedEntityInstance().eq("teiUid"),
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
+                .byTrackedEntityInstance()
+                .eq("teiUid"),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
-                .byTrackedEntityInstance().eq("teiUid")
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
+                .byTrackedEntityInstance()
+                .eq("teiUid")
                 .withDataElement("dataElementUid"),
         ) doReturn mock()
 
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
-                .byTrackedEntityInstance().eq("teiUid")
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
+                .byTrackedEntityInstance()
+                .eq("teiUid")
                 .withDataElement("dataElementUid")
                 .withLegendStrategy(AnalyticsLegendStrategy.ByDataItem),
         ) doReturn mock()
 
         if (emptyList) {
             whenever(
-                d2.analyticsModule().eventLineList()
-                    .byProgramStage().eq("stageUid")
-                    .byTrackedEntityInstance().eq("teiUid")
+                d2
+                    .analyticsModule()
+                    .eventLineList()
+                    .byProgramStage()
+                    .eq("stageUid")
+                    .byTrackedEntityInstance()
+                    .eq("teiUid")
                     .withDataElement("dataElementUid")
                     .withLegendStrategy(AnalyticsLegendStrategy.ByDataItem)
                     .blockingEvaluate(),
             ) doReturn emptyList()
         } else {
             whenever(
-                d2.analyticsModule().eventLineList()
-                    .byProgramStage().eq("stageUid")
-                    .byTrackedEntityInstance().eq("teiUid")
+                d2
+                    .analyticsModule()
+                    .eventLineList()
+                    .byProgramStage()
+                    .eq("stageUid")
+                    .byTrackedEntityInstance()
+                    .eq("teiUid")
                     .withDataElement("dataElementUid")
                     .withLegendStrategy(AnalyticsLegendStrategy.ByDataItem)
                     .blockingEvaluate(),
-            ) doReturn listOf(
-                LineListResponse(
-                    "uid",
-                    Date(),
-                    Period.builder().build(),
-                    "orgUnit",
-                    "orgUnitUid",
-                    listOf(
-                        LineListResponseValue("uid", "field", "125", null),
+            ) doReturn
+                listOf(
+                    LineListResponse(
+                        "uid",
+                        Date(),
+                        Period.builder().build(),
+                        "orgUnit",
+                        "orgUnitUid",
+                        listOf(
+                            LineListResponseValue("uid", "field", "125", null),
+                        ),
                     ),
-                ),
-            )
+                )
         }
     }
 
     private fun mockedIndicatorLineListResponse(emptyList: Boolean) {
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid"),
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid"),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
                 .byTrackedEntityInstance(),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
-                .byTrackedEntityInstance().eq("teiUid"),
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
+                .byTrackedEntityInstance()
+                .eq("teiUid"),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
-                .byTrackedEntityInstance().eq("teiUid")
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
+                .byTrackedEntityInstance()
+                .eq("teiUid")
                 .withProgramIndicator("indicatorUid"),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().eventLineList()
-                .byProgramStage().eq("stageUid")
-                .byTrackedEntityInstance().eq("teiUid")
+            d2
+                .analyticsModule()
+                .eventLineList()
+                .byProgramStage()
+                .eq("stageUid")
+                .byTrackedEntityInstance()
+                .eq("teiUid")
                 .withProgramIndicator("indicatorUid")
                 .withLegendStrategy(AnalyticsLegendStrategy.ByDataItem),
         ) doReturn mock()
         if (emptyList) {
             whenever(
-                d2.analyticsModule().eventLineList()
-                    .byProgramStage().eq("stageUid")
-                    .byTrackedEntityInstance().eq("teiUid")
+                d2
+                    .analyticsModule()
+                    .eventLineList()
+                    .byProgramStage()
+                    .eq("stageUid")
+                    .byTrackedEntityInstance()
+                    .eq("teiUid")
                     .withProgramIndicator("indicatorUid")
                     .withLegendStrategy(AnalyticsLegendStrategy.ByDataItem)
                     .blockingEvaluate(),
             ) doReturn emptyList()
         } else {
             whenever(
-                d2.analyticsModule().eventLineList()
-                    .byProgramStage().eq("stageUid")
-                    .byTrackedEntityInstance().eq("teiUid")
+                d2
+                    .analyticsModule()
+                    .eventLineList()
+                    .byProgramStage()
+                    .eq("stageUid")
+                    .byTrackedEntityInstance()
+                    .eq("teiUid")
                     .withProgramIndicator("indicatorUid")
                     .withLegendStrategy(AnalyticsLegendStrategy.ByDataItem)
                     .blockingEvaluate(),
-            ) doReturn listOf(
-                LineListResponse(
-                    "uid",
-                    Date(),
-                    Period.builder().build(),
-                    "orgUnit",
-                    "orgUnitUid",
-                    listOf(
-                        LineListResponseValue("uid", "field", "125", null),
+            ) doReturn
+                listOf(
+                    LineListResponse(
+                        "uid",
+                        Date(),
+                        Period.builder().build(),
+                        "orgUnit",
+                        "orgUnitUid",
+                        listOf(
+                            LineListResponseValue("uid", "field", "125", null),
+                        ),
                     ),
-                ),
-            )
+                )
         }
     }
 }

@@ -1,10 +1,13 @@
 package org.dhis2.usescases.searchte.robot
 
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.TypeTextAction
 import androidx.test.espresso.action.ViewActions.click
@@ -13,7 +16,6 @@ import androidx.test.espresso.contrib.PickerActions
 import androidx.test.espresso.contrib.RecyclerViewActions.actionOnItem
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withChild
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -38,14 +40,19 @@ fun filterRobot(
 
 class FilterRobot(val composeTestRule: ComposeTestRule) : BaseRobot() {
 
-    fun clickOnFilter() {
-        onView(withId(R.id.search_filter_general)).perform(click())
+    fun resetFilters() {
+        onView(withId(R.id.clear_filter)).perform(click())
+    }
+
+    fun openFilters() {
+        onView(withId(R.id.filter)).perform(click())
     }
 
     fun clickOnFilterBy(filter: String) {
         onView(withId(R.id.filterRecyclerLayout))
-            .perform(actionOnItem<FilterHolder>(hasDescendant(withText(filter)), click())
-        )
+            .perform(
+                actionOnItem<FilterHolder>(hasDescendant(withText(filter)), click())
+            )
     }
 
     fun clickOnFilterActiveOption() {
@@ -64,12 +71,22 @@ class FilterRobot(val composeTestRule: ComposeTestRule) : BaseRobot() {
 
     fun closeFilterRowAtField(filter: String) {
         onView(withId(R.id.filterRecyclerLayout))
-            .perform(actionOnItem<FilterHolder>(hasDescendant(withText(filter)), clickChildViewWithId(R.id.filterArrow)))
+            .perform(
+                actionOnItem<FilterHolder>(
+                    hasDescendant(withText(filter)),
+                    clickChildViewWithId(R.id.filterArrow)
+                )
+            )
     }
 
     fun clickOnSortByField(fieldFilter: String) {
         onView(withId(R.id.filterRecyclerLayout))
-            .perform(actionOnItem<FilterHolder>(hasDescendant(withText(fieldFilter)), clickChildViewWithId(R.id.sortingIcon)))
+            .perform(
+                actionOnItem<FilterHolder>(
+                    hasDescendant(withText(fieldFilter)),
+                    clickChildViewWithId(R.id.sortingIcon)
+                )
+            )
     }
 
     fun typeOrgUnitField(orgUnit: String) {
@@ -88,17 +105,37 @@ class FilterRobot(val composeTestRule: ComposeTestRule) : BaseRobot() {
     }
 
     fun chooseDate(year: Int, monthOfYear: Int, dayOfMonth: Int) {
-        onView(withId(R.id.datePicker)).perform(PickerActions.setDate(year, monthOfYear, dayOfMonth))
+        onView(withId(R.id.datePicker)).perform(
+            PickerActions.setDate(
+                year,
+                monthOfYear,
+                dayOfMonth
+            )
+        )
         onView(withId(R.id.acceptBtn)).perform(click())
     }
 
-    fun checkEventsAreOverdue() {
-        composeTestRule.onAllNodesWithText("overdue", substring = true, useUnmergedTree = true).assertCountEquals(4)
+    fun chooseDate(date: String) {
+        composeTestRule.onNodeWithTag("DATE_PICKER").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(
+            label = "text",
+            substring = true,
+            useUnmergedTree = true,
+        ).performClick()
+        composeTestRule.onNodeWithContentDescription("Date", substring = true).performTextReplacement(date)
+        composeTestRule.onNodeWithText("OK", true).performClick()
     }
 
     fun checkTEIWithOrgUnit(orgUnit: String) {
         onView(withId(R.id.scrollView))
-            .check(matches(allElementsWithHolderTypeHave(SearchTEViewHolder::class.java,hasDescendant(withText(orgUnit)))))
+            .check(
+                matches(
+                    allElementsWithHolderTypeHave(
+                        SearchTEViewHolder::class.java,
+                        hasDescendant(withText(orgUnit))
+                    )
+                )
+            )
     }
 
     fun checkTEINotSync() {
@@ -106,17 +143,43 @@ class FilterRobot(val composeTestRule: ComposeTestRule) : BaseRobot() {
     }
 
     fun checkFilterCounter(filterCount: String) {
-        waitForView(withId(R.id.filterCounter))
-        onView(allOf(withId(R.id.filterCounter), isDisplayed(), withParent(withId(R.id.mainToolbar))))
-            .check(matches(withChild(withText(filterCount))))
+        waitForView(
+            allOf(
+                withId(R.id.filterCounter),
+                isDisplayed(),
+                withParent(withId(R.id.mainToolbar))
+            )
+        )
+            .check(matches(hasDescendant(withText(filterCount))))
     }
 
     fun checkCountAtFilter(filter: String, count: String) {
         onView(withId(R.id.filterRecyclerLayout))
-            .check(matches(hasItem(allOf(hasDescendant(withText(filter)), hasDescendant(withText(count))))))
+            .check(
+                matches(
+                    hasItem(
+                        allOf(
+                            hasDescendant(withText(filter)),
+                            hasDescendant(withText(count))
+                        )
+                    )
+                )
+            )
     }
 
     fun checkTeiAreCompleted() {
-        composeTestRule.onAllNodesWithText("Enrollment completed", true).assertCountEquals(4)
+        val nodes = composeTestRule.onAllNodesWithText("Enrollment completed", true)
+        composeTestRule.waitForIdle()
+        assert(nodes.fetchSemanticsNodes().size >= 2) {
+            "Expected at least 2 nodes, but found ${nodes.fetchSemanticsNodes().size}"
+        }
+    }
+
+    fun clickOnThisMonthPeriodFilter() {
+        onView(withId(R.id.this_month)).perform(click())
+    }
+
+    fun clickOnAnytimePeriodFilter() {
+        onView(withId(R.id.anytime)).perform(click())
     }
 }

@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.dhis2.commons.filters.FilterManager
 import org.dhis2.commons.matomo.Actions
@@ -19,6 +20,7 @@ import org.dhis2.usescases.datasets.datasetDetail.DataSetDetailModel
 import org.dhis2.usescases.datasets.datasetDetail.DataSetDetailRepository
 import org.dhis2.usescases.datasets.datasetDetail.datasetList.DataSetListViewModel
 import org.hisp.dhis.android.core.common.State
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -30,7 +32,6 @@ import org.mockito.kotlin.whenever
 import java.util.Date
 
 class DataSetListViewModelTest {
-
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
@@ -44,6 +45,11 @@ class DataSetListViewModelTest {
     private val filterProcessor: FlowableProcessor<FilterManager> = PublishProcessor.create()
     private val filterManagerFlowable = Flowable.just(filterManager).startWith(filterProcessor)
 
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
@@ -51,24 +57,19 @@ class DataSetListViewModelTest {
 
         whenever(filterManager.asFlowable()) doReturn filterManagerFlowable
         whenever(repository.canWriteAny()) doReturn Flowable.just(true)
-        viewModel = DataSetListViewModel(
-            repository,
-            filterManager,
-            matomoAnalyticsController,
-            object : DispatcherProvider {
-                override fun io(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+        viewModel =
+            DataSetListViewModel(
+                repository,
+                filterManager,
+                matomoAnalyticsController,
+                object : DispatcherProvider {
+                    override fun io(): CoroutineDispatcher = testingDispatcher
 
-                override fun computation(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+                    override fun computation(): CoroutineDispatcher = testingDispatcher
 
-                override fun ui(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
-            },
-        )
+                    override fun ui(): CoroutineDispatcher = testingDispatcher
+                },
+            )
     }
 
     @Test
@@ -77,24 +78,19 @@ class DataSetListViewModelTest {
         whenever(
             repository.dataSetGroups(any(), any(), any(), any()),
         ) doReturn Flowable.just(dataSets)
-        viewModel = DataSetListViewModel(
-            repository,
-            filterManager,
-            matomoAnalyticsController,
-            object : DispatcherProvider {
-                override fun io(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+        viewModel =
+            DataSetListViewModel(
+                repository,
+                filterManager,
+                matomoAnalyticsController,
+                object : DispatcherProvider {
+                    override fun io(): CoroutineDispatcher = testingDispatcher
 
-                override fun computation(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+                    override fun computation(): CoroutineDispatcher = testingDispatcher
 
-                override fun ui(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
-            },
-        )
+                    override fun ui(): CoroutineDispatcher = testingDispatcher
+                },
+            )
         testingDispatcher.scheduler.advanceUntilIdle()
         assert(viewModel.datasets.value == dataSets)
     }
@@ -131,19 +127,20 @@ class DataSetListViewModelTest {
         verify(filterManager).publishData()
     }
 
-    private fun dummyDataSet() = DataSetDetailModel.create(
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        State.SYNCED,
-        "",
-        true,
-        false,
-        Date(),
-        "",
-    )
+    private fun dummyDataSet() =
+        DataSetDetailModel(
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            State.SYNCED,
+            "",
+            true,
+            false,
+            Date(),
+            "",
+        )
 }

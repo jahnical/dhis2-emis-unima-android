@@ -13,3 +13,5 @@
 /gradle.deps
 .kotlin/
 /unima-emis/build
+__pycache__/
+*.pyc

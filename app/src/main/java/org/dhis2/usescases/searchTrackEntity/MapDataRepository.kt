@@ -1,6 +1,5 @@
 package org.dhis2.usescases.searchTrackEntity
 
-import com.mapbox.geojson.FeatureCollection
 import org.dhis2.data.search.SearchParametersModel
 import org.dhis2.maps.extensions.filterRelationshipsByLayerVisibility
 import org.dhis2.maps.extensions.filterTeiByLayerVisibility
@@ -9,8 +8,10 @@ import org.dhis2.maps.geometry.mapper.featurecollection.MapCoordinateFieldToFeat
 import org.dhis2.maps.geometry.mapper.featurecollection.MapTeiEventsToFeatureCollection
 import org.dhis2.maps.geometry.mapper.featurecollection.MapTeisToFeatureCollection
 import org.dhis2.maps.layer.MapLayer
+import org.dhis2.maps.layer.types.FieldMapLayer
 import org.dhis2.maps.utils.DhisMapUtils
 import org.hisp.dhis.android.core.program.Program
+import org.maplibre.geojson.FeatureCollection
 
 class MapDataRepository(
     private val searchRepositoryKt: SearchRepositoryKt,
@@ -19,19 +20,19 @@ class MapDataRepository(
     private val mapCoordinateFieldToFeatureCollection: MapCoordinateFieldToFeatureCollection,
     private val mapUtils: DhisMapUtils,
 ) {
-
     fun getTrackerMapData(
         selectedProgram: Program?,
-        queryData: MutableMap<String, String>,
+        queryData: MutableMap<String, List<String>?>,
         layersVisibility: Map<String, MapLayer> = emptyMap(),
     ): TrackerMapData {
-        val mapTeis = searchRepositoryKt.searchTeiForMap(
-            SearchParametersModel(
-                selectedProgram,
-                queryData,
-            ),
-            true,
-        )
+        val mapTeis =
+            searchRepositoryKt.searchTeiForMap(
+                SearchParametersModel(
+                    selectedProgram,
+                    queryData,
+                ),
+                true,
+            )
 
         val mapEvents =
             searchRepositoryKt.searchEventForMap(mapTeis.map { it.uid }, selectedProgram)
@@ -44,22 +45,40 @@ class MapDataRepository(
         val dataElements = mapCoordinateFieldToFeatureCollection.map(coordinateDataElements)
         val coordinateAttributes = mapUtils.getCoordinateAttributeInfo(mapTeis.map { it.uid })
         val attributes = mapCoordinateFieldToFeatureCollection.map(coordinateAttributes)
-        val coordinateFields = mutableMapOf<String, FeatureCollection>().apply {
-            putAll(dataElements)
-            putAll(attributes)
-        }
+        val coordinateFields =
+            mutableMapOf<String, FeatureCollection>().apply {
+                putAll(dataElements)
+                putAll(attributes)
+            }
         val teiFeatureCollection =
             mapTeisToFeatureCollection.map(mapTeis, selectedProgram != null, mapRelationships)
         val eventsByProgramStage =
             mapTeiEventsToFeatureCollection.map(mapEvents).component1()
 
+        val noFieldLayers = layersVisibility.values.none { it is FieldMapLayer }
+        val anyLayerVisible = layersVisibility.values.any { it.visible }
+        val teiItems = mapTeis.filterTeiByLayerVisibility(layersVisibility, coordinateAttributes)
+        val eventItems = mapEvents.filterTrackerEventsByLayerVisibility(layersVisibility, coordinateDataElements)
+        val relationshipItems = mapRelationships.filterRelationshipsByLayerVisibility(layersVisibility)
+        val extraTeis =
+            if (noFieldLayers && anyLayerVisible) {
+                mapTeis.filter { tei ->
+                    tei !in teiItems && coordinateAttributes.any { it.tei.uid() == tei.uid }
+                }
+            } else {
+                emptyList()
+            }
+        val extraEvents =
+            if (noFieldLayers && anyLayerVisible) {
+                mapEvents.filter { event ->
+                    event !in eventItems && coordinateDataElements.any { it.event.uid() == event.uid }
+                }
+            } else {
+                emptyList()
+            }
+
         return TrackerMapData(
-            mapItems = mapTeis.filterTeiByLayerVisibility(layersVisibility, coordinateAttributes) +
-                mapEvents.filterTrackerEventsByLayerVisibility(
-                    layersVisibility,
-                    coordinateDataElements,
-                ) +
-                mapRelationships.filterRelationshipsByLayerVisibility(layersVisibility),
+            mapItems = teiItems + extraTeis + eventItems + extraEvents + relationshipItems,
             eventFeatures = eventsByProgramStage,
             teiFeatures = teiFeatureCollection.first,
             teiBoundingBox = teiFeatureCollection.second,

@@ -13,16 +13,21 @@ const val WEEKLY_BAR_WIDTH = 0.2f
 const val MONTHLY_BAR_WIDTH = 0.75f
 const val SIX_MONTHLY_BAR_WIDTH = 0.85f
 const val YEARLY_BAR_WIDTH = 0.85f
+
 class GraphToBarData {
     private val coordinateToBarEntryMapper by lazy { GraphCoordinatesToBarEntry() }
     private val serieColors = SerieColors.getColors()
 
-    fun map(graph: Graph, serieToHighlight: String? = null): BarData {
-        val series = if (graph.chartType == ChartType.NUTRITION) {
-            listOf(graph.series.last())
-        } else {
-            graph.series
-        }
+    fun map(
+        graph: Graph,
+        serieToHighlight: String? = null,
+    ): BarData {
+        val series =
+            if (graph.chartType == ChartType.NUTRITION) {
+                listOf(graph.series.last())
+            } else {
+                graph.series
+            }
         return BarData(
             series.mapIndexed { index: Int, serie: SerieData ->
                 BarDataSet(
@@ -47,15 +52,16 @@ class GraphToBarData {
         ).withGlobalStyle(barWidthByPeriod(graph))
     }
 
-    private fun barWidthByPeriod(graph: Graph): Float? {
-        return when (graph.eventPeriodType) {
+    private fun barWidthByPeriod(graph: Graph): Float? =
+        when (graph.eventPeriodType) {
             PeriodType.Daily ->
                 DAILY_BAR_WIDTH
             PeriodType.Weekly,
+            PeriodType.WeeklyWednesday,
+            PeriodType.WeeklyThursday,
+            PeriodType.WeeklyFriday,
             PeriodType.WeeklySaturday,
             PeriodType.WeeklySunday,
-            PeriodType.WeeklyThursday,
-            PeriodType.WeeklyWednesday,
             ->
                 WEEKLY_BAR_WIDTH
             PeriodType.BiWeekly,
@@ -72,13 +78,15 @@ class GraphToBarData {
                 SIX_MONTHLY_BAR_WIDTH
             }
             PeriodType.Yearly,
+            PeriodType.FinancialFeb,
             PeriodType.FinancialApril,
             PeriodType.FinancialJuly,
+            PeriodType.FinancialAug,
+            PeriodType.FinancialSep,
             PeriodType.FinancialOct,
             PeriodType.FinancialNov,
             -> {
                 YEARLY_BAR_WIDTH
             }
         }
-    }
 }

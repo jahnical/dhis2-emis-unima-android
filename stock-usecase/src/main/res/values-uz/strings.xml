@@ -1,0 +1,46 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">Дорихона фондини бошқариш</string>
+    <string name="title_activity_home">Бош саҳифа</string>
+
+    <string name="distribution">Тарқатиш</string>
+    <string name="discard">Бекор қилиш</string>
+    <string name="correction">Тузатиш</string>
+
+    <!-- Sign in -->
+    <string name="username">Фойдаланувчи исми</string>
+
+    <!-- Sync -->
+    <string name="metadata_sync_error">Метамаълумотлар синхронизациясини якунлаш имконсиз</string>
+
+    <!-- FloatingActionButtons -->
+    <string name="review">Кўриб чиқиш</string>
+
+    <string name="search">Элементни излаш</string>
+    <string name="search_placeholder">Излаш...</string>
+    <string name="delete">Ўчириб ташлаш</string>
+    <string name="ok">ОК</string>
+    <string name="cancel">Бекор қилиш</string>
+
+    <string name="from">Кимдан</string>
+    <string name="to">Етказиб бериш ... га</string>
+    <string name="subtitle">%s</string>
+
+    <!-- Languages -->
+
+    <!-- Settings -->
+
+    <!-- Stock table -->
+    <string name="quantity">Миқдори</string>
+
+    <!-- Content descriptions for accessibility -->
+
+    <string name="confirm_transaction_label">Тасдиқланг</string>
+
+    <string name="speech_network_error">Тармоқда хатолик</string>
+    <string name="online_search_parsing_error">Натижаларни таҳлил қилишда хатолик юз берди</string>
+    <string name="done_task">Бош саҳифа</string>
+    <string name="back">Орқага</string>
+    <string name="count">Ҳисоблаш</string>
+    <string name="formatting_error">Форматлашда хатолик</string>
+    <string name="invalid_possitive_zero">Фақат мусбат рақамлар ёки нолга рухсат берилади</string>
+    </resources>
