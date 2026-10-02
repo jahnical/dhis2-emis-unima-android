@@ -9,12 +9,11 @@ import dhis2.org.analytics.charts.ChartsRepository
 import dhis2.org.analytics.charts.ChartsRepositoryImpl
 import dhis2.org.analytics.charts.DhisAnalyticCharts
 import dhis2.org.analytics.charts.data.AnalyticResources
+import dhis2.org.analytics.charts.domain.GetEnrollmentAnalyticsUseCase
 import dhis2.org.analytics.charts.mappers.AnalyticDataElementToDataElementData
 import dhis2.org.analytics.charts.mappers.AnalyticIndicatorToIndicatorData
 import dhis2.org.analytics.charts.mappers.AnalyticTeiSettingsToSettingsAnalyticsModel
 import dhis2.org.analytics.charts.mappers.AnalyticsTeiSettingsToGraph
-import dhis2.org.analytics.charts.mappers.DataElementToGraph
-import dhis2.org.analytics.charts.mappers.ProgramIndicatorToGraph
 import dhis2.org.analytics.charts.mappers.VisualizationToGraph
 import dhis2.org.analytics.charts.providers.AnalyticsFilterProvider
 import dhis2.org.analytics.charts.providers.ChartCoordinatesProvider
@@ -36,42 +35,36 @@ import javax.inject.Singleton
 )
 interface ChartsComponent {
     fun charts(): Charts
+    fun getEnrollmentAnalyticsUseCase(): GetEnrollmentAnalyticsUseCase
 }
 
 @Module
 class ChartsModule {
-
     @Provides
     internal fun provideChartRepository(
         d2: D2,
         visualizationToGraph: VisualizationToGraph,
         analyticsTeiSettingsToGraph: AnalyticsTeiSettingsToGraph,
-        dataElementToGraph: DataElementToGraph,
-        indicatorToGraph: ProgramIndicatorToGraph,
         analyticsResources: AnalyticResources,
         analyticsFilterProvider: AnalyticsFilterProvider,
-    ): ChartsRepository = ChartsRepositoryImpl(
-        d2,
-        visualizationToGraph,
-        analyticsTeiSettingsToGraph,
-        dataElementToGraph,
-        indicatorToGraph,
-        analyticsResources,
-        analyticsFilterProvider,
-    )
+    ): ChartsRepository =
+        ChartsRepositoryImpl(
+            d2,
+            visualizationToGraph,
+            analyticsTeiSettingsToGraph,
+            analyticsResources,
+            analyticsFilterProvider,
+        )
 
     @Provides
-    internal fun provideAnalyticFilters(d2: D2): AnalyticsFilterProvider {
-        return AnalyticsFilterProvider(d2)
-    }
+    internal fun provideAnalyticFilters(d2: D2): AnalyticsFilterProvider =
+        AnalyticsFilterProvider(d2)
 
     @Provides
     internal fun provideVisualizationToGraph(
         periodStepProvider: PeriodStepProvider,
         chartCoordinatesProvider: ChartCoordinatesProvider,
-    ): VisualizationToGraph {
-        return VisualizationToGraph(periodStepProvider, chartCoordinatesProvider)
-    }
+    ): VisualizationToGraph = VisualizationToGraph(periodStepProvider, chartCoordinatesProvider)
 
     @Provides
     internal fun provideAnalyticsSettingsToGraph(
@@ -79,85 +72,67 @@ class ChartsModule {
         nutritionDataProvider: NutritionDataProvider,
         periodStepProvider: PeriodStepProvider,
         chartCoordinatesProvider: ChartCoordinatesProvider,
-    ): AnalyticsTeiSettingsToGraph {
-        return AnalyticsTeiSettingsToGraph(
+    ): AnalyticsTeiSettingsToGraph =
+        AnalyticsTeiSettingsToGraph(
             analyticsSettingsMapper,
             nutritionDataProvider,
             periodStepProvider,
             chartCoordinatesProvider,
         )
-    }
 
     @Provides
-    internal fun nutritionDataProvider(): NutritionDataProvider {
-        return RuleEngineNutritionDataProviderImpl()
-    }
+    internal fun nutritionDataProvider(): NutritionDataProvider =
+        RuleEngineNutritionDataProviderImpl()
 
     @Provides
     internal fun provideAnalyticSettingsMapper(
         analyticDataElementMapper: AnalyticDataElementToDataElementData,
         analyticIndicatorMapper: AnalyticIndicatorToIndicatorData,
-    ): AnalyticTeiSettingsToSettingsAnalyticsModel {
-        return AnalyticTeiSettingsToSettingsAnalyticsModel(
+    ): AnalyticTeiSettingsToSettingsAnalyticsModel =
+        AnalyticTeiSettingsToSettingsAnalyticsModel(
             analyticDataElementMapper,
             analyticIndicatorMapper,
         )
-    }
-
-    @Provides
-    internal fun provideDataElementToGraph(
-        periodStepProvider: PeriodStepProvider,
-        chartCoordinatesProvider: ChartCoordinatesProvider,
-    ): DataElementToGraph {
-        return DataElementToGraph(periodStepProvider, chartCoordinatesProvider)
-    }
-
-    @Provides
-    internal fun provideIndicatorToGraph(
-        periodStepProvider: PeriodStepProvider,
-        chartCoordinatesProvider: ChartCoordinatesProvider,
-    ): ProgramIndicatorToGraph {
-        return ProgramIndicatorToGraph(periodStepProvider, chartCoordinatesProvider)
-    }
 
     @Provides
     internal fun periodStepProvider(
         d2: D2,
         dispatcherProvider: DispatcherProvider,
-    ): PeriodStepProvider {
-        return PeriodStepProviderImpl(d2, dispatcherProvider)
-    }
+    ): PeriodStepProvider = PeriodStepProviderImpl(d2, dispatcherProvider)
 
     @Provides
     internal fun chartCoordinatesProvider(
         d2: D2,
         periodStepProvider: PeriodStepProvider,
         resourceManager: ResourceManager,
-    ): ChartCoordinatesProvider {
-        return ChartCoordinatesProviderImpl(d2, periodStepProvider, resourceManager)
-    }
+    ): ChartCoordinatesProvider =
+        ChartCoordinatesProviderImpl(d2, periodStepProvider, resourceManager)
 
     @Provides
-    internal fun provideResourceManager(context: Context, colorUtils: ColorUtils): ResourceManager {
-        return ResourceManager(context, colorUtils)
-    }
+    internal fun provideResourceManager(
+        context: Context,
+        colorUtils: ColorUtils,
+    ): ResourceManager = ResourceManager(context, colorUtils)
 
     @Provides
-    internal fun analyticResources(context: Context): AnalyticResources {
-        return AnalyticResources(context)
-    }
+    internal fun analyticResources(context: Context): AnalyticResources = AnalyticResources(context)
 
     @Provides
-    internal fun provideAnalyticDataElementMapper(): AnalyticDataElementToDataElementData {
-        return AnalyticDataElementToDataElementData()
-    }
+    internal fun provideAnalyticDataElementMapper(): AnalyticDataElementToDataElementData =
+        AnalyticDataElementToDataElementData()
 
     @Provides
-    internal fun provideAnalyticIndicatorMapper(): AnalyticIndicatorToIndicatorData {
-        return AnalyticIndicatorToIndicatorData()
-    }
+    internal fun provideAnalyticIndicatorMapper(): AnalyticIndicatorToIndicatorData =
+        AnalyticIndicatorToIndicatorData()
 
     @Provides
     internal fun bindStorageFeatureImpl(analyticsCharts: DhisAnalyticCharts): Charts =
         analyticsCharts
+
+    @Provides
+    internal fun provideGetEnrollmentAnalyticsUseCase(
+        chartsRepository: ChartsRepository,
+        dispatcherProvider: DispatcherProvider,
+    ): GetEnrollmentAnalyticsUseCase =
+        GetEnrollmentAnalyticsUseCase(chartsRepository, dispatcherProvider)
 }

@@ -1,14 +1,19 @@
 package org.dhis2.usescases.tracker
 
 import org.dhis2.commons.date.DateLabelProvider
+import org.dhis2.commons.filters.sorting.SortingItem
 import org.dhis2.commons.resources.MetadataIconProvider
+import org.dhis2.data.sorting.SearchSortingValueSetter
 import org.dhis2.maps.model.MapItemModel
 import org.dhis2.maps.model.RelatedInfo
 import org.dhis2.maps.model.RelationshipDirection
+import org.dhis2.mobile.commons.model.AvatarProviderConfiguration
+import org.dhis2.mobile.commons.model.AvatarProviderConfiguration.Metadata
+import org.dhis2.mobile.commons.model.AvatarProviderConfiguration.ProfilePic
+import org.dhis2.mobile.commons.model.MetadataIconData
 import org.dhis2.tracker.data.ProfilePictureProvider
-import org.dhis2.ui.avatar.AvatarProviderConfiguration
-import org.dhis2.ui.avatar.AvatarProviderConfiguration.Metadata
-import org.dhis2.ui.avatar.AvatarProviderConfiguration.ProfilePic
+import org.dhis2.tracker.search.model.TrackedEntitySearchItemAttributeDomain
+import org.dhis2.usescases.searchTrackEntity.SearchTeiModel
 import org.dhis2.utils.ValueUtils
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope
@@ -27,15 +32,27 @@ class TrackedEntityInstanceInfoProvider(
     private val profilePictureProvider: ProfilePictureProvider,
     private val dateLabelProvider: DateLabelProvider,
     private val metadataIconProvider: MetadataIconProvider,
+    private val sortingValueSetter: SearchSortingValueSetter,
 ) {
-
     fun getAvatar(
         tei: TrackedEntityInstance,
         programUid: String?,
         firstAttributeValue: AdditionalInfoItem?,
     ): AvatarProviderConfiguration {
-        val program = programUid?.let { d2.programModule().programs().uid(it).blockingGet() }
-        val hasIcon = d2.iconModule().icons().key(program?.style()?.icon() ?: "").blockingExists()
+        val program =
+            programUid?.let {
+                d2
+                    .programModule()
+                    .programs()
+                    .uid(it)
+                    .blockingGet()
+            }
+        val hasIcon =
+            d2
+                .iconModule()
+                .icons()
+                .key(program?.style()?.icon() ?: "")
+                .blockingExists()
         val profilePath = profilePictureProvider(tei, programUid)
 
         return when {
@@ -47,60 +64,79 @@ class TrackedEntityInstanceInfoProvider(
 
             hasIcon && profilePath.isEmpty() -> {
                 Metadata(
-                    metadataIconData = metadataIconProvider.invoke(
-                        program?.style() ?: ObjectStyle.builder().build(),
-                    ),
+                    metadataIconData =
+                        metadataIconProvider.invoke(
+                            program?.style() ?: ObjectStyle.builder().build(),
+                        ),
                 )
             }
 
             else -> {
                 AvatarProviderConfiguration.MainValueLabel(
-                    firstMainValue = firstAttributeValue?.value?.firstOrNull()?.toString()
-                        ?: "",
+                    firstMainValue =
+                        firstAttributeValue?.value?.firstOrNull()?.toString()
+                            ?: "",
                 )
             }
         }
     }
 
+    fun getMetadataIcon(style: ObjectStyle) : MetadataIconData {
+        return metadataIconProvider.invoke(style)
+    }
+
     fun getTeiTitle(
         header: String?,
         attributeValues: List<AdditionalInfoItem>,
-    ): String {
-        return when {
+    ): String =
+        when {
             header != null -> header
             attributeValues.isEmpty() -> "-"
-            else -> with(attributeValues.first()) {
-                "$key $value"
-            }
+            else ->
+                with(attributeValues.first()) {
+                    "$key $value"
+                }
         }
-    }
 
     fun getTeiLastUpdated(tei: TrackedEntitySearchItem) = dateLabelProvider.span(tei.lastUpdated)
 
-    fun getTeiAdditionalInfoList(
-        attributeValues: List<TrackedEntitySearchItemAttribute>,
-    ): List<AdditionalInfoItem> {
-        return attributeValues.filter { attribute ->
-            attribute.displayInList &&
-                !listOf(
-                    ValueType.IMAGE,
-                    ValueType.FILE_RESOURCE,
-                    ValueType.COORDINATE,
-                ).contains(attribute.valueType)
-        }.map { attribute ->
-            AdditionalInfoItem(
-                key = attribute.displayFormName,
-                value = if (attribute.value != null) {
-                    ValueUtils.transformValue(
-                        d2,
-                        attribute.value,
-                        attribute.valueType,
-                        attribute.optionSet,
-                    ) ?: ""
-                } else {
-                    ""
-                },
+    fun getTeiAdditionalInfoListForMap(attributeValues: List<TrackedEntitySearchItemAttribute>): List<AdditionalInfoItem> =
+        attributeValues
+            .filter { attribute ->
+                attribute.displayInList &&
+                    !listOf(
+                        ValueType.IMAGE,
+                        ValueType.FILE_RESOURCE,
+                        ValueType.COORDINATE,
+                    ).contains(attribute.valueType) &&
+                    attribute.value != null
+            }.map { attribute ->
+                AdditionalInfoItem(
+                    key = attribute.displayFormName,
+                    value =
+                        if (attribute.value != null) {
+                            ValueUtils.transformValueLegacy(
+                                d2,
+                                attribute.value,
+                                attribute.valueType,
+                                attribute.optionSet,
+                            ) ?: ""
+                        } else {
+                            ""
+                        },
+                )
+            }
+
+    fun getTransformedValue(attr: TrackedEntitySearchItemAttributeDomain) : String? {
+        return if (attr.value != null) {
+            ValueUtils.transformValue(
+                d2,
+                attr.value,
+                attr.valueType,
+                attr.optionSet,
             )
+        } else {
+            null
         }
     }
 
@@ -108,28 +144,41 @@ class TrackedEntityInstanceInfoProvider(
         searchItem: TrackedEntitySearchItem,
         selectedProgram: Program?,
     ): RelatedInfo {
-        val lastEnrollmentInProgram = d2.enrollmentModule().enrollments()
-            .byTrackedEntityInstance().eq(searchItem.uid)
-            .byProgram().eq(selectedProgram?.uid())
-            .byDeleted().isFalse
-            .orderByEnrollmentDate(RepositoryScope.OrderByDirection.DESC)
-            .blockingGet()
-            .firstOrNull()
+        val lastEnrollmentInProgram =
+            d2
+                .enrollmentModule()
+                .enrollments()
+                .byTrackedEntityInstance()
+                .eq(searchItem.uid)
+                .byProgram()
+                .eq(selectedProgram?.uid())
+                .byDeleted()
+                .isFalse
+                .orderByEnrollmentDate(RepositoryScope.OrderByDirection.DESC)
+                .blockingGet()
+                .firstOrNull()
 
         return RelatedInfo(
-            enrollment = lastEnrollmentInProgram?.let {
-                RelatedInfo.Enrollment(
-                    uid = lastEnrollmentInProgram.uid(),
-                    geometry = lastEnrollmentInProgram.geometry(),
-                )
-            },
+            enrollment =
+                lastEnrollmentInProgram?.let {
+                    RelatedInfo.Enrollment(
+                        uid = lastEnrollmentInProgram.uid(),
+                        geometry = lastEnrollmentInProgram.geometry(),
+                    )
+                },
         )
     }
 
-    fun updateRelationshipInfo(model: MapItemModel, relationship: Relationship): MapItemModel {
-        val relationshipType = d2.relationshipModule().relationshipTypes()
-            .uid(relationship.relationshipType())
-            .blockingGet()
+    fun updateRelationshipInfo(
+        model: MapItemModel,
+        relationship: Relationship,
+    ): MapItemModel {
+        val relationshipType =
+            d2
+                .relationshipModule()
+                .relationshipTypes()
+                .uid(relationship.relationshipType())
+                .blockingGet()
 
         val relationshipName: String?
         val relatedUid: String?
@@ -153,25 +202,38 @@ class TrackedEntityInstanceInfoProvider(
                 relationshipDirection = null
             }
         }
-        val relationshipInfo = RelatedInfo.Relationship(
-            uid = relationship.uid(),
-            displayName = relationshipType?.displayName() ?: "",
-            relationshipTypeUid = relationshipType?.uid(),
-            relatedUid = relatedUid,
-            relationshipDirection = relationshipDirection,
-        )
+        val relationshipInfo =
+            RelatedInfo.Relationship(
+                uid = relationship.uid(),
+                displayName = relationshipType?.displayName() ?: "",
+                relationshipTypeUid = relationshipType?.uid(),
+                relatedUid = relatedUid,
+                relationshipDirection = relationshipDirection,
+            )
         return model.copy(
-            additionalInfoList = model.additionalInfoList +
-                AdditionalInfoItem(
-                    value = relationshipName ?: "",
-                    isConstantItem = true,
-                    color = SurfaceColor.Primary,
+            additionalInfoList =
+                model.additionalInfoList +
+                    AdditionalInfoItem(
+                        value = relationshipName ?: "",
+                        isConstantItem = true,
+                        color = SurfaceColor.Primary,
+                    ),
+            relatedInfo =
+                model.relatedInfo?.copy(
+                    relationship = relationshipInfo,
+                ) ?: RelatedInfo(
+                    relationship = relationshipInfo,
                 ),
-            relatedInfo = model.relatedInfo?.copy(
-                relationship = relationshipInfo,
-            ) ?: RelatedInfo(
-                relationship = relationshipInfo,
-            ),
         )
     }
+
+    fun getUnknownLabel(): String {
+        return sortingValueSetter.unknownLabel
+    }
+
+    fun getSortingKeyValue(searchTei: SearchTeiModel, sortingItem: SortingItem): Pair<String, String>? {
+        return sortingValueSetter.setSortingItem(searchTei, sortingItem)
+    }
+
+
 }

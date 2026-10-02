@@ -1,7 +1,6 @@
 package org.dhis2.usescases.main.program
 
-import org.dhis2.android.rtsm.data.AppConfig
-import org.dhis2.ui.MetadataIconData
+import org.dhis2.mobile.commons.model.MetadataIconData
 import org.hisp.dhis.android.core.common.State
 import java.util.Date
 
@@ -17,9 +16,11 @@ data class ProgramUiModel(
     val onlyEnrollOnce: Boolean,
     val accessDataWrite: Boolean,
     val state: State,
+    val filtersAreActive: Boolean,
     val downloadState: ProgramDownloadState,
     val downloadActive: Boolean = false,
-    val stockConfig: AppConfig?,
+    val isStockUseCase: Boolean = false,
+    //val stockConfig: AppConfig?,
     val isSEMIS: Boolean = false,
     val lastUpdated: Date,
 ) {

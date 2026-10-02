@@ -5,24 +5,28 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import org.dhis2.R
-import org.dhis2.tracker.relationships.model.RelationshipTopBarIconState
+import org.dhis2.tracker.relationships.ui.state.RelationshipTopBarIconState
+import org.dhis2.utils.getOnToolbarColor
 import org.hisp.dhis.mobile.ui.designsystem.component.Button
 import org.hisp.dhis.mobile.ui.designsystem.component.ButtonStyle
 import org.hisp.dhis.mobile.ui.designsystem.component.IconButton
 
-fun ComposeView?.setButtonContent(trackedEntityName: String, onButtonClicked: () -> Unit) {
+fun ComposeView?.setButtonContent(
+    trackedEntityName: String,
+    onButtonClicked: () -> Unit,
+) {
     this?.setContent {
+        val onToolbarColor = getOnToolbarColor()
         Button(
             text = "${stringResource(id = R.string.edit)} ${trackedEntityName.lowercase()}",
             style = ButtonStyle.TEXT_LIGHT,
             icon = {
                 Icon(
                     imageVector = Icons.Outlined.Edit,
-                    tint = Color.White,
+                    tint = onToolbarColor,
                     contentDescription = "Edit",
                 )
             },
@@ -36,13 +40,14 @@ fun RelationshipTopBarIcon(
     relationshipTopBarIconState: RelationshipTopBarIconState,
     onButtonClicked: () -> Unit,
 ) {
+    val onToolbarColor = getOnToolbarColor()
     IconButton(
         modifier = Modifier,
         icon = {
             Icon(
                 imageVector = relationshipTopBarIconState.icon,
                 contentDescription = stringResource(R.string.relationships),
-                tint = Color.White,
+                tint = onToolbarColor,
             )
         },
     ) {

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error">خطأ</string>
+    <string name="due_date">تاريخ الاستحقاق</string>
+    <string name="complete">مكتمل</string>
+    <string name="share">مشاركة</string>
+    <string name="action_close">إغلاق</string>
+    <string name="incident_date">تاريخ الواقعة</string>
+    <string name="download">تنزيل</string>
+    </resources>

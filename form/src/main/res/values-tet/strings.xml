@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="error">Erru</string>
+    <string name="required">Nesesáriu</string>
+    <string name="complete">Kompletu</string>
+    <string name="share">Partilla</string>
     <string name="action_close">Taka</string>
-</resources>
+    <string name="download">Hatun</string>
+    </resources>

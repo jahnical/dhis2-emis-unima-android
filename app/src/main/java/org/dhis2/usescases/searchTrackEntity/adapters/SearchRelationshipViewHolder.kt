@@ -13,7 +13,6 @@ class SearchRelationshipViewHolder(
         isOnline: Boolean,
     ) -> Unit,
 ) : BaseTeiViewHolder(binding, colorUtils) {
-
     override fun itemConfiguration() {
         binding.sortingFieldName.visibility = View.GONE
         binding.sortingFieldValue.visibility = View.GONE
@@ -22,7 +21,7 @@ class SearchRelationshipViewHolder(
 
     override fun itemViewClick() {
         itemView.setOnClickListener {
-            onAddRelationship(teiModel.tei.uid(), null, teiModel.isOnline)
+            onAddRelationship(teiModel.tei.uid, null, teiModel.tei.isOnline)
         }
     }
 }

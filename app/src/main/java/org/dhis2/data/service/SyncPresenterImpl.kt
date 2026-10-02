@@ -8,7 +8,9 @@ import io.reactivex.Completable
 import io.reactivex.Observable
 import org.dhis2.bindings.toSeconds
 import org.dhis2.commons.bindings.enrollment
+import org.dhis2.commons.bindings.event
 import org.dhis2.commons.bindings.program
+import org.dhis2.commons.date.DateUtils
 import org.dhis2.commons.prefs.Preference.Companion.DATA
 import org.dhis2.commons.prefs.Preference.Companion.EVENT_MAX
 import org.dhis2.commons.prefs.Preference.Companion.EVENT_MAX_DEFAULT
@@ -21,10 +23,10 @@ import org.dhis2.commons.prefs.Preference.Companion.TIME_DAILY
 import org.dhis2.commons.prefs.Preference.Companion.TIME_DATA
 import org.dhis2.commons.prefs.Preference.Companion.TIME_META
 import org.dhis2.commons.prefs.PreferenceProvider
+import org.dhis2.mobile.sync.domain.SyncStatusController
 import org.dhis2.data.service.workManager.WorkManagerController
 import org.dhis2.data.service.workManager.WorkerItem
 import org.dhis2.data.service.workManager.WorkerType
-import org.dhis2.utils.DateUtils
 import org.dhis2.utils.analytics.AnalyticsHelper
 import org.dhis2.utils.analytics.matomo.DEFAULT_EXTERNAL_TRACKER_NAME
 import org.hisp.dhis.android.core.D2
@@ -538,65 +540,116 @@ class SyncPresenterImpl(
         orgUnit: String,
         attributeOptionCombo: String,
         period: String,
-    ): Boolean {
-        return d2.dataValueModule().dataValues().byPeriod().eq(period)
-            .byOrganisationUnitUid().eq(orgUnit)
-            .byAttributeOptionComboUid().eq(attributeOptionCombo)
-            .bySyncState().notIn(State.SYNCED)
-            .blockingGet().isEmpty()
-    }
+    ): Boolean =
+        d2
+            .dataValueModule()
+            .dataValues()
+            .byPeriod()
+            .eq(period)
+            .byOrganisationUnitUid()
+            .eq(orgUnit)
+            .byAttributeOptionComboUid()
+            .eq(attributeOptionCombo)
+            .bySyncState()
+            .notIn(State.SYNCED)
+            .blockingGet()
+            .isEmpty()
 
     override fun checkSyncProgramStatus(uid: String): Boolean {
-        val program = d2.programModule().programs().uid(uid).blockingGet()
+        val program =
+            d2
+                .programModule()
+                .programs()
+                .uid(uid)
+                .blockingGet()
 
         return if (program!!.programType() == ProgramType.WITH_REGISTRATION) {
-            d2.trackedEntityModule().trackedEntityInstances()
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
                 .byProgramUids(listOf(uid))
-                .byAggregatedSyncState().notIn(State.SYNCED, State.RELATIONSHIP)
-                .blockingGet().isEmpty()
+                .byAggregatedSyncState()
+                .notIn(State.SYNCED, State.RELATIONSHIP)
+                .blockingGet()
+                .isEmpty()
         } else {
-            d2.eventModule().events().byProgramUid().eq(uid)
-                .byAggregatedSyncState().notIn(State.SYNCED)
-                .blockingGet().isEmpty()
+            d2
+                .eventModule()
+                .events()
+                .byProgramUid()
+                .eq(uid)
+                .byAggregatedSyncState()
+                .notIn(State.SYNCED)
+                .blockingGet()
+                .isEmpty()
         }
     }
 
     override fun checkSyncDataSetStatus(uid: String): Boolean {
         val dataSetReport =
-            d2.dataSetModule().dataSetInstances().byDataSetUid().eq(uid).one().blockingGet()
+            d2
+                .dataSetModule()
+                .dataSetInstances()
+                .byDataSetUid()
+                .eq(uid)
+                .one()
+                .blockingGet()
 
-        return d2.dataValueModule().dataValues()
-            .byOrganisationUnitUid().eq(dataSetReport!!.organisationUnitUid())
-            .byPeriod().eq(dataSetReport.period())
-            .byAttributeOptionComboUid().eq(dataSetReport.attributeOptionComboUid())
-            .bySyncState().notIn(State.SYNCED)
-            .blockingGet().isEmpty()
+        return d2
+            .dataValueModule()
+            .dataValues()
+            .byOrganisationUnitUid()
+            .eq(dataSetReport!!.organisationUnitUid())
+            .byPeriod()
+            .eq(dataSetReport.period())
+            .byAttributeOptionComboUid()
+            .eq(dataSetReport.attributeOptionComboUid())
+            .bySyncState()
+            .notIn(State.SYNCED)
+            .blockingGet()
+            .isEmpty()
     }
 
     override fun messageTrackerImportConflict(uid: String): List<TrackerImportConflict>? {
         var trackerImportConflicts: List<TrackerImportConflict>? =
-            d2.importModule().trackerImportConflicts().byTrackedEntityInstanceUid().eq(uid)
+            d2
+                .importModule()
+                .trackerImportConflicts()
+                .byTrackedEntityInstanceUid()
+                .eq(uid)
                 .blockingGet()
-        if (trackerImportConflicts != null && trackerImportConflicts.isNotEmpty()) {
+        if (!trackerImportConflicts.isNullOrEmpty()) {
             return trackerImportConflicts
         }
 
         trackerImportConflicts =
             d2.importModule().trackerImportConflicts().byEventUid().eq(uid).blockingGet()
-        if (trackerImportConflicts != null && trackerImportConflicts.isNotEmpty()) {
+        if (trackerImportConflicts.isNotEmpty()) {
             return trackerImportConflicts
         }
 
         trackerImportConflicts =
-            d2.importModule().trackerImportConflicts().byEnrollmentUid().eq(uid).blockingGet()
-        return if (trackerImportConflicts != null && trackerImportConflicts.isNotEmpty()) {
+            d2
+                .importModule()
+                .trackerImportConflicts()
+                .byEnrollmentUid()
+                .eq(uid)
+                .blockingGet()
+        return if (trackerImportConflicts.isNotEmpty()) {
             trackerImportConflicts
         } else {
             null
         }
     }
 
-    override fun startPeriodicDataWork() {
+    private fun getProgramSetting(): ProgramSettings? =
+        d2
+            .settingModule()
+            .synchronizationSettings()
+            .blockingGet()
+            ?.programSettings()
+
+    /*override fun startPeriodicDataWork() {
         val seconds =
             getSettings()?.dataSync()?.toSeconds() ?: preferences.getInt(TIME_DATA, TIME_DAILY)
         workManagerController.cancelUniqueWork(DATA)
@@ -656,5 +709,5 @@ class SyncPresenterImpl(
                 )
             }
         } ?: analyticsHelper.clearMatomoSecondaryTracker()
-    }
+    }*/
 }

@@ -3,13 +3,11 @@ package org.dhis2.utils
 import org.dhis2.commons.extensions.toFriendlyDate
 import org.dhis2.commons.extensions.toFriendlyDateTime
 import org.dhis2.commons.extensions.toPercentage
+import org.dhis2.tracker.input.model.TrackerInputType
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue
 
-/**
- * QUADRAM. Created by ppajuelo on 25/09/2018.
- */
 class ValueUtils private constructor() {
     init {
         throw IllegalStateException("Utility class")
@@ -23,10 +21,11 @@ class ValueUtils private constructor() {
             optionSetUid: String?,
         ): TrackedEntityAttributeValue {
             val transformedValue =
-                transformValue(d2, attributeValue.value(), valueType, optionSetUid)
+                transformValueLegacy(d2, attributeValue.value(), valueType, optionSetUid)
 
             return if (transformedValue != attributeValue.value()) {
-                attributeValue.toBuilder()
+                attributeValue
+                    .toBuilder()
                     .value(transformedValue)
                     .build()
             } else {
@@ -37,19 +36,68 @@ class ValueUtils private constructor() {
         fun transformValue(
             d2: D2,
             value: String?,
+            valueType: TrackerInputType?,
+            optionSetUid: String?,
+        ): String? {
+            var teAttrValue = value
+            when (valueType) {
+                TrackerInputType.ORGANISATION_UNIT -> {
+                    if (!d2
+                            .organisationUnitModule()
+                            .organisationUnits()
+                            .byUid()
+                            .eq(value)
+                            .blockingIsEmpty()
+                    ) {
+                        val orgUnitName =
+                            d2
+                                .organisationUnitModule()
+                                .organisationUnits()
+                                .byUid()
+                                .eq(value)
+                                .one()
+                                .blockingGet()!!
+                                .displayName()!!
+                        teAttrValue = orgUnitName
+                    }
+                }
+                TrackerInputType.DATE, TrackerInputType.AGE -> {
+                    teAttrValue = teAttrValue?.toFriendlyDate()
+                }
+                TrackerInputType.DATE_TIME -> {
+                    teAttrValue = teAttrValue?.toFriendlyDateTime()
+                }
+
+                TrackerInputType.PERCENTAGE -> {
+                    teAttrValue = teAttrValue?.toPercentage()
+                }
+                else -> {
+                    teAttrValue = transformOptionSet(optionSetUid, d2, value)
+                }
+            }
+            return teAttrValue
+        }
+
+        @Deprecated("Use transformValue with TrackerInputType instead of ValueType")
+        fun transformValueLegacy(
+            d2: D2,
+            value: String?,
             valueType: ValueType?,
             optionSetUid: String?,
         ): String? {
             var teAttrValue = value
             when (valueType) {
                 ValueType.ORGANISATION_UNIT -> {
-                    if (!d2.organisationUnitModule().organisationUnits().byUid().eq(value)
-                            .blockingIsEmpty()
-                    ) {
-                        val orgUnitName = d2.organisationUnitModule().organisationUnits()
-                            .byUid().eq(value)
-                            .one().blockingGet()!!.displayName()!!
-                        teAttrValue = orgUnitName
+                    val orgUnit =
+                        d2
+                            .organisationUnitModule()
+                            .organisationUnits()
+                            .byUid()
+                            .eq(value)
+                            .one()
+                            .blockingGet()
+                    if (orgUnit != null && orgUnit.displayName() != null) {
+                        teAttrValue = orgUnit.displayName()
                     }
                 }
                 ValueType.DATE, ValueType.AGE -> {
@@ -69,14 +117,25 @@ class ValueUtils private constructor() {
             return teAttrValue
         }
 
-        private fun transformOptionSet(optionSetUid: String?, d2: D2, value: String?): String? {
+        private fun transformOptionSet(
+            optionSetUid: String?,
+            d2: D2,
+            value: String?,
+        ): String? {
             var teAttrValue = value
             if (optionSetUid != null) {
                 val optionCode = value
                 if (optionCode != null) {
                     val option =
-                        d2.optionModule().options().byOptionSetUid().eq(optionSetUid).byCode()
-                            .eq(optionCode).one().blockingGet()
+                        d2
+                            .optionModule()
+                            .options()
+                            .byOptionSetUid()
+                            .eq(optionSetUid)
+                            .byCode()
+                            .eq(optionCode)
+                            .one()
+                            .blockingGet()
                     if (option != null && (option.code() == optionCode || option.name() == optionCode)) {
                         teAttrValue = option.displayName()
                     }
