@@ -109,13 +109,19 @@ class FormRepositoryImpl
             .byDataElement().eq(dl)
             .blockingGet()
             .map { stageDls ->
+                // SDK 1.14: ProgramStageDataElement.dataElement() only carries the uid,
+                // so the full DataElement has to be looked up for name/valueType.
+                val dataElement = stageDls.dataElement()?.uid()?.let { uid ->
+                    d2.dataElementModule().dataElements().uid(uid).blockingGet()
+                }
+
                 FormField(
-                    uid = stageDls.dataElement()?.uid().orEmpty(),
-                    label = stageDls.dataElement()?.displayFormName().orEmpty(),
-                    type = stageDls.dataElement()?.valueType(),
+                    uid = dataElement?.uid().orEmpty(),
+                    label = dataElement?.displayFormName().orEmpty(),
+                    type = dataElement?.valueType(),
                     placeholder = hintProvider
-                        .provideDateHint(stageDls.dataElement()?.valueType() ?: ValueType.TEXT),
-                    options = getOptions(program, stageDls.dataElement()?.uid().orEmpty())
+                        .provideDateHint(dataElement?.valueType() ?: ValueType.TEXT),
+                    options = getOptions(program, dataElement?.uid().orEmpty())
                 )
             }
     }

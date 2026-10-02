@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.dhis2.ui.theme.colorPrimary
+import org.saudigitus.emis.ui.theme.colorPrimary
 
 @Composable
 fun AttendanceRate(

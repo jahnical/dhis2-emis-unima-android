@@ -9,10 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Divider
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomeItem(
     modifier: Modifier = Modifier,
@@ -60,7 +58,7 @@ fun HomeItem(
                     contentDescription = label,
                 )
             }
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.fillMaxWidth()
                     .padding(vertical = 2.dp),
                 color = Color.LightGray.copy(.85f),

@@ -1,8 +1,7 @@
 package org.saudigitus.emis.data.model;
 
-import org.dhis2.commons.data.CarouselItemModel;
 import org.dhis2.commons.data.tuples.Trio;
-import org.dhis2.ui.MetadataIconData;
+import org.dhis2.mobile.commons.model.MetadataIconData;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode;
 import org.hisp.dhis.android.core.program.Program;
@@ -19,7 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
-public class SearchTeiModel implements CarouselItemModel {
+public class SearchTeiModel {
 
     private LinkedHashMap<String, TrackedEntityAttributeValue> attributeValues;
     private LinkedHashMap<String, TrackedEntityAttributeValue> textAttributeValues;

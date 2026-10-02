@@ -46,7 +46,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilterNotNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.dhis2.ui.theme.colorPrimary
+import org.saudigitus.emis.ui.theme.colorPrimary
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map

@@ -31,7 +31,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.dhis2.ui.theme.colorPrimary
+import org.saudigitus.emis.ui.theme.colorPrimary
 import org.saudigitus.emis.R
 import org.saudigitus.emis.ui.components.InfoCard
 import org.saudigitus.emis.ui.components.ShowCard

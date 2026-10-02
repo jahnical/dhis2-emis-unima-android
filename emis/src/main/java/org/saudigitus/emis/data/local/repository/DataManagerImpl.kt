@@ -353,7 +353,7 @@ class DataManagerImpl
         val data = mutableMapOf<SearchTeiModel, AttendanceEntity>()
 
         return@withContext try {
-            val cursor = d2.databaseAdapter().rawQuery(
+            val rows = d2.databaseAdapter().rawQuery(
                 SqlRaw.geTeiByAttendanceStatusQuery(
                     ou,
                     program,
@@ -368,34 +368,26 @@ class DataManagerImpl
                 ),
             )
 
-            if (cursor.count > 0) {
-                cursor.moveToFirst()
+            rows.forEach { row ->
+                val eventUid = row["event"]
+                val teiUid = row["tei"]
+                val status = row["status"]
 
-                do {
-                    if (!cursor.isNull(0) &&
-                        !cursor.isNull(1) && !cursor.isNull(2)
-                    ) {
-                        val response = async {
-                            transformations.teiEventTransform(
-                                teiUid = cursor.getString(1),
-                                eventUid = cursor.getString(0),
-                                program = program,
-                                attendanceDataElement = attendanceDataElement,
-                                reasonDataElement = reasonDataElement,
-                                config = config,
-                            )
-                        }
+                if (eventUid != null && teiUid != null && status != null) {
+                    val result = transformations.teiEventTransform(
+                        teiUid = teiUid,
+                        eventUid = eventUid,
+                        program = program,
+                        attendanceDataElement = attendanceDataElement,
+                        reasonDataElement = reasonDataElement,
+                        config = config,
+                    )
 
-                        val result = response.await()
-
-                        data[result.first] = result.second
-                    }
-                } while (cursor.moveToNext())
-
-                data
-            } else {
-                emptyMap()
+                    data[result.first] = result.second
+                }
             }
+
+            data
         } catch (_: Exception) {
             emptyMap()
         }

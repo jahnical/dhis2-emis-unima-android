@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.androidx.material3.window)
     implementation(libs.datastore)
     implementation(libs.kotlin.serialization.json)
+    implementation(libs.jackson.module.kotlin)
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.lifecycle.runtime.compose)
 

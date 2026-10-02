@@ -17,9 +17,9 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalTextStyle
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Card
@@ -83,7 +83,7 @@ fun ReasonForAbsenceDialog(
             ),
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.fillMaxWidth(),
             color = Color.LightGray.copy(.75f),
             thickness = .5.dp,
@@ -115,7 +115,7 @@ fun ReasonForAbsenceDialog(
                 }
             }
         }
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.fillMaxWidth(),
             color = Color.LightGray.copy(.75f),
             thickness = .5.dp,
@@ -159,7 +159,7 @@ fun AttendanceSummaryDialog(
             ),
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.fillMaxWidth(),
             color = Color.LightGray.copy(.75f),
             thickness = .5.dp,
@@ -180,7 +180,7 @@ fun AttendanceSummaryDialog(
                 )
             }
         }
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.fillMaxWidth(),
             color = Color.LightGray.copy(.75f),
             thickness = .5.dp,

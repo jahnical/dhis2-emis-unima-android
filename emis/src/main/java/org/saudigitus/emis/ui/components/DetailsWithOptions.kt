@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
@@ -33,7 +33,7 @@ fun <T>DetailsWithOptions(
         shape = RoundedCornerShape(16.dp),
     ) {
         ShowCard(infoCard = infoCard)
-        Divider(
+        HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 5.dp),
