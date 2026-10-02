@@ -290,7 +290,7 @@ androidComponents {
                     else -> ""
                 }
 
-                output.outputFileName = "SEMIS-v${libs.versions.vName.get()}$suffix.apk"
+                output.outputFileName = "EMIS-Malawi-v${libs.versions.vName.get()}$suffix.apk"
             }
         }
 

@@ -7,7 +7,7 @@ minSdk = "23"
 vCode = "157"
 vName = "3.4.2"
 # --- EMIS fork additions ---
-semis = "1.5.1"
+semis = "1.6.0"
 hilt = '2.60.1'
 androidxHiltNavigation = "1.3.0"
 datastore = "1.1.7"
