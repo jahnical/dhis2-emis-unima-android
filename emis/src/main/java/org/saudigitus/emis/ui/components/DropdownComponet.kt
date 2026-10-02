@@ -49,7 +49,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import kotlinx.serialization.Serializable
 import org.dhis2.commons.orgunitselector.OUTreeFragment
-import org.dhis2.commons.orgunitselector.OrgUnitSelectorScope
+import org.dhis2.mobile.commons.orgunit.OrgUnitSelectorScope
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.OU
 import org.saudigitus.emis.ui.teis.FilterType

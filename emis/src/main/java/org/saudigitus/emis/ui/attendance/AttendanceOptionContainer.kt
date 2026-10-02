@@ -25,8 +25,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dhis2.commons.ui.model.ListCardUiModel
 import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
@@ -96,13 +99,17 @@ fun AttendanceOptionContainer(
             ListCard(
                 modifier = Modifier.testTag("TEI_ITEM"),
                 listAvatar = card.avatar,
-                title = ListCardTitleModel(text = card.title),
-                additionalInfoList = card.additionalInfo,
+                listCardState = rememberListCardState(
+                        title = ListCardTitleModel(text = card.title),
+                        additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                            additionalInfoList = card.additionalInfo,
+                            syncProgressItem = AdditionalInfoItem(key = "", value = ""),
+                            expandLabelText = card.expandLabelText,
+                            shrinkLabelText = card.shrinkLabelText,
+                        ),
+                    ),
                 actionButton = card.actionButton,
-                expandLabelText = card.expandLabelText,
-                shrinkLabelText = card.shrinkLabelText,
                 onCardClick = card.onCardCLick,
-                shadow = false,
             )
 
             if (attendanceStep == ButtonStep.EDITING) {

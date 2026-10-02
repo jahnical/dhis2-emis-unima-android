@@ -12,6 +12,7 @@ import org.dhis2.commons.bindings.programStage
 import org.dhis2.commons.rules.RuleEngineContextData
 import org.dhis2.mobileProgramRules.toRuleDataValue
 import org.dhis2.mobileProgramRules.toRuleEngineInstant
+import org.dhis2.mobileProgramRules.toRuleEngineInstantOrNow
 import org.dhis2.mobileProgramRules.toRuleEngineLocalDate
 import org.dhis2.mobileProgramRules.toRuleEngineObject
 import org.dhis2.mobileProgramRules.toRuleVariable
@@ -20,12 +21,16 @@ import org.hisp.dhis.android.core.event.EventStatus
 import org.hisp.dhis.android.core.program.ProgramRuleActionType
 import org.hisp.dhis.rules.api.RuleEngine
 import org.hisp.dhis.rules.api.RuleEngineContext
+import org.hisp.dhis.rules.api.RuleSupplementaryData
 import org.hisp.dhis.rules.models.Rule
 import org.hisp.dhis.rules.models.RuleDataValue
 import org.hisp.dhis.rules.models.RuleEvent
 import org.hisp.dhis.rules.models.RuleEventStatus
 import org.hisp.dhis.rules.models.RuleVariable
+import java.util.Date
 import org.hisp.dhis.rules.models.RuleEffect
+import org.hisp.dhis.rules.models.RuleInstant
+import org.hisp.dhis.rules.models.RuleLocalDate
 import org.saudigitus.emis.utils.DateHelper
 import java.util.Collections
 import javax.inject.Inject
@@ -51,7 +56,11 @@ class RuleEngineRepository @Inject constructor(
                 }
             }
 
-        return@withContext suppData
+        return@withContext RuleSupplementaryData(
+            userGroups = d2.userModule().userGroups().blockingGetUids(),
+            userRoles = d2.userModule().userRoles().blockingGetUids(),
+            orgUnitGroups = suppData,
+        )
     }
 
     private suspend fun ruleVariables(program: String) = withContext(Dispatchers.IO) {
@@ -60,6 +69,7 @@ class RuleEngineRepository @Inject constructor(
             .blockingGet()
             .map {
                 it.toRuleVariable(
+                    d2.optionModule().options(),
                     d2.trackedEntityModule().trackedEntityAttributes(),
                     d2.dataElementModule().dataElements(),
                 )
@@ -115,24 +125,15 @@ class RuleEngineRepository @Inject constructor(
                             RuleEventStatus.ACTIVE
                         }
                     },
-                    eventDate = Instant.fromEpochMilliseconds(eventDate.time),
-                    dueDate = event.dueDate()?.let {
-                        Instant.fromEpochMilliseconds(it.time)
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-                    },
-                    completedDate = event.completedDate()?.let {
-                        Instant.fromEpochMilliseconds(it.time)
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-                    },
+                    eventDate = eventDate.toRuleEngineLocalDate(),
+                    dueDate = event.dueDate()?.toRuleEngineLocalDate(),
+                    completedDate = event.completedDate()?.toRuleEngineLocalDate(),
                     organisationUnit = organisationUnit,
                     organisationUnitCode = d2.organisationUnitModule().organisationUnits()
                         .uid(organisationUnit).blockingGet()?.code(),
-                    dataValues = event.trackedEntityDataValues()?.toRuleDataValue(
-                        event,
-                        d2.dataElementModule().dataElements(),
-                        d2.programModule().programRuleVariables(),
-                        d2.optionModule().options(),
-                    ) ?: emptyList(),
+                    createdDate = event.created().toRuleEngineInstantOrNow(),
+                    createdAtClientDate = event.createdAtClient()?.toRuleEngineInstant(),
+                    dataValues = event.trackedEntityDataValues()?.toRuleDataValue() ?: emptyList(),
                 )
             }
     }
@@ -140,13 +141,13 @@ class RuleEngineRepository @Inject constructor(
     private suspend fun ruleContext(
         ruleVariables: List<RuleVariable>,
         rules: List<Rule>,
-        supplementaryData: Map<String, List<String>> = emptyMap(),
+        supplementaryData: RuleSupplementaryData,
         constants: Map<String, String>,
     ) = withContext(Dispatchers.IO) {
         return@withContext RuleEngineContext(
             rules = rules,
             ruleVariables = ruleVariables,
-            supplementaryData = supplementaryData,
+            ruleSupplementaryData = supplementaryData,
             constantsValues = constants,
         )
     }
@@ -160,7 +161,7 @@ class RuleEngineRepository @Inject constructor(
         val constants = async { constants() }.await()
         val supplementaryData = ou?.let {
             async { supplementaryData(it) }.await()
-        } ?: emptyMap()
+        } ?: RuleSupplementaryData()
 
         return@withContext ruleContext(
             ruleVariables,
@@ -202,11 +203,13 @@ class RuleEngineRepository @Inject constructor(
             programStage = event.programStage()!!,
             programStageName = d2.programStage(event.programStage()!!)?.name()!!,
             status = RuleEventStatus.valueOf(event.status()!!.name),
-            eventDate = event.eventDate()!!.toRuleEngineInstant(),
+            eventDate = event.eventDate()!!.toRuleEngineLocalDate(),
             dueDate = event.dueDate()?.toRuleEngineLocalDate(),
             completedDate = event.completedDate()?.toRuleEngineLocalDate(),
             organisationUnit = event.organisationUnit()!!,
             organisationUnitCode = d2.organisationUnit(event.organisationUnit()!!)?.code(),
+            createdDate = event.created().toRuleEngineInstantOrNow(),
+            createdAtClientDate = event.createdAtClient()?.toRuleEngineInstant(),
             dataValues = dataValues,
         )
     }
@@ -217,7 +220,9 @@ class RuleEngineRepository @Inject constructor(
         dataValues: List<RuleDataValue> = emptyList(),
         eventDate: String,
     ): RuleEvent {
-        val eventInstant = Instant.fromEpochSeconds(DateHelper.dateStringToSeconds(eventDate))
+        // Reuse the shared helper so date conversion matches the rest of the app.
+        val eventLocalDate = Date(DateHelper.dateStringToSeconds(eventDate) * 1000L)
+            .toRuleEngineLocalDate()
         val programStageName = d2.programModule().programStages().uid(stage).blockingGet()?.name()
 
         return RuleEvent(
@@ -225,11 +230,13 @@ class RuleEngineRepository @Inject constructor(
             programStage = stage,
             programStageName = programStageName ?: "",
             status = RuleEventStatus.ACTIVE,
-            eventDate = eventInstant,
+            eventDate = eventLocalDate,
             dueDate = null,
             completedDate = null,
             organisationUnit = ou,
             organisationUnitCode = d2.organisationUnit(ou)?.code(),
+            createdDate = RuleInstant.now(),
+            createdAtClientDate = null,
             dataValues = dataValues,
         )
     }
@@ -240,8 +247,6 @@ class RuleEngineRepository @Inject constructor(
         dataElement: String,
         value: String,
     ) = RuleDataValue(
-        eventDate = Instant.fromEpochSeconds(DateHelper.dateStringToSeconds(event)),
-        programStage = stage,
         dataElement = dataElement,
         value = value
     )

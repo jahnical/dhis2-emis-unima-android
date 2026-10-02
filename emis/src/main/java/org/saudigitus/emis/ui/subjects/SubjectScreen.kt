@@ -54,9 +54,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.dhis2.commons.resources.ColorUtils
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardColumn
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.components.DetailsWithOptions
@@ -365,11 +368,16 @@ fun SubjectScreen(
                                                     },
                                                 ),
                                                 listAvatar = cardWithClick.avatar,
-                                                title = ListCardTitleModel(text = cardWithClick.title),
-                                                additionalInfoList = cardWithClick.additionalInfo,
+                                                listCardState = rememberListCardState(
+                                                        title = ListCardTitleModel(text = cardWithClick.title),
+                                                        additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                                                            additionalInfoList = cardWithClick.additionalInfo,
+                                                            syncProgressItem = AdditionalInfoItem(key = "", value = ""),
+                                                            expandLabelText = cardWithClick.expandLabelText,
+                                                            shrinkLabelText = cardWithClick.shrinkLabelText,
+                                                        ),
+                                                    ),
                                                 actionButton = {},
-                                                expandLabelText = cardWithClick.expandLabelText,
-                                                shrinkLabelText = cardWithClick.shrinkLabelText,
                                                 onCardClick = cardWithClick.onCardCLick,
                                             )
                                         }

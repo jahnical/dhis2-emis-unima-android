@@ -88,6 +88,7 @@ kotlin {
 dependencies {
 
     implementation(project(":commons"))
+    implementation(project(":commonskmm"))
     implementation(project(":compose-table"))
     implementation(project(":form"))
     implementation(project(":dhis2-mobile-program-rules"))

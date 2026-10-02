@@ -16,6 +16,7 @@
     <string name="calendar">Calendar</string>
     <string name="attendance_date">Select attendance date</string>
     <string name="update">Update</string>
+    <string name="save">Save</string>
     <string name="edit">Edit</string>
     <string name="attendance">Attendance</string>
     <string name="summary">Summary</string>

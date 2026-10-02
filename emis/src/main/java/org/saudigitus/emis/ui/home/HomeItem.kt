@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +35,7 @@ fun HomeItem(
     Card(
         modifier = modifier,
         border = BorderStroke(width = 0.85.dp, color = Color.LightGray.copy(.85f)),
-        elevation = 3.dp,
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         shape = RoundedCornerShape(16.dp),
         enabled = enabled,
         onClick = onClick,

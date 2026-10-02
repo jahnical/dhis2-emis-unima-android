@@ -23,8 +23,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.components.NoResults
@@ -109,12 +112,17 @@ fun TeiScreen(
                                         color = if (isInactive) Color.LightGray.copy(.25f) else Color.White,
                                     ),
                                 listAvatar = card.avatar,
-                                title = ListCardTitleModel(text = card.title),
-                                lastUpdated = card.lastUpdated,
-                                additionalInfoList = card.additionalInfo,
+                                listCardState = rememberListCardState(
+                                        title = ListCardTitleModel(text = card.title),
+                                        lastUpdated = card.lastUpdated,
+                                        additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                                            additionalInfoList = card.additionalInfo,
+                                            syncProgressItem = AdditionalInfoItem(key = "", value = ""),
+                                            expandLabelText = card.expandLabelText,
+                                            shrinkLabelText = card.shrinkLabelText,
+                                        ),
+                                    ),
                                 actionButton = card.actionButton,
-                                expandLabelText = card.expandLabelText,
-                                shrinkLabelText = card.shrinkLabelText,
                                 onCardClick = card.onCardCLick,
                             )
                         }
