@@ -38,9 +38,12 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.dhis2.commons.resources.ColorUtils
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardColumn
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.components.DetailsWithOptions
@@ -257,7 +260,7 @@ fun SubjectScreen(
                                         },
                                     ),
                                 ) {
-                                    ListCard(
+                                    /*ListCard(
                                         modifier = Modifier.background(
                                             color = if (isInactive) {
                                                 Color.LightGray.copy(.25f)
@@ -271,6 +274,32 @@ fun SubjectScreen(
                                         actionButton = {},
                                         expandLabelText = cardWithClick.expandLabelText,
                                         shrinkLabelText = cardWithClick.shrinkLabelText,
+                                        onCardClick = cardWithClick.onCardCLick,
+                                    )*/
+
+                                    val additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                                        additionalInfoList = cardWithClick.additionalInfo,
+                                        syncProgressItem = AdditionalInfoItem(value = ""), // provide your sync item here
+                                        expandLabelText = cardWithClick.expandLabelText,
+                                        shrinkLabelText = cardWithClick.shrinkLabelText,
+                                    )
+
+                                    val cardState = rememberListCardState(
+                                        title = ListCardTitleModel(text = cardWithClick.title),
+                                        additionalInfoColumnState = additionalInfoColumnState,
+                                    )
+
+                                    ListCard(
+                                        modifier = Modifier.background(
+                                            color = if (isInactive) {
+                                                Color.LightGray.copy(.25f)
+                                            } else {
+                                                Color.White
+                                            },
+                                        ),
+                                        listCardState = cardState,
+                                        listAvatar = cardWithClick.avatar,
+                                        actionButton = {},
                                         onCardClick = cardWithClick.onCardCLick,
                                     )
                                 }

@@ -29,6 +29,7 @@ import org.dhis2.commons.featureconfig.di.FeatureConfigActivityComponent
 import org.dhis2.commons.featureconfig.di.FeatureConfigActivityModule
 import org.dhis2.commons.featureconfig.di.FeatureConfigModule
 import org.dhis2.commons.filters.data.FilterPresenter
+import org.dhis2.commons.navigator.TeiDashboardComponentProvider
 import org.dhis2.commons.network.NetworkUtilsModule
 import org.dhis2.commons.orgunitselector.OUTreeComponent
 import org.dhis2.commons.orgunitselector.OUTreeModule
@@ -53,6 +54,7 @@ import org.dhis2.mobile.commons.network.NetworkStatusProvider
 import org.dhis2.mobile.sync.domain.CheckPeriodicJobs
 import org.dhis2.usescases.crash.CrashActivity
 import org.dhis2.usescases.teiDashboard.TeiDashboardComponent
+import org.dhis2.usescases.teiDashboard.TeiDashboardMobileActivity
 import org.dhis2.usescases.teiDashboard.TeiDashboardModule
 import org.dhis2.utils.analytics.AnalyticsModule
 import org.dhis2.utils.analytics.DATA_STORE_ANALYTICS_PERMISSION_KEY
@@ -60,11 +62,13 @@ import org.dhis2.utils.granularsync.SyncStatusDialogProvider
 import org.dhis2.utils.timber.DebugTree
 import org.hisp.dhis.android.core.D2Manager
 import org.koin.android.ext.android.inject
+import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import timber.log.Timber.Forest.plant
 import java.io.IOException
 import javax.inject.Singleton
 
+@HiltAndroidApp
 open class App : Application(), Components, DefaultLifecycleObserver {
     @Singleton
     lateinit var appComponent: AppComponent
@@ -319,6 +323,9 @@ open class App : Application(), Components, DefaultLifecycleObserver {
     override fun provideOUTreeComponent(module: OUTreeModule): OUTreeComponent? {
         return serverComponent?.plus(module)
     }
+
+    override val dashboard: TeiDashboardComponentProvider
+        get() = TeiDashboardMobileActivity()
 
     override val syncComponentProvider: SyncComponentProvider
         get() = SyncStatusDialogProvider()

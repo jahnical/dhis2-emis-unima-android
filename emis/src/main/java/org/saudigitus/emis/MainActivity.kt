@@ -56,6 +56,10 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        val programExtras = intent?.extras
+        viewModel.setBundle(programExtras)
+        viewModel.setProgram(programExtras?.getString(Constants.PROGRAM_UID).orEmpty())
+
         setContent {
             val widthSizeClass = calculateWindowSizeClass(this).widthSizeClass
             val isExpandedScreen = (widthSizeClass == WindowWidthSizeClass.Medium) || (widthSizeClass == WindowWidthSizeClass.Expanded)
@@ -64,9 +68,6 @@ class MainActivity : FragmentActivity() {
                 darkTheme = false,
                 dynamicColor = false,
             ) {
-                viewModel.setBundle(intent?.extras)
-                viewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
-
                 val navController = rememberNavController()
 
                 Surface(

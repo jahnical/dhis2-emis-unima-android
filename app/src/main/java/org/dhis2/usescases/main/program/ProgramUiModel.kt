@@ -19,9 +19,9 @@ data class ProgramUiModel(
     val filtersAreActive: Boolean,
     val downloadState: ProgramDownloadState,
     val downloadActive: Boolean = false,
+    val isSEMIS: Boolean = false,
     val isStockUseCase: Boolean = false,
     //val stockConfig: AppConfig?,
-    val isSEMIS: Boolean = false,
     val lastUpdated: Date,
 ) {
     //fun countDescription(): String = "%s %s".format(count, typeName.pluralize(count))

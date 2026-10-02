@@ -78,7 +78,6 @@ fun List<ProgramRuleAction>.toRuleActionList(): List<RuleAction> =
     }
 
 fun List<ProgramRuleVariable>.toRuleVariableList(
-    optionCollectionRepository: OptionCollectionRepository,
     attributeRepository: TrackedEntityAttributeCollectionRepository,
     dataElementRepository: DataElementCollectionRepository,
 ): List<RuleVariable> =
@@ -96,7 +95,7 @@ fun List<ProgramRuleVariable>.toRuleVariableList(
                 else -> isCalculatedValue(it)
             }
         if (allowVariable) {
-            it.toRuleVariable(optionCollectionRepository, attributeRepository, dataElementRepository)
+            it.toRuleVariable(attributeRepository, dataElementRepository)
         } else {
             null
         }
@@ -379,7 +378,6 @@ fun ProgramRuleAction.toRuleEngineObject(): RuleAction {
 }
 
 fun ProgramRuleVariable.toRuleVariable(
-    optionCollectionRepository: OptionCollectionRepository,
     attributeRepository: TrackedEntityAttributeCollectionRepository,
     dataElementRepository: DataElementCollectionRepository,
 ): RuleVariable {
@@ -411,14 +409,7 @@ fun ProgramRuleVariable.toRuleVariable(
         }
 
     val useCodeForOptionSet = useCodeForOptionSet() ?: false
-    val options =
-        fetchOptions(
-            optionCollectionRepository = optionCollectionRepository,
-            dataElementUid = dataElement()?.uid(),
-            attributeUid = trackedEntityAttribute()?.uid(),
-            dataElementRepository = dataElementRepository,
-            attributeRepository = attributeRepository,
-        )
+    val options = emptyList<Option>()
 
     return when (programRuleVariableSourceType()) {
         ProgramRuleVariableSourceType.CALCULATED_VALUE ->

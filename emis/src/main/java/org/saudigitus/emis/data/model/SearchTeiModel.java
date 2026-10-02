@@ -1,8 +1,9 @@
 package org.saudigitus.emis.data.model;
 
-import org.dhis2.commons.data.CarouselItemModel;
-import org.dhis2.commons.data.tuples.Trio;
-import org.dhis2.ui.MetadataIconData;
+import androidx.compose.ui.graphics.Color;
+
+import org.hisp.dhis.mobile.ui.designsystem.component.ImageCardData;
+import kotlin.Triple;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode;
 import org.hisp.dhis.android.core.program.Program;
@@ -10,6 +11,7 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,14 +21,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
-public class SearchTeiModel implements CarouselItemModel {
+import kotlin.Pair;
+
+public class SearchTeiModel {
 
     private LinkedHashMap<String, TrackedEntityAttributeValue> attributeValues;
     private LinkedHashMap<String, TrackedEntityAttributeValue> textAttributeValues;
 
-    private List<Trio<String, String, String>> enrollmentsInfo;
+    private List<Triple<String, String, String>> enrollmentsInfo;
     private List<Program> programInfo;
-    private HashMap<String, MetadataIconData> metadataIconDataMap;
+    private HashMap<String, ImageCardData> metadataIconDataMap;
     private boolean hasOverdue;
     private boolean isOnline;
 
@@ -67,11 +71,11 @@ public class SearchTeiModel implements CarouselItemModel {
         this.metadataIconDataMap = new HashMap<>();
     }
 
-    public void addEnrollmentInfo(Trio<String, String, String> enrollmentInfo) {
+    public void addEnrollmentInfo(Triple<String, String, String> enrollmentInfo) {
         enrollmentsInfo.add(enrollmentInfo);
     }
 
-    public void addProgramInfo(Program program, MetadataIconData metadataIconData) {
+    public void addProgramInfo(Program program, ImageCardData metadataIconData) {
         if (!programInfo.contains(program)) {
             programInfo.add(program);
             metadataIconDataMap.put(program.uid(), metadataIconData);
@@ -187,21 +191,23 @@ public class SearchTeiModel implements CarouselItemModel {
         }
     }
 
-    public MetadataIconData getMetadataIconData(@Nullable String programUid) {
+ /*   public MetadataIconData getMetadataIconData(@Nullable String programUid) {
         MetadataIconData iconData = metadataIconDataMap.get(programUid);
         if (iconData != null) {
             return iconData;
         } else {
             return MetadataIconData.Companion.defaultIcon();
         }
-    }
+    }*/
+
+
 
     public Boolean isMetadataIconDataAvailable(@Nullable String programUid) {
-        MetadataIconData iconData = metadataIconDataMap.get(programUid);
-        if (iconData != null) {
-            return !iconData.getIconRes().isEmpty();
+        ImageCardData iconData = metadataIconDataMap.get(programUid);
+        if (iconData instanceof ImageCardData.IconCardData) {
+            return !((ImageCardData.IconCardData) iconData).getIconRes().isEmpty();
         } else {
-            return false;
+            return iconData instanceof ImageCardData.CustomIconData;
         }
     }
 
@@ -221,7 +227,7 @@ public class SearchTeiModel implements CarouselItemModel {
         return this.openedAttributeList;
     }
 
-    public void setSortingValue(kotlin.Pair<String, String> sortingKeyValue) {
+    public void setSortingValue(Pair<String, String> sortingKeyValue) {
         if (sortingKeyValue != null) {
             this.sortingKey = sortingKeyValue.getFirst();
             this.sortingValue = sortingKeyValue.getSecond();
@@ -245,7 +251,6 @@ public class SearchTeiModel implements CarouselItemModel {
     }
 
     @NotNull
-    @Override
     public String uid() {
         return tei.uid();
     }

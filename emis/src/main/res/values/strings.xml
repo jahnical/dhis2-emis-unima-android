@@ -75,4 +75,5 @@
     <string name="dowload_teis">Sync %s</string>
     <string name="fetch_ties">Fetch %s</string>
     <string name="no_attendance_school_days">Attendance is only available on school days. Please select a valid school day.</string>
+    <string name="save">save</string>
 </resources>

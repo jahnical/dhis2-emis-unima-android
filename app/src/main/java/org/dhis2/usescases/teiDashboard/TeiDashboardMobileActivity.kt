@@ -48,18 +48,16 @@ import org.dhis2.commons.navigator.TeiDashboardComponentProvider
 import org.dhis2.commons.network.NetworkUtils
 import org.dhis2.commons.orgunitselector.OUTreeFragment
 import org.dhis2.commons.orgunitselector.OUTreeModel
-import org.dhis2.mobile.commons.orguni.OrgUnitSelectorScope
+import org.dhis2.mobile.commons.orgunit.OrgUnitSelectorScope
 import org.dhis2.commons.resources.EventResourcesProvider
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.commons.sync.OnDismissListener
 import org.dhis2.commons.sync.SyncContext
 import org.dhis2.databinding.ActivityDashboardMobileBinding
 import org.dhis2.form.model.EnrollmentMode
-import org.dhis2.form.ui.provider.FormResultDialogProvider
 import org.dhis2.tracker.TEIDashboardItems
 import org.dhis2.tracker.relationships.ui.state.RelationshipTopBarIconState
 import org.dhis2.ui.ThemeManager
-import org.dhis2.ui.dialogs.bottomsheet.DeleteBottomSheetDialog
 import org.dhis2.usescases.enrollment.DateEditionWarningHandler
 import org.dhis2.usescases.enrollment.EnrollmentActivity
 import org.dhis2.usescases.enrollment.EnrollmentActivity.Companion.getIntent
@@ -110,9 +108,6 @@ class TeiDashboardMobileActivity :
     @Inject
     lateinit var dateEditionWarningHandler: DateEditionWarningHandler
 
-    @Inject
-    lateinit var enrollmentResultDialogProvider: FormResultDialogProvider
-
     var featureConfig: FeatureConfigRepository? = null
         @Inject set
 
@@ -137,7 +132,6 @@ class TeiDashboardMobileActivity :
     @Inject
     lateinit var eventResourcesProvider: EventResourcesProvider
 
-    lateinit var programModel: DashboardProgramModel
     var teiUid: String? = null
     var programUid: String? = null
     var enrollmentUid: String? = null
@@ -327,7 +321,6 @@ class TeiDashboardMobileActivity :
                 ),
                 locationProvider = locationProvider,
                 dateEditionWarningHandler = dateEditionWarningHandler,
-                enrollmentResultDialogProvider = enrollmentResultDialogProvider,
             ) {
                 dashboardViewModel.updateDashboard()
             }
@@ -526,8 +519,8 @@ class TeiDashboardMobileActivity :
     }
 
     private fun setData(dashboardModel: DashboardEnrollmentModel) {
-        themeManager.setProgramTheme(dashboardModel.currentProgram().uid())
-        setProgramColor(dashboardModel.currentProgram().uid())
+        themeManager.setProgramTheme(dashboardModel.currentProgram()?.uid()!!)
+        setProgramColor(dashboardModel.currentProgram()?.uid())
         val title = String.format(
             "%s %s",
             if (dashboardModel.getTrackedEntityAttributeValueBySortOrder(1) != null) {

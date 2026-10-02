@@ -254,6 +254,7 @@ class MainViewModel(
                     }
                     SyncStatus.Succeed -> {
                         launchUseCase(dispatcher.io()) {
+                            mainNavigator.getCurrentIfProgram()?.programViewModel?.updateProgramQueries()
                             val navigationBarItems =
                                 configureHomeNavigationBar().getOrDefault(emptyList())
                             _homeScreenState.update {

@@ -15,18 +15,26 @@ import org.dhis2.data.schedulers.TrampolineSchedulerProvider
 import org.dhis2.mobile.commons.model.MetadataIconData
 import org.dhis2.mobile.sync.model.SyncStatusData
 import org.hisp.dhis.android.core.D2
+import org.hisp.dhis.android.core.arch.repositories.filters.internal.StringFilterConnector
+import org.hisp.dhis.android.core.arch.repositories.`object`.ReadOnlyOneObjectRepositoryFinalImpl
 import org.hisp.dhis.android.core.common.Access
 import org.hisp.dhis.android.core.common.DataAccess
 import org.hisp.dhis.android.core.common.ObjectStyle
 import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
+import org.hisp.dhis.android.core.datastore.DataStoreEntry
 import org.hisp.dhis.android.core.dataset.DataSet
 import org.hisp.dhis.android.core.dataset.DataSetInstanceSummary
+import org.hisp.dhis.android.core.datastore.DataStoreCollectionRepository
+import org.hisp.dhis.android.core.datastore.DataStoreModule
 import org.hisp.dhis.android.core.event.Event
 import org.hisp.dhis.android.core.program.Program
 import org.hisp.dhis.android.core.program.ProgramType
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityType
+import org.saudigitus.emis.utils.Constants
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -46,6 +54,13 @@ class ProgramRepositoryImplTest {
 
     private lateinit var programRepository: ProgramRepository
     private val d2: D2 = Mockito.mock(D2::class.java, Mockito.RETURNS_DEEP_STUBS)
+    private val dataStoreModule: DataStoreModule =
+        Mockito.mock(DataStoreModule::class.java, Mockito.RETURNS_DEEP_STUBS)
+    private val dataStoreRepository: DataStoreCollectionRepository =
+        Mockito.mock(DataStoreCollectionRepository::class.java)
+    private val namespaceConnector: StringFilterConnector<DataStoreCollectionRepository> = mock()
+    private val keyConnector: StringFilterConnector<DataStoreCollectionRepository> = mock()
+    private val dataStoreObjectRepository: ReadOnlyOneObjectRepositoryFinalImpl<DataStoreEntry> = mock()
     private val filterPresenter: FilterPresenter =
         Mockito.mock(FilterPresenter::class.java, Mockito.RETURNS_DEEP_STUBS)
     private val dhisProgramUtils: DhisProgramUtils = mock()
@@ -59,6 +74,14 @@ class ProgramRepositoryImplTest {
     @Before
     fun setUp() {
         RxAndroidPlugins.setInitMainThreadSchedulerHandler { Schedulers.trampoline() }
+        whenever(d2.dataStoreModule()).thenReturn(dataStoreModule)
+        whenever(dataStoreModule.dataStore()).thenReturn(dataStoreRepository)
+        whenever(dataStoreRepository.byNamespace()).thenReturn(namespaceConnector)
+        whenever(namespaceConnector.eq("semis")).thenReturn(dataStoreRepository)
+        whenever(dataStoreRepository.byKey()).thenReturn(keyConnector)
+        whenever(keyConnector.eq(Constants.KEY)).thenReturn(dataStoreRepository)
+        whenever(dataStoreRepository.one()).thenReturn(dataStoreObjectRepository)
+        whenever(dataStoreObjectRepository.blockingGet()).thenReturn(null)
 
         programRepository =
             ProgramRepositoryImpl(
@@ -144,14 +167,13 @@ class ProgramRepositoryImplTest {
 
         testObserver
             .assertNoErrors()
-            .assertValue {
-                it.size == mockedPrograms().size &&
-                    it[0].count == 10 &&
-                    it[0].typeName == "event" &&
-                    it[1].count == 2 &&
-                    it[1].typeName == "tei" &&
-                    !it[1].isSEMIS
-            }
+        val programModels = testObserver.values().single()
+        assertEquals(mockedPrograms().size, programModels.size)
+        assertEquals(10, programModels[0].count)
+        assertEquals("event", programModels[0].typeName)
+        assertEquals(2, programModels[1].count)
+        assertEquals("tei", programModels[1].typeName)
+        assertFalse(programModels[1].isSEMIS)
     }
 
     private fun initWheneverForPrograms() {
@@ -245,8 +267,8 @@ class ProgramRepositoryImplTest {
             filterPresenter.filteredTrackerProgram(any()).offlineFirst(),
         ) doReturn mock()
         whenever(
-            filterPresenter.filteredTrackerProgram(any()).offlineFirst().blockingGetUids(),
-        ) doReturn listOf("0", "1")
+            filterPresenter.filteredTrackerProgram(any()).offlineFirst().blockingCount(),
+        ) doReturn 2
     }
 
     private fun mockedDataSetInstanceSummaries(): List<DataSetInstanceSummary> =

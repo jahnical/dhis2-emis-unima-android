@@ -1,5 +1,6 @@
 package org.dhis2.usescases.login.ui
 
+/*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
@@ -156,3 +157,4 @@ private fun PreviewLoginTopBar() {
         LoginTopBar(version = "v2.9") {}
     }
 }
+*/

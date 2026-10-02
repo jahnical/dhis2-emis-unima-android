@@ -35,6 +35,7 @@ class ProgramViewModelMapper {
             state = State.valueOf(state.name),
             filtersAreActive = filtersAreActive,
             downloadState = ProgramDownloadState.NONE,
+            isSEMIS = false,
             isStockUseCase = false,
             lastUpdated = program.lastUpdated() ?: Date(),
         )
@@ -61,6 +62,7 @@ class ProgramViewModelMapper {
             state = dataSetInstanceSummary.state(),
             filtersAreActive = filtersAreActive,
             downloadState = ProgramDownloadState.NONE,
+            isSEMIS = false,
             isStockUseCase = false,
             lastUpdated = dataSet.lastUpdated() ?: Date(),
         )

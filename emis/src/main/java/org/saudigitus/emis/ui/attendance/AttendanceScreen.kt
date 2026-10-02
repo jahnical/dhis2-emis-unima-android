@@ -46,8 +46,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilterNotNull
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.dhis2.ui.theme.colorPrimary
+
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendar
@@ -110,7 +111,7 @@ fun AttendanceScreen(
         AttendanceSummaryDialog(
             title = stringResource(R.string.attendance_summary),
             data = viewModel.getSummary(),
-            themeColor = colorPrimary,
+            themeColor = SurfaceColor.Primary,
             disableActions = isAttendanceCompleted,
             onCancel = { viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING) },
         ) {
@@ -128,11 +129,13 @@ fun AttendanceScreen(
     }
 
     if (isAttendanceCompleted) {
-        LaunchedEffect(key1 = snackbarHostState) {
+        val message = stringResource(R.string.attendance_saved)
+        LaunchedEffect(Unit) {
             snackbarHostState.showSnackbar(
-                message = context.getString(R.string.attendance_saved),
+                message = message,
                 duration = SnackbarDuration.Short,
             )
+            isAttendanceCompleted = false
         }
     }
 
@@ -159,7 +162,7 @@ fun AttendanceScreen(
             Toolbar(
                 headers = toolbarHeaders,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorPrimary,
+                    containerColor = SurfaceColor.Primary,
                     navigationIconContentColor = Color.White,
                     titleContentColor = Color.White,
                     actionIconContentColor = Color.White,
@@ -200,9 +203,9 @@ fun AttendanceScreen(
                         text = if (attendanceStep == ButtonStep.EDITING) {
                             stringResource(R.string.update)
                         } else {
-                            stringResource(R.string.save)
+                            stringResource(R.string.saved)
                         },
-                        color = colorPrimary,
+                        color = SurfaceColor.Primary,
                         style = LocalTextStyle.current.copy(
                             fontFamily = FontFamily(Font(R.font.rubik_medium)),
                         ),
@@ -216,7 +219,7 @@ fun AttendanceScreen(
                             Icons.Default.Save
                         },
                         contentDescription = null,
-                        tint = colorPrimary,
+                        tint = SurfaceColor.Primary,
                     )
                 },
                 onClick = {
@@ -305,7 +308,7 @@ fun AttendanceScreen(
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = colorPrimary,
+                        color = SurfaceColor.Primary,
                     )
                 } else {
                     LazyColumn(

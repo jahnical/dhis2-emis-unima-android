@@ -8,6 +8,7 @@ buildscript {
         classpath(libs.kotlinPlugin)
         classpath(libs.jacoco)
         classpath(libs.kotlinSerialization)
+        classpath(libs.hiltPlugin)
     }
 }
 

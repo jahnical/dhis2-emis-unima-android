@@ -20,6 +20,7 @@ import org.dhis2.utils.TRUE
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.program.ProgramType
+import org.saudigitus.emis.utils.ProgramValidator
 import java.io.File
 
 private const val NO_HOME_ITEM = "No home item found"
@@ -145,27 +146,28 @@ class HomeRepositoryImpl(
             when {
                 program?.programType() == ProgramType.WITH_REGISTRATION ->
                     HomeItemData.TrackerProgram(
-                        program.uid(),
-                        program.displayName() ?: program.uid(),
-                        program.access().data().write() == true,
-                        program.trackedEntityType()?.uid() ?: "",
+                        uid = program.uid(),
+                        label = program.displayName() ?: program.uid(),
+                        accessDataWrite = program.access().data().write() == true,
+                        trackedEntityType = program.trackedEntityType()?.uid() ?: "",
+                        isSEMIS = ProgramValidator(d2).isSEMIS(program.uid()),
                         isStockUseCase = d2.isStockProgram(program.uid()),
                     )
 
                 program?.programType() == ProgramType.WITHOUT_REGISTRATION ->
                     HomeItemData.EventProgram(
-                        program.uid(),
-                        program.displayName() ?: program.uid(),
-                        program.access().data().write() == true,
+                        uid = program.uid(),
+                        label = program.displayName() ?: program.uid(),
+                        accessDataWrite = program.access().data().write() == true,
                     )
 
                 else -> {
                     requireNotNull(dataSetInstance)
                     val dataSet = d2.dataSet(dataSetInstance.dataSetUid())
                     HomeItemData.DataSet(
-                        dataSetInstance.dataSetUid(),
-                        dataSetInstance.dataSetDisplayName(),
-                        dataSet?.access()?.data()?.write() == true,
+                        uid = dataSetInstance.dataSetUid(),
+                        label = dataSetInstance.dataSetDisplayName(),
+                        accessDataWrite = dataSet?.access()?.data()?.write() == true,
                     )
                 }
             }

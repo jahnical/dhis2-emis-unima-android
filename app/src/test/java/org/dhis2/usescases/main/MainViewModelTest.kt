@@ -43,6 +43,8 @@ import org.dhis2.usescases.main.domain.LogoutUser
 import org.dhis2.usescases.main.domain.ScheduleNewVersionAlert
 import org.dhis2.usescases.main.domain.UpdateInitialSyncStatus
 import org.dhis2.usescases.main.domain.model.LockAction
+import org.dhis2.usescases.main.program.ProgramFragment
+import org.dhis2.usescases.main.program.ProgramViewModel
 import org.dhis2.usescases.main.ui.Form
 import org.dhis2.usescases.main.ui.model.HomeAction
 import org.dhis2.usescases.main.ui.model.HomeEffect
@@ -183,10 +185,15 @@ class MainViewModelTest {
     @Test
     fun `Should reconfigure navigation bar when metadata sync succeeds`() =
         runTest {
+            val programFragment: ProgramFragment = mock()
+            val programViewModel: ProgramViewModel = mock()
+            whenever(mainNavigator.getCurrentIfProgram()) doReturn programFragment
+            whenever(programFragment.programViewModel) doReturn programViewModel
             whenever(configureHomeNavigationBar()) doReturn Result.success(emptyList())
             metadataJobFlow.emit(succeededMetadataJob)
             advanceUntilIdle()
             verify(configureHomeNavigationBar).invoke(Unit)
+            verify(programViewModel).updateProgramQueries()
         }
 
     @Test

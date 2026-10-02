@@ -17,6 +17,7 @@ import org.hisp.dhis.android.core.arch.call.BaseD2Progress
 import org.hisp.dhis.android.core.fileresource.FileResourceDomainType
 import org.hisp.dhis.android.core.settings.GeneralSettings
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -90,6 +91,23 @@ class AndroidSyncRepositoryTest {
             repository.updateProjectAnalytics()
 
             verify(analyticsHelper, times(1)).updateMatomoSecondaryTracker(any(), any())
+        }
+
+    @Test
+    fun `Should download data store entries during metadata sync`() =
+        runTest {
+            whenever(d2.metadataModule().download()) doReturn Observable.just(BaseD2Progress.empty(1))
+
+            val result = repository.syncMetadata {}
+
+            assertTrue(result.isSuccess)
+            verify(
+                d2
+                    .dataStoreModule()
+                    .dataStoreDownloader()
+                    .byNamespace()
+                    .`in`(listOf("semis")),
+            ).blockingDownload()
         }
 
     @Test

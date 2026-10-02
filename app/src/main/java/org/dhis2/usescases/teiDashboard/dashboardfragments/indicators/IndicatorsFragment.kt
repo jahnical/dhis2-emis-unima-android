@@ -6,14 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Surface
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.databinding.DataBindingUtil
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
-import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.internal.lifecycle.HiltViewModelFactory
 import dhis2.org.analytics.charts.extensions.isNotCurrent
 import dhis2.org.analytics.charts.idling.AnalyticsCountingIdlingResource
 import dhis2.org.analytics.charts.ui.AnalyticsAdapter

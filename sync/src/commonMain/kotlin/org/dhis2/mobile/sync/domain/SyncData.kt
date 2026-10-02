@@ -67,25 +67,34 @@ class SyncData(
             )
 
             syncStatusController.initDownloadMedia()
-            repository.downloadDataFileResources { progress ->
-                input(DataSyncProgress(DataSyncTask.DownloadFileResource, progress))
+            val downloadMediaResult =
+                repository.downloadDataFileResources { progress ->
+                    input(DataSyncProgress(DataSyncTask.DownloadFileResource, progress))
+                }
+
+            val downloadReservedValuesResult =
+                repository.downloadReservedValues { progress ->
+                    input(DataSyncProgress(DataSyncTask.SyncReservedValues, progress))
+                }
+
+            val syncResults =
+                listOf(
+                    uploadEventResult,
+                    downloadEventResult,
+                    uploadTEIResult,
+                    downloadTEIResult,
+                    uploadDataValueResult,
+                    downloadDataValueResult,
+                    downloadMediaResult,
+                    downloadReservedValuesResult,
+                )
+            val syncFailure = syncResults.firstNotNullOfOrNull { it.exceptionOrNull() }
+            val saveStateResult = repository.saveDataSyncState(syncFailure == null)
+
+            when {
+                syncFailure != null -> Result.failure(syncFailure)
+                else -> saveStateResult
             }
-
-            repository.downloadReservedValues { progress ->
-                input(DataSyncProgress(DataSyncTask.SyncReservedValues, progress))
-            }
-
-            val isSuccess =
-                uploadEventResult.isSuccess &&
-                    downloadEventResult.isSuccess &&
-                    uploadTEIResult.isSuccess &&
-                    downloadTEIResult.isSuccess &&
-                    uploadDataValueResult.isSuccess &&
-                    downloadDataValueResult.isSuccess
-
-            repository.saveDataSyncState(isSuccess)
-
-            Result.success(Unit)
         } catch (domainError: DomainError) {
             if (domainError is DomainError.NetworkError) {
                 syncStatusController.onNetworkUnavailable()

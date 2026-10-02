@@ -23,6 +23,7 @@ import org.dhis2.commons.sync.OnDismissListener
 import org.dhis2.commons.sync.SyncContext
 import org.dhis2.mobile.sync.domain.SyncStatusController
 import org.dhis2.usescases.general.FragmentGlobalAbstract
+import org.dhis2.usescases.main.HomeItemData
 import org.dhis2.usescases.main.navigateTo
 import org.dhis2.usescases.main.toHomeItemData
 import org.dhis2.utils.HelpManager
@@ -136,10 +137,24 @@ class ProgramFragment :
             SELECT_PROGRAM,
         )
 
-        getActivityContent.navigateTo(
-            requireContext(),
-            program.toHomeItemData(),
+        val homeItemData = program.toHomeItemData()
+        val trackerProgram = homeItemData as? HomeItemData.TrackerProgram
+        val branch =
+            when {
+                trackerProgram?.isSEMIS == true -> "SEMIS"
+                trackerProgram?.isStockUseCase == true -> "STOCK"
+                trackerProgram != null -> "TRACKER"
+                homeItemData is HomeItemData.EventProgram -> "EVENT"
+                else -> "DATA_SET"
+            }
+        Timber.tag("EMIS_WIRING").i(
+            "programUid=%s isSEMIS=%s isStockUseCase=%s branch=%s",
+            program.uid,
+            trackerProgram?.isSEMIS ?: false,
+            trackerProgram?.isStockUseCase ?: false,
+            branch,
         )
+        getActivityContent.navigateTo(requireContext(), homeItemData)
     }
 
     override fun showSyncDialog(program: ProgramUiModel) {

@@ -14,6 +14,9 @@ import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureAc
 import org.dhis2.usescases.programEventDetail.ProgramEventDetailActivity
 import org.dhis2.usescases.searchTrackEntity.SearchTEActivity
 import org.dhis2.usescases.teiDashboard.TeiDashboardMobileActivity
+import org.hisp.dhis.android.core.D2Manager
+import org.saudigitus.emis.utils.ProgramValidator
+import timber.log.Timber
 
 const val LAUNCH_SYNC_DIALOG = "LAUNCH_SYNC_DIALOG"
 const val OPEN_ERROR_LOCATION = "OPEN_ERROR_LOCATION"
@@ -90,14 +93,43 @@ class SyncStatusDialogNavigator(
 
     private fun navigateToStockUsecase(stockProgramSyncItem: SyncStatusType.StockProgram): Intent? =
         if (context !is HomeActivity) {
-            Intent(
-                context,
-                HomeActivity::class.java,
-            ).apply {
-                putExtra(
-                    org.dhis2.commons.Constants.PROGRAM_UID,
-                    stockProgramSyncItem.programUid,
-                )
+            val isSEMIS = ProgramValidator(D2Manager.getD2()).isSEMIS(stockProgramSyncItem.programUid)
+            val branch = if (isSEMIS) "SEMIS" else "STOCK_SYNC"
+            Timber.tag("EMIS_WIRING").i(
+                "programUid=%s isSEMIS=%s isStockUseCase=%s branch=%s",
+                stockProgramSyncItem.programUid,
+                isSEMIS,
+                true,
+                branch,
+            )
+            if (isSEMIS) {
+                Intent(context, org.saudigitus.emis.MainActivity::class.java).apply {
+                    putExtra(
+                        org.dhis2.commons.Constants.PROGRAM_UID,
+                        stockProgramSyncItem.programUid,
+                    )
+                    Timber.tag("EMIS_WIRING").i(
+                        "programUid=%s isSEMIS=%s isStockUseCase=%s branch=SEMIS launch=MainActivity programExtra=%s",
+                        stockProgramSyncItem.programUid,
+                        true,
+                        true,
+                        getStringExtra(org.dhis2.commons.Constants.PROGRAM_UID),
+                    )
+                }
+            } else {
+                Intent(context, HomeActivity::class.java).apply {
+                    putExtra(
+                        org.dhis2.commons.Constants.PROGRAM_UID,
+                        stockProgramSyncItem.programUid,
+                    )
+                    Timber.tag("EMIS_WIRING").i(
+                        "programUid=%s isSEMIS=%s isStockUseCase=%s branch=STOCK_SYNC launch=HomeActivity programExtra=%s",
+                        stockProgramSyncItem.programUid,
+                        false,
+                        true,
+                        getStringExtra(org.dhis2.commons.Constants.PROGRAM_UID),
+                    )
+                }
             }
         } else {
             null

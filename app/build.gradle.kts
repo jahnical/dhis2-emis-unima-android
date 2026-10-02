@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose.compiler)
     alias(libs.plugins.sentry)
+    id("dagger.hilt.android.plugin")
 }
 apply(from = "${project.rootDir}/jacoco/jacoco.gradle.kts")
 
@@ -309,6 +310,7 @@ androidComponents {
 }
 
 ksp {
+    arg("dagger.hilt.disableModulesHaveInstallInCheck", "true")
     arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.incremental", "true")
     arg("room.expandProjection", "true")
@@ -375,7 +377,8 @@ dependencies {
     "dhis2PlayServicesImplementation"(libs.google.auth)
     "dhis2PlayServicesImplementation"(libs.google.auth.apiphone)
 
-    ksp(libs.dagger.compiler)
+    implementation(libs.dagger.hilt.android)
+    ksp(libs.dagger.hilt.compiler)
 
     testImplementation(libs.test.archCoreTesting)
     testImplementation(libs.test.testCore)
@@ -383,6 +386,7 @@ dependencies {
     testImplementation(libs.test.mockitoInline)
     testImplementation(libs.test.mockitoKotlin)
     testImplementation(libs.test.truth)
+    testImplementation(libs.test.robolectric)
     testImplementation(libs.test.kotlinCoroutines)
     testImplementation(libs.test.turbine)
     testImplementation(libs.test.androidx.paging)
@@ -406,6 +410,10 @@ dependencies {
     androidTestImplementation(libs.koin.test)
     androidTestImplementation(libs.koin.test.junit4)
     debugImplementation(libs.test.ui.test.manifest)
+}
+
+configurations.matching { it.name.endsWith("UnitTestRuntimeClasspath") }.configureEach {
+    exclude(group = "org.conscrypt", module = "conscrypt-android")
 }
 
 sentry {

@@ -303,6 +303,12 @@ class AndroidSyncRepository(
             d2.metadataModule().download().blockingForEach { progress ->
                 onProgressUpdate(ceil(progress.percentage() ?: 0.0).toInt())
             }
+            d2
+                .dataStoreModule()
+                .dataStoreDownloader()
+                .byNamespace()
+                .`in`(listOf("semis"))
+                .blockingDownload()
             Result.success(Unit)
         }
 

@@ -715,6 +715,7 @@ private fun testingProgramModel() =
         state = State.SYNCED,
         filtersAreActive = false,
         downloadState = ProgramDownloadState.NONE,
+        isSEMIS = false,
         isStockUseCase = false,
         lastUpdated = Date(),
     )

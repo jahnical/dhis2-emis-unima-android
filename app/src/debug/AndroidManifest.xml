@@ -16,7 +16,8 @@
         android:allowBackup="false"
         android:fullBackupContent="@xml/old_backup_config"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:icon="@drawable/emis_logo">
+        android:icon="@drawable/emis_logo"
+        tools:replace="android:icon">
 
         <activity android:name=".usescases.development.DevelopmentActivity" />
 

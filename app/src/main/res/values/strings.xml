@@ -108,6 +108,7 @@
     <string name="active">Active</string>
 
     <!-- State -->
+
     <string name="state_synced">Sync</string>
     <string name="state_to_post">To send</string>
     <string name="state_to_update">To update</string>
@@ -904,14 +905,7 @@
     <string name="sync_dialog_action_refresh">Refresh</string>
     <string name="sync_dialog_action_not_now">Not now</string>
     <string name="tap_to_explore_action">Tap here to explore</string>
-    <plurals name="error_count_label">
-        <item quantity="one">%s error</item>
-        <item quantity="other">%s errors</item>
-    </plurals>
-    <plurals name="warning_count_label">
-        <item quantity="one">%s warning</item>
-        <item quantity="other">%s warnings</item>
-    </plurals>
+
     <string name="new_version_message">App version <b>%s</b> is now available. Do you want to download it?</string>
     <string name="software_update">Software update</string>
     <string name="remind_me_later">Later</string>
@@ -989,6 +983,7 @@
     <string name="deactivate_enrollment_label">Deactivate %s</string>
     <string name="reopen_enrollment_label">Re-open %s</string>
     <string name="main_menu_developer_scree">Developer options</string>
+    <string name="about_semis">SEMIS Version</string>
 
     <plurals name="error_count_label">
         <item quantity="one">%s error</item>

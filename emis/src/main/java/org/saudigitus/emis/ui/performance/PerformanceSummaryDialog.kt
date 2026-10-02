@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Divider
-import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -55,10 +55,10 @@ fun PerformanceSummaryDialog(
             ),
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.LightGray.copy(.75f),
             thickness = .5.dp,
+            color = Color.LightGray.copy(.75f)
         )
         Row(
             modifier = Modifier
@@ -79,10 +79,10 @@ fun PerformanceSummaryDialog(
                 icon = painterResource(R.drawable.not_filled),
             )
         }
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.LightGray.copy(.75f),
             thickness = .5.dp,
+            color = Color.LightGray.copy(.75f)
         )
         ActionButtons(
             modifier = Modifier.align(Alignment.End),
