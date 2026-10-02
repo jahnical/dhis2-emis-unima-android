@@ -3,9 +3,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("com.android.library")
     kotlin("android")
-    kotlin("kapt")
+    alias(libs.plugins.ksp)
     id("kotlin-parcelize")
-    id("dagger.hilt.android.plugin")
+    alias(libs.plugins.hilt)
     id("kotlinx-serialization")
     alias(libs.plugins.kotlin.compose.compiler)
 }
@@ -38,7 +38,7 @@ android {
         }
     }
 
-    flavorDimensions("default")
+    flavorDimensions += "default"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -82,7 +82,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.viewModelKtx)
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.uitooling)
@@ -90,15 +90,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.dagger.hilt.android)
-    implementation(libs.androidx.lifecycle.runtime.compose.android)
+    implementation(libs.lifecycle.runtime.compose)
 
-    kapt(libs.dagger.hilt.android.compiler)
+    ksp(libs.dagger.hilt.android.compiler)
 
     coreLibraryDesugaring(libs.desugar)
 }
-
-kapt {
-    correctErrorTypes = true
-}
-
-

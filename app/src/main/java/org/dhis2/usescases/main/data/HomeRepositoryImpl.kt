@@ -20,6 +20,8 @@ import org.dhis2.utils.TRUE
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.program.ProgramType
+import org.saudigitus.emis.data.model.app_config.EMISConfig
+import org.saudigitus.emis.utils.Constants
 import java.io.File
 
 private const val NO_HOME_ITEM = "No home item found"
@@ -135,6 +137,17 @@ class HomeRepositoryImpl(
             d2.programs().size + d2.dataSetInstanceSummaries().size
         }
 
+    private fun isSEMIS(program: String): Boolean {
+        val dataStore = d2.dataStoreModule()
+            .dataStore()
+            .byNamespace().eq("semis")
+            .byKey().eq(Constants.KEY)
+            .one().blockingGet()
+
+        val config = EMISConfig.fromJson(dataStore?.value()) ?: emptyList()
+        return config.find { it.program == program } != null
+    }
+
     override suspend fun singleHomeItemData(): HomeItemData =
         execute {
             val program = d2.programs().firstOrNull()
@@ -150,6 +163,7 @@ class HomeRepositoryImpl(
                         program.access().data().write() == true,
                         program.trackedEntityType()?.uid() ?: "",
                         isStockUseCase = d2.isStockProgram(program.uid()),
+                        isSEMIS = isSEMIS(program.uid()),
                     )
 
                 program?.programType() == ProgramType.WITHOUT_REGISTRATION ->

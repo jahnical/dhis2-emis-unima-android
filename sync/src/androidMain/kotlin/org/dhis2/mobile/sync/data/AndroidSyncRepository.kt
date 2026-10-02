@@ -27,6 +27,7 @@ import org.dhis2.mobile.sync.model.SMSConfigResult
 import org.dhis2.mobile.sync.model.SyncResult
 import org.dhis2.mobile.sync.model.toSyncPeriod
 import org.hisp.dhis.android.core.D2
+import timber.log.Timber
 import org.hisp.dhis.android.core.D2Manager
 import org.hisp.dhis.android.core.arch.call.D2ProgressStatus
 import org.hisp.dhis.android.core.arch.call.D2ProgressSyncStatus
@@ -298,11 +299,26 @@ class AndroidSyncRepository(
             Result.success(Unit)
         }
 
+    /**
+     * EMIS fork: downloads the DHIS2 data store, which holds the "semis" namespace
+     * configuration the EMIS modules read. Upstream does not sync the data store, so
+     * without this the EMIS config is never available offline. Failures are logged and
+     * swallowed so a data store problem can never block the rest of the sync.
+     */
+    private fun downloadDataStore() {
+        runCatching {
+            d2.dataStoreModule().dataStoreDownloader().download().blockingSubscribe()
+        }.onFailure { error ->
+            Timber.tag("SYNC_DATASTORE").e(error, "DataStore download failed, skipping")
+        }
+    }
+
     override suspend fun syncMetadata(onProgressUpdate: (Int) -> Unit) =
         execute {
             d2.metadataModule().download().blockingForEach { progress ->
                 onProgressUpdate(ceil(progress.percentage() ?: 0.0).toInt())
             }
+            downloadDataStore()
             Result.success(Unit)
         }
 
@@ -413,6 +429,8 @@ class AndroidSyncRepository(
         onProgressUpdate: suspend (progressData: Map<String, DataSyncProgressStatus>) -> Unit,
     ): Result<Unit> =
         run {
+            downloadDataStore()
+
             val eventProgramUids =
                 d2
                     .programModule()

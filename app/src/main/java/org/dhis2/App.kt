@@ -37,6 +37,8 @@ import org.dhis2.commons.prefs.PreferenceModule
 import org.dhis2.commons.schedulers.SchedulerModule
 import org.dhis2.commons.schedulers.SchedulersProviderImpl
 import org.dhis2.commons.service.SessionManagerModule
+import org.dhis2.commons.navigator.TeiDashboardComponentProvider
+import org.dhis2.usescases.teiDashboard.TeiDashboardMobileActivity
 import org.dhis2.commons.sync.SyncComponentProvider
 import org.dhis2.data.dispatcher.DispatcherModule
 import org.dhis2.data.server.SSLContextInitializer
@@ -322,6 +324,9 @@ open class App : Application(), Components, DefaultLifecycleObserver {
 
     override val syncComponentProvider: SyncComponentProvider
         get() = SyncStatusDialogProvider()
+
+    override val dashboard: TeiDashboardComponentProvider
+        get() = TeiDashboardMobileActivity()
 
     private fun areTrackingPermissionGranted(): Boolean {
         val isUserLoggedIn = serverComponent != null &&
