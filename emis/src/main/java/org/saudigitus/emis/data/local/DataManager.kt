@@ -95,6 +95,12 @@ interface DataManager {
         grade: String,
     ): List<SubjectResult>
 
+    /** Computes the term summary for display only - the write happens via computeAndSaveTermSummary. */
+    suspend fun computeTermSummary(
+        program: String,
+        results: List<SubjectResult>,
+    ): TermSummary?
+
     suspend fun computeAndSaveTermSummary(
         tei: String,
         program: String,
