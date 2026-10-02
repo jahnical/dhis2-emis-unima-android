@@ -1,6 +1,5 @@
 package org.saudigitus.emis.data.model;
 
-import org.dhis2.commons.data.tuples.Trio;
 import org.dhis2.mobile.commons.model.MetadataIconData;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode;
@@ -23,7 +22,6 @@ public class SearchTeiModel {
     private LinkedHashMap<String, TrackedEntityAttributeValue> attributeValues;
     private LinkedHashMap<String, TrackedEntityAttributeValue> textAttributeValues;
 
-    private List<Trio<String, String, String>> enrollmentsInfo;
     private List<Program> programInfo;
     private HashMap<String, MetadataIconData> metadataIconDataMap;
     private boolean hasOverdue;
@@ -55,7 +53,6 @@ public class SearchTeiModel {
         this.selectedEnrollment = null;
         this.attributeValues = new LinkedHashMap<>();
         this.textAttributeValues = new LinkedHashMap<>();
-        this.enrollmentsInfo = new ArrayList<>();
         this.programInfo = new ArrayList<>();
         this.isOnline = true;
         this.enrollments = new ArrayList<>();
@@ -64,10 +61,6 @@ public class SearchTeiModel {
         this.enrolledOrgUnit = null;
         this.onlineErrorMessage = null;
         this.metadataIconDataMap = new HashMap<>();
-    }
-
-    public void addEnrollmentInfo(Trio<String, String, String> enrollmentInfo) {
-        enrollmentsInfo.add(enrollmentInfo);
     }
 
     public void addProgramInfo(Program program, MetadataIconData metadataIconData) {
@@ -113,7 +106,6 @@ public class SearchTeiModel {
 
     public void resetEnrollments() {
         this.enrollments.clear();
-        this.enrollmentsInfo.clear();
     }
 
     public void setAttributeValues(LinkedHashMap<String, TrackedEntityAttributeValue> attributeValues) {
@@ -244,7 +236,6 @@ public class SearchTeiModel {
     }
 
     @NotNull
-    @Override
     public String uid() {
         return tei.uid();
     }
