@@ -418,26 +418,6 @@ class TeiDashboardMobileActivity :
                     RelationshipFragment().apply {
                         arguments =
                             RelationshipFragment.withArguments(
-                        programUid,
-                        teiUid,
-                        enrollmentUid,
-                    )
-
-                TEIDashboardItems.ANALYTICS -> {
-                    presenter.trackDashboardAnalytics()
-                    IndicatorsFragment().apply {
-                        arguments =
-                            Bundle().apply {
-                                putString(VISUALIZATION_TYPE, VisualizationType.TRACKER.name)
-                            }
-                    }
-                }
-
-                TEIDashboardItems.RELATIONSHIPS -> {
-                    presenter.trackDashboardRelationships()
-                    RelationshipFragment().apply {
-                        arguments =
-                            RelationshipFragment.withArguments(
                                 programUid,
                                 teiUid,
                                 enrollmentUid,
