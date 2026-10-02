@@ -17,11 +17,6 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         multiDexEnabled = true
 
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments["dagger.hilt.disableCrossCompilationRootValidation"] = "true"
-            }
-        }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -94,4 +89,8 @@ dependencies {
     ksp(libs.dagger.hilt.android.compiler)
 
     coreLibraryDesugaring(libs.desugar)
+}
+
+hilt {
+    disableCrossCompilationRootValidation = true
 }

@@ -37,6 +37,7 @@ import org.dhis2.commons.prefs.PreferenceModule
 import org.dhis2.commons.schedulers.SchedulerModule
 import org.dhis2.commons.schedulers.SchedulersProviderImpl
 import org.dhis2.commons.service.SessionManagerModule
+import dagger.hilt.android.HiltAndroidApp
 import org.dhis2.commons.navigator.TeiDashboardComponentProvider
 import org.dhis2.usescases.teiDashboard.TeiDashboardMobileActivity
 import org.dhis2.commons.sync.SyncComponentProvider
@@ -67,6 +68,7 @@ import timber.log.Timber.Forest.plant
 import java.io.IOException
 import javax.inject.Singleton
 
+@HiltAndroidApp
 open class App : Application(), Components, DefaultLifecycleObserver {
     @Singleton
     lateinit var appComponent: AppComponent

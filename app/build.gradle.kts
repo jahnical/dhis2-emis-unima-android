@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose.compiler)
     alias(libs.plugins.sentry)
+    alias(libs.plugins.hilt)
 }
 apply(from = "${project.rootDir}/jacoco/jacoco.gradle.kts")
 
@@ -302,6 +303,9 @@ ksp {
     arg("room.expandProjection", "true")
     // Enable debug logs
     arg("ksp.logging.level", "DEBUG")
+    // This module's Dagger modules predate Hilt and have no @InstallIn; Hilt is only
+    // here so :emis @AndroidEntryPoint activities have an @HiltAndroidApp Application.
+    arg("dagger.hilt.disableModulesHaveInstallInCheck", "true")
 }
 
 kotlin {
@@ -362,7 +366,9 @@ dependencies {
     "dhis2PlayServicesImplementation"(libs.google.auth)
     "dhis2PlayServicesImplementation"(libs.google.auth.apiphone)
 
+    implementation(libs.dagger.hilt.android)
     ksp(libs.dagger.compiler)
+    ksp(libs.dagger.hilt.android.compiler)
 
     testImplementation(libs.test.archCoreTesting)
     testImplementation(libs.test.testCore)
