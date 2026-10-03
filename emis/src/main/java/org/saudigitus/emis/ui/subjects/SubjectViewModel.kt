@@ -61,14 +61,16 @@ class SubjectViewModel
                     ?.filterNotNull()
                     ?: emptyList()
 
-                _uiState.update {
-                    it.copy(filters = repository.getTerms(stages))
-                }
+                val terms = repository.getTerms(stages)
+                _uiState.update { it.copy(filters = terms) }
 
-                val selected = uiState.value.filters.getOrNull(0)
-
-                if (selected != null) {
-                    performOnFilterClick(selected.id)
+                // Keeps the current term instead of resetting to the first one on every re-entry.
+                val currentStageStillValid = terms.any { it.id == _programStage.value }
+                if (!currentStageStillValid) {
+                    val selected = terms.getOrNull(0)
+                    if (selected != null) {
+                        performOnFilterClick(selected.id)
+                    }
                 }
             }
         }

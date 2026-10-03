@@ -1,17 +1,25 @@
 package org.saudigitus.emis.ui.form
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,11 +27,15 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.dhis2.composetable.ui.Keyboard
 import org.dhis2.composetable.ui.keyboardAsState
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.mobile.ui.designsystem.component.InputShellState
+import org.saudigitus.emis.R
 import org.saudigitus.emis.utils.findByCode
 
 @Composable
@@ -104,10 +116,12 @@ fun FormBuilder(
                     val nextField = fields[i + 1]
                     val dataNext = formData?.find { it.tei == key && it.dataElement == nextField.uid }
 
-                    val nextHasOptions = nextField.hasOptions() || dataNext?.hasOptions == true
+                    // Pairs on either a real dropdown or a readOnly companion field (e.g. grade).
+                    val nextIsCompanion = nextField.hasOptions() || dataNext?.hasOptions == true ||
+                        readOnly.contains(nextField.uid)
 
-                    // text input (score) + dropdown (grade) side-by-side
-                    if (nextHasOptions) {
+                    // text input (score) + grade/dropdown companion side-by-side
+                    if (nextIsCompanion) {
                         PairedMixedFields(
                             key = key,
                             textField = formField,
@@ -168,6 +182,47 @@ fun FormBuilder(
     }
 }
 
+/** Read-only companion (e.g. grade): a Text for real ellipsis, tap to reveal the full value. */
+@Composable
+private fun ReadOnlyCompanionField(
+    value: String,
+    label: String?,
+    modifier: Modifier = Modifier,
+) {
+    var showFullValue by remember { mutableStateOf(false) }
+    val displayText = value.ifEmpty { stringResource(R.string.enter_score_to_see_grade) }
+
+    Box(modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = value.isNotEmpty()) { showFullValue = true }
+                .padding(top = 8.dp, bottom = 4.dp),
+        ) {
+            if (!label.isNullOrEmpty()) {
+                Text(text = label, fontSize = 12.sp, color = InputShellState.UNFOCUSED.color)
+            }
+            Text(
+                text = displayText,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Divider(thickness = 1.dp, color = InputShellState.DISABLED.color)
+        }
+
+        DropdownMenu(
+            expanded = showFullValue,
+            onDismissRequest = { showFullValue = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(value) },
+                onClick = { showFullValue = false },
+            )
+        }
+    }
+}
+
 @Composable
 private fun PairedMixedFields(
     key: String,
@@ -194,6 +249,12 @@ private fun PairedMixedFields(
         unfocusedIndicatorColor = InputShellState.UNFOCUSED.color,
         disabledIndicatorColor = InputShellState.DISABLED.color,
     )
+    // A readOnly companion (e.g. grade) renders as plain text, never a dropdown.
+    val dropdownIsEditable = !readOnly.contains(dropdownField.uid) &&
+        (dropdownField.hasOptions() || dropdownData?.hasOptions == true)
+    val dropdownDisplayText = (dropdownSelectedItem ?: dropdownData?.itemOptions)?.toString()
+        ?: dropdownData?.value
+        ?: ""
 
     if (isNarrow) {
         Column {
@@ -219,16 +280,24 @@ private fun PairedMixedFields(
                 enabled = enabled && !readOnly.contains(textField.uid),
                 colors = colors,
             )
-            DropdownField(
-                label = dropdownField.label,
-                placeholder = dropdownField.placeholder,
-                data = dropdownField.options ?: emptyList(),
-                selectedItem = dropdownSelectedItem ?: dropdownData?.itemOptions,
-                enabled = enabled && !readOnly.contains(dropdownField.uid),
-                colors = dropdownColors,
-            ) { item ->
-                setFormState(key, dropdownData?.event.orEmpty(), dropdownField.uid, item.code.orEmpty(), null)
-                onNext(Triple(dropdownField.uid, item.code, null))
+            if (dropdownIsEditable) {
+                DropdownField(
+                    label = dropdownField.label,
+                    placeholder = dropdownField.placeholder,
+                    data = dropdownField.options ?: emptyList(),
+                    selectedItem = dropdownSelectedItem ?: dropdownData?.itemOptions,
+                    enabled = enabled && !readOnly.contains(dropdownField.uid),
+                    colors = dropdownColors,
+                ) { item ->
+                    setFormState(key, dropdownData?.event.orEmpty(), dropdownField.uid, item.code.orEmpty(), null)
+                    onNext(Triple(dropdownField.uid, item.code, null))
+                }
+            } else {
+                ReadOnlyCompanionField(
+                    value = dropdownDisplayText,
+                    label = dropdownField.label,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     } else {
@@ -259,16 +328,24 @@ private fun PairedMixedFields(
                 colors = colors,
             )
             Box(modifier = Modifier.weight(1f)) {
-                DropdownField(
-                    label = dropdownField.label,
-                    placeholder = dropdownField.placeholder,
-                    data = dropdownField.options ?: emptyList(),
-                    selectedItem = dropdownSelectedItem ?: dropdownData?.itemOptions,
-                    enabled = enabled && !readOnly.contains(dropdownField.uid),
-                    colors = dropdownColors,
-                ) { item ->
-                    setFormState(key, dropdownData?.event.orEmpty(), dropdownField.uid, item.code.orEmpty(), null)
-                    onNext(Triple(dropdownField.uid, item.code, null))
+                if (dropdownIsEditable) {
+                    DropdownField(
+                        label = dropdownField.label,
+                        placeholder = dropdownField.placeholder,
+                        data = dropdownField.options ?: emptyList(),
+                        selectedItem = dropdownSelectedItem ?: dropdownData?.itemOptions,
+                        enabled = enabled && !readOnly.contains(dropdownField.uid),
+                        colors = dropdownColors,
+                    ) { item ->
+                        setFormState(key, dropdownData?.event.orEmpty(), dropdownField.uid, item.code.orEmpty(), null)
+                        onNext(Triple(dropdownField.uid, item.code, null))
+                    }
+                } else {
+                    ReadOnlyCompanionField(
+                        value = dropdownDisplayText,
+                        label = dropdownField.label,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
