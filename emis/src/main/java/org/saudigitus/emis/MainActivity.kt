@@ -97,9 +97,12 @@ class MainActivity : FragmentActivity() {
                             )
                         }
                         composable(
-                            route = "${AppRoutes.ATTENDANCE_ROUTE}/{ou}",
+                            route = "${AppRoutes.ATTENDANCE_ROUTE}/{ou}/{academicYear}",
                             arguments = listOf(
                                 navArgument("ou") {
+                                    type = NavType.StringType
+                                },
+                                navArgument("academicYear") {
                                     type = NavType.StringType
                                 },
                             ),
@@ -114,6 +117,9 @@ class MainActivity : FragmentActivity() {
                             attendanceViewModel.setTeis(teis)
                             attendanceViewModel.setInfoCard(viewModel.infoCard.collectAsStateWithLifecycle().value)
                             attendanceViewModel.setOU(it.arguments?.getString("ou") ?: "")
+                            attendanceViewModel.setCurrentSchoolCalendar(
+                                it.arguments?.getString("academicYear") ?: "",
+                            )
 
                             AttendanceScreen(
                                 attendanceViewModel,

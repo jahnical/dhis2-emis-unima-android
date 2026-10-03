@@ -299,7 +299,14 @@ fun HomeUI(
                             label = stringResource(R.string.attendance),
                             enabled = uiState.infoCard.hasData(),
                             onClick = {
-                                onEvent(HomeUiEvent.NavTo("${AppRoutes.ATTENDANCE_ROUTE}/${uiState.school?.uid}"))
+                                onEvent(
+                                    HomeUiEvent.NavTo(
+                                        AppRoutes.attendanceRoute(
+                                            uiState.school?.uid,
+                                            uiState.academicYear?.code,
+                                        ),
+                                    ),
+                                )
                             },
                         )
                     }

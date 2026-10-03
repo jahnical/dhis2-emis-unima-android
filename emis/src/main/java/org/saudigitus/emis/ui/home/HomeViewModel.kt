@@ -301,6 +301,7 @@ class HomeViewModel
                 academicYear = academicYear,
             )
         }
+        academicYear?.code?.let { setCurrentSchoolCalendar(it) }
         invokeInFilters()
     }
 
