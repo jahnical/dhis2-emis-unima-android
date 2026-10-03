@@ -89,6 +89,7 @@ class AttendanceViewModel
 
     fun setOptions(academicYear: String, grade: String, section: String) {
         _options.value = listOf(academicYear, grade, section)
+        setCurrentSchoolCalendar(academicYear)
     }
 
     override fun setConfig(program: String) {

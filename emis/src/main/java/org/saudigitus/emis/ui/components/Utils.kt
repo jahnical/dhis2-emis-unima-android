@@ -30,6 +30,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,12 +89,17 @@ fun CustomDatePicker(
     onDatePick: (date: String) -> Unit,
     dateValidator: (Long) -> Boolean = { true },
 ) {
+    // rememberDatePickerState only builds selectableDates once, so it must read
+    // dateValidator through rememberUpdatedState - otherwise it keeps calling
+    // whichever validator was passed in on the very first composition.
+    val latestDateValidator by rememberUpdatedState(dateValidator)
+
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = null,
         initialDisplayMode = DisplayMode.Picker,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return dateValidator(utcTimeMillis)
+                return latestDateValidator(utcTimeMillis)
             }
         },
     )

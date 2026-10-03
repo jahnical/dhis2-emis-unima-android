@@ -98,7 +98,7 @@ fun AttendanceScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    LaunchedEffect(schoolCalendar != null) {
+    LaunchedEffect(schoolCalendar, currentSchoolCalendar) {
         canTakeAttendance = validateCalendar(
             longDate,
             schoolCalendar,

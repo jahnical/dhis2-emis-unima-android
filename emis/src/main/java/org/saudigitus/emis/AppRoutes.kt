@@ -12,6 +12,9 @@ object AppRoutes {
     fun studentSummaryRoute(ou: String, stage: String, tei: String, studentName: String) =
         "$STUDENT_SUMMARY_ROUTE/$ou/$stage/$tei/$studentName"
 
+    fun attendanceRoute(ou: String?, academicYear: String?) =
+        "$ATTENDANCE_ROUTE/$ou/$academicYear"
+
     fun absenteeismRoute(
         academicYear: String?,
         school: String?,
