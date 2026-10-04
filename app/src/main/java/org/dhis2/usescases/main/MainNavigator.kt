@@ -2,13 +2,8 @@ package org.dhis2.usescases.main
 
 import android.transition.ChangeBounds
 import android.view.View
-import androidx.annotation.IdRes
-import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import dhis2.org.analytics.charts.ui.GroupAnalyticsFragment
 import org.dhis2.R
 import org.dhis2.usescases.about.AboutFragment
@@ -18,134 +13,89 @@ import org.dhis2.usescases.settings.SyncManagerFragment
 import org.dhis2.usescases.troubleshooting.TroubleshootingFragment
 
 class MainNavigator(
-    private val fragmentManager: FragmentManager,
-    private val onTransitionStart: () -> Unit,
-    private val onScreenChanged: (
-        titleRes: Int,
-        showFilterButton: Boolean,
-        showBottomNavigation: Boolean,
-    ) -> Unit,
+    private var fragmentManager: FragmentManager,
 ) {
-    enum class MainScreen(@StringRes val title: Int, @IdRes val navViewId: Int) {
-        PROGRAMS(R.string.done_task, R.id.menu_home),
-        VISUALIZATIONS(R.string.done_task, R.id.menu_home),
-        QR(R.string.QR_SCANNER, R.id.qr_scan),
-        SETTINGS(R.string.SYNC_MANAGER, R.id.sync_manager),
-        TROUBLESHOOTING(R.string.main_menu_troubleshooting, R.id.menu_troubleshooting),
-        ABOUT(R.string.about, R.id.menu_about),
-    }
-
-    private var currentScreen = MutableLiveData<MainScreen?>(null)
-    var selectedScreen: LiveData<MainScreen?> = currentScreen
     private var currentFragment: Fragment? = null
+    private var lastHomeFragment: Fragment? = null
 
-    fun isHome(): Boolean = isPrograms() || isVisualizations()
-
-    fun isPrograms(): Boolean = currentScreen.value == MainScreen.PROGRAMS
-
-    fun isVisualizations(): Boolean = currentScreen.value == MainScreen.VISUALIZATIONS
-
-    fun getCurrentIfProgram(): ProgramFragment? {
-        return currentFragment?.takeIf { it is ProgramFragment } as ProgramFragment
+    fun updateFragmentManager(fm: FragmentManager) {
+        fragmentManager = fm
     }
 
-    fun currentScreenName() = currentScreen.value?.name
+    fun getCurrentIfProgram(): ProgramFragment? =
+        currentFragment?.takeIf { it is ProgramFragment } as? ProgramFragment
 
-    fun currentNavigationViewItemId(screenName: String): Int =
-        MainScreen.valueOf(screenName).navViewId
 
-    fun openHome() {
-        when {
-            isVisualizations() -> openVisualizations()
-            else -> openPrograms()
+    fun openHome(): MainScreenType {
+        return when {
+            lastHomeFragment is GroupAnalyticsFragment -> {
+                MainScreenType.Home(HomeScreen.Visualizations)
+            }
+
+            else -> {
+                MainScreenType.Home(HomeScreen.Programs)
+            }
         }
     }
 
     fun openPrograms() {
         val programFragment = ProgramFragment()
-        val sharedView = if (isVisualizations()) {
-            (currentFragment as GroupAnalyticsFragment).sharedView()
-        } else {
-            null
-        }
-        if (sharedView != null) {
-            programFragment.sharedElementEnterTransition = ChangeBounds()
-            programFragment.sharedElementReturnTransition = ChangeBounds()
-        }
+        lastHomeFragment = programFragment
+        val sharedView =
+            (currentFragment as? GroupAnalyticsFragment)?.sharedView()?.let { sharedView ->
+                programFragment.sharedElementEnterTransition = ChangeBounds()
+                programFragment.sharedElementReturnTransition = ChangeBounds()
+                sharedView
+            }
+
         beginTransaction(
-            ProgramFragment(),
-            MainScreen.PROGRAMS,
+            programFragment,
             sharedView,
         )
     }
 
-    fun restoreScreen(screenToRestoreName: String, languageSelectorOpened: Boolean = false) {
-        when (MainScreen.valueOf(screenToRestoreName)) {
-            MainScreen.PROGRAMS -> openPrograms()
-            MainScreen.VISUALIZATIONS -> openVisualizations()
-            MainScreen.QR -> openQR()
-            MainScreen.SETTINGS -> openSettings()
-            MainScreen.ABOUT -> openAbout()
-            MainScreen.TROUBLESHOOTING -> openTroubleShooting(languageSelectorOpened)
-        }
-    }
-
     fun openVisualizations() {
-        beginTransaction(GroupAnalyticsFragment.forHome(), MainScreen.VISUALIZATIONS)
+        val visualizationsFragment = GroupAnalyticsFragment.forHome()
+        lastHomeFragment = visualizationsFragment
+        beginTransaction(visualizationsFragment)
     }
 
     fun openSettings() {
         beginTransaction(
             SyncManagerFragment(),
-            MainScreen.SETTINGS,
         )
     }
 
     fun openQR() {
         beginTransaction(
             QrReaderFragment(),
-            MainScreen.QR,
         )
     }
 
     fun openAbout() {
         beginTransaction(
             AboutFragment(),
-            MainScreen.ABOUT,
         )
     }
 
     fun openTroubleShooting(languageSelectorOpened: Boolean = false) {
         beginTransaction(
             fragment = TroubleshootingFragment.instance(languageSelectorOpened),
-            screen = MainScreen.TROUBLESHOOTING,
             useFadeInTransition = languageSelectorOpened,
         )
     }
 
     private fun beginTransaction(
         fragment: Fragment,
-        screen: MainScreen,
         sharedView: View? = null,
         useFadeInTransition: Boolean = false,
     ) {
-        if (currentScreen.value != screen) {
-            onTransitionStart()
-            currentScreen.value = screen
-            currentFragment = fragment
-            val transaction: FragmentTransaction = fragmentManager.beginTransaction()
-            transaction.apply {
+        currentFragment = fragment
+        fragmentManager.beginTransaction()
+            .apply {
                 if (sharedView == null) {
-                    val (enterAnimation, exitAnimation) = if (useFadeInTransition) {
-                        Pair(android.R.anim.fade_in, android.R.anim.fade_out)
-                    } else {
-                        Pair(R.anim.fragment_enter_right, R.anim.fragment_exit_left)
-                    }
-                    val (enterPopAnimation, exitPopAnimation) = if (useFadeInTransition) {
-                        Pair(android.R.anim.fade_in, android.R.anim.fade_out)
-                    } else {
-                        Pair(R.anim.fragment_enter_left, R.anim.fragment_exit_right)
-                    }
+                    val (enterAnimation, exitAnimation) = getEnterExitAnimation(useFadeInTransition)
+                    val (enterPopAnimation, exitPopAnimation) = getEnterExitPopAnimation(useFadeInTransition)
                     setCustomAnimations(
                         enterAnimation,
                         exitAnimation,
@@ -156,15 +106,21 @@ class MainNavigator(
                     setReorderingAllowed(true)
                     addSharedElement(sharedView, "contenttest")
                 }
-            }
-                .replace(R.id.fragment_container, fragment, fragment::class.simpleName)
-                .commitAllowingStateLoss()
-
-            onScreenChanged(
-                screen.title,
-                isPrograms(),
-                isHome(),
-            )
-        }
+            }.replace(R.id.fragment_container, fragment, fragment::class.simpleName)
+            .commitAllowingStateLoss()
     }
+
+    private fun getEnterExitPopAnimation(useFadeInTransition: Boolean): Pair<Int, Int> =
+        if (useFadeInTransition) {
+            Pair(android.R.anim.fade_in, android.R.anim.fade_out)
+        } else {
+            Pair(R.anim.fragment_enter_left, R.anim.fragment_exit_right)
+        }
+
+    private fun getEnterExitAnimation(useFadeInTransition: Boolean): Pair<Int, Int> =
+        if (useFadeInTransition) {
+            Pair(android.R.anim.fade_in, android.R.anim.fade_out)
+        } else {
+            Pair(R.anim.fragment_enter_right, R.anim.fragment_exit_left)
+        }
 }

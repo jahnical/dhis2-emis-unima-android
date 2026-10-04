@@ -11,8 +11,7 @@
         android:name="android.hardware.telephony"
         android:required="false" />
 
-    <application
-        android:icon="@drawable/emis_logo">
+    <application>
 
         <activity android:name=".usescases.development.DevelopmentActivity" />
 

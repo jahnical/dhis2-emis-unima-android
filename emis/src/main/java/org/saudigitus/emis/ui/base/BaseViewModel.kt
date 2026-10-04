@@ -42,6 +42,10 @@ abstract class BaseViewModel(
     private val _currentSchoolCalendar = MutableStateFlow<SchoolCalendar?>(null)
     val currentSchoolCalendar: StateFlow<SchoolCalendar?> = _currentSchoolCalendar;
 
+    // Holds the academic year picked via a filter, if any; falls back to the
+    // datastore's default (the real current year) when nothing is selected.
+    private val _selectedAcademicYear = MutableStateFlow<String?>(null)
+
     protected val _eventDate = MutableStateFlow(DateHelper.formatDate(System.currentTimeMillis()) ?: "")
     val eventDate: StateFlow<String> = _eventDate
 
@@ -63,11 +67,23 @@ abstract class BaseViewModel(
     init {
         viewModelScope.launch {
             _schoolCalendar.value = repository.dateValidation(Constants.CALENDAR_KEY)
-            val default = schoolCalendar.value?.defaults
-            _currentSchoolCalendar.value = schoolCalendar.value?.schoolCalendar?.find {
-                it?.academicYear?.code == default?.academicYear
-            }
+            refreshCurrentSchoolCalendar()
         }
+    }
+
+    // Re-picks the matching school calendar entry whenever the selected academic
+    // year or the datastore config changes, instead of only once at startup.
+    private fun refreshCurrentSchoolCalendar() {
+        val code = _selectedAcademicYear.value ?: schoolCalendar.value?.defaults?.academicYear
+        _currentSchoolCalendar.value = schoolCalendar.value?.schoolCalendar?.find {
+            it?.academicYear?.code == code
+        }
+    }
+
+    fun setCurrentSchoolCalendar(academicYearCode: String) {
+        if (academicYearCode.isBlank()) return
+        _selectedAcademicYear.value = academicYearCode
+        refreshCurrentSchoolCalendar()
     }
 
     protected abstract fun setConfig(program: String)

@@ -10,8 +10,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.printToLog
-import androidx.test.platform.app.InstrumentationRegistry
-import org.dhis2.form.di.Injector
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.mobile.ui.designsystem.component.InputStyle
 import org.junit.Rule
@@ -19,7 +17,7 @@ import org.junit.Test
 
 
 class AgeProviderTest {
-     val resourceManager = Injector.provideResourcesManager(InstrumentationRegistry.getInstrumentation().getContext())
+
     companion object {
 
         const val AGE_VALUE = "2023-01-19"
@@ -50,11 +48,11 @@ class AgeProviderTest {
             generateFieldUiModel(FIELD_UI_MODEL_UID, AGE_VALUE, AGE_VALUE, ValueType.DATE)
         composeTestRule.setContent {
             ProvideInputAge(
-                inputStyle = InputStyle.DataInputStyle(),
                 modifier = Modifier.testTag(INPUT_AGE_TEST_TAG),
+                inputStyle = InputStyle.DarkInputStyle(),
                 fieldUiModel = dateValueTypeFieldUiModel,
                 intentHandler = {},
-                resources = resourceManager,
+                onNextClicked = {},
             )
         }
         composeTestRule.onNodeWithTag(INPUT_AGE_TEST_TAG).assertIsDisplayed()
@@ -68,11 +66,11 @@ class AgeProviderTest {
             generateFieldUiModel(FIELD_UI_MODEL_UID, "", AGE_VALUE, ValueType.DATE)
         composeTestRule.setContent {
             ProvideInputAge(
-                inputStyle = InputStyle.DataInputStyle(),
                 modifier = Modifier.testTag(INPUT_AGE_TEST_TAG),
+                inputStyle = InputStyle.DarkInputStyle(),
                 fieldUiModel = dateValueTypeFieldUiModel,
                 intentHandler = {},
-                resources = resourceManager,
+                onNextClicked = { },
             )
         }
         composeTestRule.onNodeWithTag(INPUT_AGE_MODE_SELECTOR).assertIsDisplayed()
@@ -86,12 +84,11 @@ class AgeProviderTest {
             generateFieldUiModel(FIELD_UI_MODEL_UID, "", AGE_VALUE, ValueType.DATE)
         composeTestRule.setContent {
             ProvideInputAge(
-                inputStyle = InputStyle.DataInputStyle(),
-
                 modifier = Modifier.testTag(INPUT_AGE_TEST_TAG),
+                inputStyle = InputStyle.DarkInputStyle(),
                 fieldUiModel = dateValueTypeFieldUiModel,
                 intentHandler = {},
-                resources = resourceManager,
+                onNextClicked = {},
             )
         }
         composeTestRule.onNodeWithText(DATE_OF_BIRTH).performClick()
@@ -107,11 +104,11 @@ class AgeProviderTest {
             generateFieldUiModel(FIELD_UI_MODEL_UID, "", AGE_VALUE, ValueType.DATE)
         composeTestRule.setContent {
             ProvideInputAge(
-                inputStyle = InputStyle.DataInputStyle(),
                 modifier = Modifier.testTag(INPUT_AGE_TEST_TAG),
+                inputStyle = InputStyle.DarkInputStyle(),
                 fieldUiModel = dateValueTypeFieldUiModel,
                 intentHandler = {},
-                resources = resourceManager,
+                onNextClicked = {},
             )
 
         }
@@ -128,11 +125,11 @@ class AgeProviderTest {
             generateFieldUiModel(FIELD_UI_MODEL_UID, "", AGE_VALUE, ValueType.DATE)
         composeTestRule.setContent {
             ProvideInputAge(
-                inputStyle = InputStyle.DataInputStyle(),
                 modifier = Modifier.testTag(INPUT_AGE_TEST_TAG),
+                inputStyle = InputStyle.DarkInputStyle(),
                 fieldUiModel = dateValueTypeFieldUiModel,
                 intentHandler = {},
-                resources = resourceManager,
+                onNextClicked = {},
             )
         }
         composeTestRule.onNodeWithText(AGE_BUTTON_TEXT).performClick()
@@ -146,6 +143,7 @@ class AgeProviderTest {
         composeTestRule.onNodeWithTag(INPUT_AGE_TEXT_FIELD).assertTextEquals(AGE_SELECTOR_TEXT)
 
     }
+
     @Test
     fun shouldDisplayTextButtonSelectorWhenTappingResetButton() {
 
@@ -153,11 +151,11 @@ class AgeProviderTest {
             generateFieldUiModel(FIELD_UI_MODEL_UID, "", AGE_VALUE, ValueType.DATE)
         composeTestRule.setContent {
             ProvideInputAge(
-                inputStyle = InputStyle.DataInputStyle(),
                 modifier = Modifier.testTag(INPUT_AGE_TEST_TAG),
+                inputStyle = InputStyle.DarkInputStyle(),
                 fieldUiModel = dateValueTypeFieldUiModel,
                 intentHandler = {},
-                resources = resourceManager,
+                onNextClicked = {},
             )
         }
         composeTestRule.onNodeWithText(AGE_BUTTON_TEXT).performClick()
@@ -173,14 +171,15 @@ class AgeProviderTest {
             generateFieldUiModel(FIELD_UI_MODEL_UID, AGE_VALUE, AGE_VALUE, ValueType.DATE)
         composeTestRule.setContent {
             ProvideInputAge(
-                inputStyle = InputStyle.DataInputStyle(),
                 modifier = Modifier.testTag(INPUT_AGE_TEST_TAG),
+                inputStyle = InputStyle.DarkInputStyle(),
                 fieldUiModel = dateValueTypeFieldUiModel,
                 intentHandler = {},
-                resources = resourceManager,
+                onNextClicked = {},
             )
         }
-        composeTestRule.onNodeWithTag(INPUT_AGE_OPEN_CALENDAR_BUTTON).assertIsDisplayed().performClick()
+        composeTestRule.onNodeWithTag(INPUT_AGE_OPEN_CALENDAR_BUTTON).assertIsDisplayed()
+            .performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("DATE_PICKER").assertIsDisplayed()
 

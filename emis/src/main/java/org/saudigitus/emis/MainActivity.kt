@@ -56,6 +56,10 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        val programExtras = intent?.extras
+        viewModel.setBundle(programExtras)
+        viewModel.setProgram(programExtras?.getString(Constants.PROGRAM_UID).orEmpty())
+
         setContent {
             val widthSizeClass = calculateWindowSizeClass(this).widthSizeClass
             val isExpandedScreen = (widthSizeClass == WindowWidthSizeClass.Medium) || (widthSizeClass == WindowWidthSizeClass.Expanded)
@@ -64,9 +68,6 @@ class MainActivity : FragmentActivity() {
                 darkTheme = false,
                 dynamicColor = false,
             ) {
-                viewModel.setBundle(intent?.extras)
-                viewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
-
                 val navController = rememberNavController()
 
                 Surface(
@@ -97,9 +98,12 @@ class MainActivity : FragmentActivity() {
                             )
                         }
                         composable(
-                            route = "${AppRoutes.ATTENDANCE_ROUTE}/{ou}",
+                            route = "${AppRoutes.ATTENDANCE_ROUTE}/{ou}/{academicYear}",
                             arguments = listOf(
                                 navArgument("ou") {
+                                    type = NavType.StringType
+                                },
+                                navArgument("academicYear") {
                                     type = NavType.StringType
                                 },
                             ),
@@ -114,6 +118,9 @@ class MainActivity : FragmentActivity() {
                             attendanceViewModel.setTeis(teis)
                             attendanceViewModel.setInfoCard(viewModel.infoCard.collectAsStateWithLifecycle().value)
                             attendanceViewModel.setOU(it.arguments?.getString("ou") ?: "")
+                            attendanceViewModel.setCurrentSchoolCalendar(
+                                it.arguments?.getString("academicYear") ?: "",
+                            )
 
                             AttendanceScreen(
                                 attendanceViewModel,
@@ -250,6 +257,7 @@ class MainActivity : FragmentActivity() {
 
                             SubjectScreen(
                                 state = state,
+                                selectedStage = stage,
                                 onBack = navController::navigateUp,
                                 onFilterClick = subjectViewModel::performOnFilterClick,
                                 infoCard = infoCard,

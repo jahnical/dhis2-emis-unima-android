@@ -2,8 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
-    kotlin("android")
-    kotlin("kapt")
+    alias(libs.plugins.legacy.kapt)
     id("kotlin-parcelize")
     id("dagger.hilt.android.plugin")
     id("kotlinx-serialization")
@@ -17,12 +16,6 @@ android {
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
         multiDexEnabled = true
-
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments["dagger.hilt.disableCrossCompilationRootValidation"] = "true"
-            }
-        }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

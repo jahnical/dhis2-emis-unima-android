@@ -1,7 +1,6 @@
 package org.dhis2.usescases.main.program
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,22 +19,25 @@ import androidx.fragment.app.viewModels
 import com.google.android.material.snackbar.Snackbar
 import org.dhis2.App
 import org.dhis2.R
-import org.dhis2.android.rtsm.commons.Constants.INTENT_EXTRA_APP_CONFIG
-import org.dhis2.android.rtsm.data.AppConfig
-import org.dhis2.android.rtsm.ui.home.HomeActivity
 import org.dhis2.commons.sync.OnDismissListener
 import org.dhis2.commons.sync.SyncContext
+import org.dhis2.mobile.sync.domain.SyncStatusController
 import org.dhis2.usescases.general.FragmentGlobalAbstract
+import org.dhis2.usescases.main.HomeItemData
 import org.dhis2.usescases.main.navigateTo
 import org.dhis2.usescases.main.toHomeItemData
 import org.dhis2.utils.HelpManager
 import org.dhis2.utils.analytics.SELECT_PROGRAM
 import org.dhis2.utils.analytics.TYPE_PROGRAM_SELECTED
 import org.dhis2.utils.granularsync.SyncStatusDialog
+import org.koin.android.ext.android.inject
 import timber.log.Timber
 import javax.inject.Inject
 
-class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
+class ProgramFragment :
+    FragmentGlobalAbstract(),
+    ProgramView {
+    private val syncStatusController: SyncStatusController by inject()
 
     @Inject
     lateinit var programViewModelFactory: ProgramViewModelFactory
@@ -43,9 +45,6 @@ class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
     val programViewModel: ProgramViewModel by viewModels {
         programViewModelFactory
     }
-
-    @Inject
-    lateinit var animation: ProgramAnimation
 
     private val getActivityContent =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -57,7 +56,10 @@ class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity?.let {
-            (it.applicationContext as App).userComponent()?.plus(ProgramModule(this))?.inject(this)
+            (it.applicationContext as App)
+                .userComponent()
+                ?.plus(ProgramModule(this, syncStatusController))
+                ?.inject(this)
         }
     }
 
@@ -65,8 +67,8 @@ class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View {
-        return ComposeView(requireContext()).apply {
+    ): View =
+        ComposeView(requireContext()).apply {
             setViewCompositionStrategy(
                 ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed,
             )
@@ -89,11 +91,15 @@ class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
                 )
             }
         }
-    }
 
     override fun onResume() {
         super.onResume()
         programViewModel.init()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        programViewModel.dispose()
     }
 
     //endregion
@@ -131,21 +137,29 @@ class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
             SELECT_PROGRAM,
         )
 
-        getActivityContent.navigateTo(
-            requireContext(),
-            program.toHomeItemData(),
+        val homeItemData = program.toHomeItemData()
+        val trackerProgram = homeItemData as? HomeItemData.TrackerProgram
+        val branch =
+            when {
+                trackerProgram?.isSEMIS == true -> "SEMIS"
+                trackerProgram?.isStockUseCase == true -> "STOCK"
+                trackerProgram != null -> "TRACKER"
+                homeItemData is HomeItemData.EventProgram -> "EVENT"
+                else -> "DATA_SET"
+            }
+        Timber.tag("EMIS_WIRING").i(
+            "programUid=%s isSEMIS=%s isStockUseCase=%s branch=%s",
+            program.uid,
+            trackerProgram?.isSEMIS ?: false,
+            trackerProgram?.isStockUseCase ?: false,
+            branch,
         )
-    }
-
-    override fun navigateToStockManagement(config: AppConfig) {
-        Intent(activity, HomeActivity::class.java).apply {
-            putExtra(INTENT_EXTRA_APP_CONFIG, config)
-            getActivityContent.launch(this)
-        }
+        getActivityContent.navigateTo(requireContext(), homeItemData)
     }
 
     override fun showSyncDialog(program: ProgramUiModel) {
-        SyncStatusDialog.Builder()
+        SyncStatusDialog
+            .Builder()
             .withContext(this)
             .withSyncContext(
                 when (program.programType) {
@@ -153,8 +167,7 @@ class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
                     "WITHOUT_REGISTRATION" -> SyncContext.GlobalEventProgram(program.uid)
                     else -> SyncContext.GlobalDataSet(program.uid)
                 },
-            )
-            .onDismissListener(
+            ).onDismissListener(
                 object : OnDismissListener {
                     override fun onDismiss(hasChanged: Boolean) {
                         if (hasChanged) {
@@ -162,16 +175,14 @@ class ProgramFragment : FragmentGlobalAbstract(), ProgramView {
                         }
                     }
                 },
-            )
-            .onNoConnectionListener {
-                val contextView = activity?.findViewById<View>(R.id.navigationBar)
-                Snackbar.make(
-                    contextView!!,
-                    R.string.sync_offline_check_connection,
-                    Snackbar.LENGTH_SHORT,
-                ).show()
-            }
-            .show(FRAGMENT_TAG)
+            ).onNoConnectionListener {
+                Snackbar
+                    .make(
+                        requireView(),
+                        R.string.sync_offline_check_connection,
+                        Snackbar.LENGTH_SHORT,
+                    ).show()
+            }.show(FRAGMENT_TAG)
     }
 
     companion object {

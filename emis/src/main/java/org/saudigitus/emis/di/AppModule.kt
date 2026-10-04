@@ -7,10 +7,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import org.dhis2.commons.network.NetworkUtils
+import org.dhis2.commons.resources.ColorUtils
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.form.ui.provider.HintProvider
 import org.dhis2.form.ui.provider.HintProviderImpl
 import org.hisp.dhis.android.core.D2
+import org.hisp.dhis.android.core.D2Manager
 import org.saudigitus.emis.data.local.AnalyticsRepository
 import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.FormRepository
@@ -29,6 +31,16 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun providesD2(): D2 = D2Manager.getD2()
+
+    @Provides
+    @Singleton
+    fun providesResourceManager(
+        @ApplicationContext context: Context,
+    ): ResourceManager = ResourceManager(context, ColorUtils())
 
     @Provides
     @Singleton

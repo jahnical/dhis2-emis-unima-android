@@ -25,8 +25,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dhis2.commons.ui.model.ListCardUiModel
 import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
@@ -93,7 +96,7 @@ fun AttendanceOptionContainer(
                 .background(color = Color.White),
             contentAlignment = Alignment.CenterEnd,
         ) {
-            ListCard(
+           /* ListCard(
                 modifier = Modifier.testTag("TEI_ITEM"),
                 listAvatar = card.avatar,
                 title = ListCardTitleModel(text = card.title),
@@ -103,6 +106,27 @@ fun AttendanceOptionContainer(
                 shrinkLabelText = card.shrinkLabelText,
                 onCardClick = card.onCardCLick,
                 shadow = false,
+            )*/
+
+            val additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                additionalInfoList = card.additionalInfo,
+                syncProgressItem = AdditionalInfoItem(value = ""), // replace with your actual sync item
+                expandLabelText = card.expandLabelText,
+                shrinkLabelText = card.shrinkLabelText,
+            )
+
+            val cardState = rememberListCardState(
+                title = ListCardTitleModel(text = card.title),
+                additionalInfoColumnState = additionalInfoColumnState,
+                shadow = false,
+            )
+
+            ListCard(
+                modifier = Modifier.testTag("TEI_ITEM"),
+                listCardState = cardState,
+                listAvatar = card.avatar,
+                actionButton = card.actionButton,
+                onCardClick = card.onCardCLick,
             )
 
             if (attendanceStep == ButtonStep.EDITING) {

@@ -353,7 +353,7 @@ class DataManagerImpl
         val data = mutableMapOf<SearchTeiModel, AttendanceEntity>()
 
         return@withContext try {
-            val cursor = d2.databaseAdapter().rawQuery(
+            val rows = d2.databaseAdapter().rawQuery(
                 SqlRaw.geTeiByAttendanceStatusQuery(
                     ou,
                     program,
@@ -368,17 +368,20 @@ class DataManagerImpl
                 ),
             )
 
-            if (cursor.count > 0) {
-                cursor.moveToFirst()
+            if (rows.isNotEmpty()) {
+                for (row in rows) {
+                    val eventUid = row["event"]
+                    val teiUid = row["tei"]
+                    val status = row["status"]
 
-                do {
-                    if (!cursor.isNull(0) &&
-                        !cursor.isNull(1) && !cursor.isNull(2)
+                    if (!eventUid.isNullOrEmpty() &&
+                        !teiUid.isNullOrEmpty() &&
+                        !status.isNullOrEmpty()
                     ) {
                         val response = async {
                             transformations.teiEventTransform(
-                                teiUid = cursor.getString(1),
-                                eventUid = cursor.getString(0),
+                                teiUid = teiUid,
+                                eventUid = eventUid,
                                 program = program,
                                 attendanceDataElement = attendanceDataElement,
                                 reasonDataElement = reasonDataElement,
@@ -390,7 +393,7 @@ class DataManagerImpl
 
                         data[result.first] = result.second
                     }
-                } while (cursor.moveToNext())
+                }
 
                 data
             } else {

@@ -52,10 +52,13 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.InputShellState
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardColumn
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.attendance.ButtonStep
@@ -141,9 +144,10 @@ fun PerformanceScreen(
     }
 
     if (isCompleted) {
+        val message = stringResource(R.string.marks_saved)
         LaunchedEffect(key1 = snackbarHostState) {
             snackbarHostState.showSnackbar(
-                message = context.getString(R.string.marks_saved),
+                message = message,
                 duration = SnackbarDuration.Short,
             )
         }
@@ -302,7 +306,7 @@ fun PerformanceScreen(
                                     color = if (isInactive) Color.LightGray.copy(.65f) else Color.White,
                                 ),
                             ) {
-                                ListCard(
+                               /* ListCard(
                                     modifier = Modifier
                                         .testTag("TEI_ITEM")
                                         .background(
@@ -314,6 +318,29 @@ fun PerformanceScreen(
                                     actionButton = card.actionButton,
                                     expandLabelText = card.expandLabelText,
                                     shrinkLabelText = card.shrinkLabelText,
+                                    onCardClick = card.onCardCLick,
+                                )*/
+                                val additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                                    additionalInfoList = card.additionalInfo,
+                                    syncProgressItem = AdditionalInfoItem(value = ""), // replace with your actual sync item
+                                    expandLabelText = card.expandLabelText,
+                                    shrinkLabelText = card.shrinkLabelText,
+                                )
+
+                                val cardState = rememberListCardState(
+                                    title = ListCardTitleModel(text = card.title),
+                                    additionalInfoColumnState = additionalInfoColumnState,
+                                )
+
+                                ListCard(
+                                    modifier = Modifier
+                                        .testTag("TEI_ITEM")
+                                        .background(
+                                            color = if (isInactive) Color.LightGray.copy(.25f) else Color.White,
+                                        ),
+                                    listCardState = cardState,
+                                    listAvatar = card.avatar,
+                                    actionButton = card.actionButton,
                                     onCardClick = card.onCardCLick,
                                 )
                             }

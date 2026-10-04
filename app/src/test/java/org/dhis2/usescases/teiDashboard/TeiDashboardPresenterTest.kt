@@ -8,10 +8,11 @@ import org.dhis2.commons.matomo.MatomoAnalyticsController
 import org.dhis2.commons.prefs.PreferenceProvider
 import org.dhis2.commons.schedulers.SchedulerProvider
 import org.dhis2.data.schedulers.TrampolineSchedulerProvider
-import org.dhis2.ui.MetadataIconData
+import org.dhis2.mobile.commons.model.MetadataIconData
 import org.dhis2.utils.analytics.AnalyticsHelper
 import org.dhis2.utils.analytics.CLICK
 import org.dhis2.utils.analytics.DELETE_TEI
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit
@@ -30,7 +31,6 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class TeiDashboardPresenterTest {
-
     private lateinit var presenter: TeiDashboardPresenter
     private val repository: DashboardRepository = mock()
     private val schedulers: SchedulerProvider = TrampolineSchedulerProvider()
@@ -44,15 +44,16 @@ class TeiDashboardPresenterTest {
 
     @Before
     fun setup() {
-        presenter = TeiDashboardPresenter(
-            view,
-            programUid,
-            repository,
-            schedulers,
-            analyticsHelper,
-            preferenceProvider,
-            matomoAnalyticsController,
-        )
+        presenter =
+            TeiDashboardPresenter(
+                view,
+                programUid,
+                repository,
+                schedulers,
+                analyticsHelper,
+                preferenceProvider,
+                matomoAnalyticsController,
+            )
     }
 
     @Test
@@ -65,24 +66,42 @@ class TeiDashboardPresenterTest {
     @Test
     fun `Should set program and restore adapter`() {
         val programUid = "programUid"
-        val program = Program.builder().uid(programUid).build()
+        val program =
+            Program
+                .builder()
+                .uid(programUid)
+                .categoryCombo(ObjectWithUid.create("categoryComboUid"))
+                .enrollmentCategoryCombo(ObjectWithUid.create("categoryComboUid"))
+                .build()
         val trackedEntityInstance = TrackedEntityInstance.builder().uid(teiUid).build()
-        val enrollment = Enrollment.builder().uid("enrollmentUid").build()
+        val enrollment =
+            Enrollment
+                .builder()
+                .uid("enrollmentUid")
+                .attributeOptionCombo("attributeOptionComboUid")
+                .build()
         val programStages = listOf(ProgramStage.builder().uid("programStageUid").build())
-        val trackedEntityAttributes = listOf(
-            Pair(
-                TrackedEntityAttribute.builder().uid("teiAttr").build(),
-                TrackedEntityAttributeValue.builder().build(),
-            ),
-        )
+        val trackedEntityAttributes =
+            listOf(
+                Pair(
+                    TrackedEntityAttribute.builder().uid("teiAttr").build(),
+                    TrackedEntityAttributeValue.builder().build(),
+                ),
+            )
         val trackedEntityAttributeValues = listOf(TrackedEntityAttributeValue.builder().build())
         val orgUnits = listOf(OrganisationUnit.builder().uid("orgUnitUid").build())
-        val programs = listOf(
-            Pair(
-                Program.builder().uid(programUid).build(),
-                MetadataIconData.defaultIcon(),
-            ),
-        )
+        val programs =
+            listOf(
+                Pair(
+                    Program
+                        .builder()
+                        .uid(programUid)
+                        .categoryCombo(ObjectWithUid.create("categoryComboUid"))
+                        .enrollmentCategoryCombo(ObjectWithUid.create("categoryComboUid"))
+                        .build(),
+                    MetadataIconData.defaultIcon(),
+                ),
+            )
 
         whenever(
             repository.getTrackedEntityInstance(teiUid),

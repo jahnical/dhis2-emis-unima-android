@@ -37,6 +37,7 @@
     <string name="search_students">Search students</string>
     <string name="performance_summary">Performance summary</string>
     <string name="marks_saved">Performance saved successfully</string>
+    <string name="enter_score_to_see_grade">Enter score to see grade</string>
     <string name="bulk_assing">Bulk assign</string>
     <string name="marked_follow_up">Marked for follow-up</string>
     <string name="sync_retry">Retry sync</string>
@@ -75,4 +76,5 @@
     <string name="dowload_teis">Sync %s</string>
     <string name="fetch_ties">Fetch %s</string>
     <string name="no_attendance_school_days">Attendance is only available on school days. Please select a valid school day.</string>
+    <string name="save">save</string>
 </resources>

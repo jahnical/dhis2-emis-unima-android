@@ -1,0 +1,23 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="title_activity_home">Beranda</string>
+
+    <string name="discard">Buang</string>
+    <!-- Sign in -->
+    <string name="username">Nama pengguna</string>
+
+    <string name="delete">Hapus</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Batal</string>
+
+    <string name="from">Dari</string>
+    <!-- Content descriptions for accessibility -->
+
+    <string name="confirm_transaction_label">Konfirmasi</string>
+
+    <string name="online_search_parsing_error">Kesalahan saat penguraian hasil</string>
+    <string name="done_task">Beranda</string>
+    <string name="back">Kembali</string>
+    <string name="count">Hitung</string>
+    <string name="formatting_error">Memformat kesalahan</string>
+    <string name="invalid_possitive_zero">Hanya angka positif atau nol yang diperbolehkan</string>
+    </resources>

@@ -1,5 +1,6 @@
 package org.dhis2.usescases.login.ui
 
+/*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
@@ -76,8 +77,8 @@ fun LoginTopBar(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
-                painter = painterResource(id = R.drawable.emis_logo_white),
-                contentDescription = "SEMIS logo",
+                painter = painterResource(id = R.drawable.ic_dhis_white),
+                contentDescription = "dhis2 logo",
             )
 
             if (displayMoreActions) {
@@ -156,3 +157,4 @@ private fun PreviewLoginTopBar() {
         LoginTopBar(version = "v2.9") {}
     }
 }
+*/

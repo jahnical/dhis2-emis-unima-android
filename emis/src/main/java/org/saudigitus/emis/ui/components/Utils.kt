@@ -11,25 +11,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.HideSource
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,8 +48,6 @@ import org.saudigitus.emis.ui.theme.dark_warning
 import org.saudigitus.emis.ui.theme.light_error
 import org.saudigitus.emis.ui.theme.light_info
 import org.saudigitus.emis.utils.DateHelper
-import java.time.LocalDate
-import java.time.ZoneId
 
 @Composable
 fun NoResults(
@@ -88,12 +86,17 @@ fun CustomDatePicker(
     onDatePick: (date: String) -> Unit,
     dateValidator: (Long) -> Boolean = { true },
 ) {
+    // rememberDatePickerState only builds selectableDates once, so it must read
+    // dateValidator through rememberUpdatedState - otherwise it keeps calling
+    // whichever validator was passed in on the very first composition.
+    val latestDateValidator by rememberUpdatedState(dateValidator)
+
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = null,
         initialDisplayMode = DisplayMode.Picker,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return dateValidator(utcTimeMillis)
+                return latestDateValidator(utcTimeMillis)
             }
         },
     )

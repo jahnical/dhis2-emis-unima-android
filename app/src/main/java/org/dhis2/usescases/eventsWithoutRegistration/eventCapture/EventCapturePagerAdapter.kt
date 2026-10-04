@@ -22,17 +22,18 @@ class EventCapturePagerAdapter(
     displayRelationshipScreen: Boolean,
     private val shouldOpenErrorSection: Boolean,
     private val eventMode: EventMode,
-
 ) : FragmentStateAdapter(fragmentActivity) {
     private val landscapePages: MutableList<EventPageType> = ArrayList()
     private val portraitPages: MutableList<EventPageType> = ArrayList()
+    private val itemIds: MutableList<Long> = ArrayList()
 
-    fun isFormScreenShown(currentItem: Int?): Boolean {
-        return currentItem != null && portraitPages[currentItem] == EventPageType.DATA_ENTRY
-    }
+    fun isFormScreenShown(currentItem: Int?): Boolean = currentItem != null && portraitPages[currentItem] == EventPageType.DATA_ENTRY
 
     private enum class EventPageType {
-        DATA_ENTRY, ANALYTICS, RELATIONSHIPS, NOTES
+        DATA_ENTRY,
+        ANALYTICS,
+        RELATIONSHIPS,
+        NOTES,
     }
 
     init {
@@ -50,16 +51,21 @@ class EventCapturePagerAdapter(
         }
         portraitPages.add(EventPageType.NOTES)
         landscapePages.add(EventPageType.NOTES)
+
+        if (isPortrait) {
+            portraitPages.forEach { itemIds.add(it.ordinal * 1000L) }
+        } else {
+            landscapePages.forEach { itemIds.add(it.ordinal * 1000L) }
+        }
     }
 
-    override fun createFragment(position: Int): Fragment {
-        return createFragmentForPage(
+    override fun createFragment(position: Int): Fragment =
+        createFragmentForPage(
             if (isPortrait) portraitPages[position] else landscapePages[position],
         )
-    }
 
-    private fun createFragmentForPage(pageType: EventPageType): Fragment {
-        return when (pageType) {
+    private fun createFragmentForPage(pageType: EventPageType): Fragment =
+        when (pageType) {
             EventPageType.ANALYTICS -> {
                 val indicatorFragment: Fragment = IndicatorsFragment()
                 val arguments = Bundle()
@@ -70,12 +76,13 @@ class EventCapturePagerAdapter(
 
             EventPageType.RELATIONSHIPS -> {
                 val relationshipFragment: Fragment = RelationshipFragment()
-                relationshipFragment.arguments = withArguments(
-                    programUid,
-                    null,
-                    null,
-                    eventUid,
-                )
+                relationshipFragment.arguments =
+                    withArguments(
+                        programUid,
+                        null,
+                        null,
+                        eventUid,
+                    )
                 relationshipFragment
             }
 
@@ -91,15 +98,15 @@ class EventCapturePagerAdapter(
                 )
             }
         }
-    }
 
     fun getDynamicTabIndex(navigationPage: NavigationPage?): Int {
-        val pageType = when (navigationPage) {
-            NavigationPage.ANALYTICS -> EventPageType.ANALYTICS
-            NavigationPage.RELATIONSHIPS -> EventPageType.RELATIONSHIPS
-            NavigationPage.NOTES -> EventPageType.NOTES
-            else -> null
-        }
+        val pageType =
+            when (navigationPage) {
+                NavigationPage.ANALYTICS -> EventPageType.ANALYTICS
+                NavigationPage.RELATIONSHIPS -> EventPageType.RELATIONSHIPS
+                NavigationPage.NOTES -> EventPageType.NOTES
+                else -> null
+            }
 
         return if (pageType != null) {
             if (isPortrait) {
@@ -112,18 +119,27 @@ class EventCapturePagerAdapter(
         }
     }
 
-    override fun getItemCount(): Int {
-        return if (isPortrait) {
+    override fun getItemCount(): Int =
+        if (isPortrait) {
             portraitPages.size
         } else {
             landscapePages.size
         }
-    }
 
     val isPortrait: Boolean
         get() = fragmentActivity.resources.configuration.orientation == 1
 
     companion object {
         const val NO_POSITION: Int = -1
+    }
+
+    fun refreshDataEntry() {
+        val index = portraitPages.indexOf(EventPageType.DATA_ENTRY)
+        itemIds[index] = itemIds[index] + 1
+        notifyItemChanged(index)
+    }
+
+    override fun getItemId(position: Int): Long {
+        return itemIds[position]
     }
 }

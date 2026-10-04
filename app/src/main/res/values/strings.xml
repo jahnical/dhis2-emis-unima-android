@@ -34,13 +34,10 @@
 
     <string name="sync_error_title">Sync Error</string>
     <string name="sync_error_text">An error has occurred during synchronisation. Please retry.</string>
-    <string name="sync_incomplete_error_text">Sync finished but we did not receive server confirmation for all records. Those record are still marked as "offline" in the App. We recommend to retry the synchronization.</string>
-    <string name="metadata_sync_error">FAIL: Something went wrong in the sync process. If you have connection please try again. If the error persist, contact your administrator.</string>
-    <string name="data_sync_warning">WARNING: Most of your data is synced but some fields presented conflicts. Sync your configuration and try again. Check their sync status: programs, TEI\'s and events with conflicts are marked as @.</string>
-    <string name="data_sync_warning_program">WARNING: Most of your data is synced but some fields presented conflicts. Sync your configuration and try again. If warning persists, check their sync status: programs, TEI\'s and events with conflicts are marked as @.</string>
-    <string name="data_sync_error">ERROR: Some of your data failed to sync. Check their sync status: programs with errors are marked as @, TEI\'s and events as $".</string>
-    <string name="data_sync_error_program">ERROR: Some of your data failed to sync. Check their sync status: TEI\'s and events with conflicts are marked as $".</string>
-    <string name="server_sync_error">There was an error and the server did not respond. Contact your administrator.</string>
+    <string name="sync_incomplete_error_text">Sync finished but we did not receive server confirmation for all records. Those record are still marked as \"offline\" in the App. We recommend to retry the synchronization.</string>
+    <string name="metadata_sync_error">FAIL: Something went wrong in the sync process. If you have connection please try again. If the error persists, contact your administrator.</string>
+    <string name="data_sync_warning_v2">There are conflicts in your data. Please sync your configuration, review your data and try syncing again.</string>
+    <string name="data_sync_error_v2">Some of your data failed to sync.</string>
 
     <string name="search_result_text">%s results found</string>
     <string name="add_new">Add new</string>
@@ -111,6 +108,7 @@
     <string name="active">Active</string>
 
     <!-- State -->
+
     <string name="state_synced">Sync</string>
     <string name="state_to_post">To send</string>
     <string name="state_to_update">To update</string>
@@ -204,8 +202,7 @@
     <string name="SYNC_DATA">SYNC Data Now</string>
     <string name="SYNC_META">SYNC Configuration Now</string>
     <string name="SYNC_MANAGER">Settings</string>
-    <string name="last_data_sync_date">Last sync on: %s</string>
-    <string name="last_metadata_sync_date">Last sync on: %s</string>
+    <string name="last_data_sync">Last sync on</string>
     <string name="refill_reserved_values">Refill</string>
     <string name="settings_sms_module_title">SMS module:</string>
     <string name="settings_sms_receiver_number">SMS gateway</string>
@@ -216,11 +213,7 @@
     <string name="settings_sms_receiver_number_hint">number</string>
     <string name="settings_sms_module_switch">Enable SMS submission</string>
     <string name="settings_sms_response_wait_switch">Wait for SMS result response</string>
-    <plurals name="settings_specific_programs">
-        <item quantity="one">There is %s program with specific settings</item>
-        <item quantity="other">There are %s programs with specific settings</item>
-    </plurals>
-    <string name="settings_sync_period">Syncing period</string>
+    <string name="settings_sync_period_v2">Sync period</string>
     <string name="settings_limit_scope">Settings limited</string>
     <string name="settings_limit_globally">Globally</string>
     <string name="settings_limit_program">by program</string>
@@ -246,6 +239,9 @@
     <string name="settingsCheckVersionMessage">Software</string>
     <string name="settingsExportDB">Export database</string>
     <string name="settingsExportDBMessage">Export your database and share it with your administrator</string>
+    <string name="settingTwoFA">Two factor authentication</string>
+    <string name="settingsTwoFAStatus">Status</string>
+    <string name="settingTwoFADescr">Enable or disable the authentication in two steps.</string>
     <!--endregion-->
 
     <string name="enrollmment_date">Enrollment date</string>
@@ -355,7 +351,6 @@
     <!--ABOUT-->
     <string name="about_app">App Version: %s</string>
     <string name="about_sdk">SDK Version: %s</string>
-    <string name="about_semis">SEMIS Version: %s</string>
     <string name="about_connected">Connected to: %s</string>
     <string name="about_user">Current user: %s</string>
     <string name="about_more">More about this app: read <a href="https://drive.google.com/open?id=1YHRBk6LSp6uROfs19-wCfQGc-rgl2f5iDrhCDasTR8M">here</a> what\'s supported and what\'s not supported</string>
@@ -435,8 +430,7 @@
     <string name="tuto_main_10">Log out to change user or server. You will be able to log in again even if there is no internet connection.</string>
     <string name="text_plus_colon">%s:</string>
     <string name="relationships">relationships</string>
-    <string name="empty_tei_add">There are no events registered, click "+" to add a new one.</string>
-    <string name="empty_tei_no_add">There are no events registered.</string>
+    <string name="empty_tei_add">There are no events registered, click \"+\" to add a new one.</string>
     <string name="qr_data_values">Data values</string>
     <string name="info">Info</string>
     <string name="qr_no_id_error">Could not read this Id</string>
@@ -623,10 +617,7 @@
     <string name="filter_event_status_visited">Visited</string>
     <string name="filter_event_status_completed">Completed</string>
     <string name="filter_event_status_skipped">Skipped</string>
-    <string name="event_tei_limits">Events:%smax:%s%scurrent:%s TEI:%smax:%s%scurrent:%s</string>
-    <string name="event_tei_limits_v2">Settings limited %s\nEvents: %s/%s TEI: %s/%s</string>
-    <string name="enrollment_data_hide">Hide enrollment data</string>
-    <string name="enrollment_data_show">Show enrollment data</string>
+    <string name="limit_setting">Settings limited %s</string>
     <string name="sms_enabled">SMS module enabled</string>
     <string name="sms_disabled">SMS module disabled</string>
     <string name="sms_downloading_data">Downloading data for SMS module. Please wait</string>
@@ -824,8 +815,7 @@
     <string name="edition_no_write_access">You do not have permission to edit this data</string>
     <string name="event_date_not_in_orgunit_range">This data is not editable because the organization unit is closed</string>
     <string name="edition_no_catcombo_access">You do not have permission to edit this data</string>
-    <string name="edition_orgunit_capture_scope">You cannot edit data from this organisation unit</string>
-    <string name="reload_list">Reset search</string>
+    <string name="edition_orgunit_user_scope">You cannot edit data from this organisation unit</string>
     <string name="error_tei_online_search_title">The online search returned the following message:</string>
     <string name="program_rules_loop_warning_title">Program rules warning</string>
     <string name="program_rules_loop_warning_message">There is a configuration issue causing a loop in the rules. Contact you administrator.</string>
@@ -915,16 +905,9 @@
     <string name="sync_dialog_action_refresh">Refresh</string>
     <string name="sync_dialog_action_not_now">Not now</string>
     <string name="tap_to_explore_action">Tap here to explore</string>
-    <plurals name="error_count_label">
-        <item quantity="one">%s error</item>
-        <item quantity="other">%s errors</item>
-    </plurals>
-    <plurals name="warning_count_label">
-        <item quantity="one">%s warning</item>
-        <item quantity="other">%s warnings</item>
-    </plurals>
+
     <string name="new_version_message">App version <b>%s</b> is now available. Do you want to download it?</string>
-    <string name="software_update">"Software update"</string>
+    <string name="software_update">Software update</string>
     <string name="remind_me_later">Later</string>
     <string name="download_now">Download now</string>
     <string name="check_for_updates">Check for updates</string>
@@ -933,7 +916,7 @@
     <string name="unknow_sources_denied">Unknown sources permission is denied.\nYou need to enable it to install version.</string>
     <string name="storage_denied">Storage permission is denied.\nYou need to enable it to install version.</string>
     <string name="app_version">App version</string>
-    <string name="error_applying_rule_effects">"Something went wrong with the program configuration, we cannot load this event. Please contact your system admin."</string>
+    <string name="error_applying_rule_effects">Something went wrong with the program configuration, we cannot load this event. Please contact your system admin.</string>
     <string name="dashboard_menu_delete_person">Delete Person</string>
     <string name="permission_notification_denied">Notification permission is denied.</string>
     <string name="permission_notification_granted">Notification permission granted.</string>
@@ -943,6 +926,8 @@
     <string name="overdue">Overdue %s</string>
     <string name="registered_in">Registered in</string>
     <string name="view_only">View only</string>
+    <string name="at_enroll_org_unit">At %s.</string>
+    <string name="no_access_to_it">You don\'t have access to it.</string>
     <string name="scheduled">Scheduled: %s</string>
     <string name="scheduled_for">Scheduled for %s</string>
     <string name="skipped">Skipped</string>
@@ -994,4 +979,24 @@
     <string name="successfully_transferred">Successfully transferred</string>
     <string name="event_cancelled">%1$s cancelled</string>
     <string name="due_date_updated">Due date updated</string>
+    <string name="complete_enrollment_label">Complete %s</string>
+    <string name="deactivate_enrollment_label">Deactivate %s</string>
+    <string name="reopen_enrollment_label">Re-open %s</string>
+    <string name="main_menu_developer_scree">Developer options</string>
+    <string name="about_semis">SEMIS Version</string>
+
+    <plurals name="error_count_label">
+        <item quantity="one">%s error</item>
+        <item quantity="other">%s errors</item>
+    </plurals>
+
+    <plurals name="warning_count_label">
+        <item quantity="one">%s warning</item>
+        <item quantity="other">%s warnings</item>
+    </plurals>
+
+    <plurals name="settings_specific_programs">
+        <item quantity="one">There is %s program with specific settings</item>
+        <item quantity="other">There are %s programs with specific settings</item>
+    </plurals>
 </resources>
