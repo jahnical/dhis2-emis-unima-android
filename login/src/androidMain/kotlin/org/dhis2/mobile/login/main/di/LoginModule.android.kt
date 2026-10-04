@@ -1,7 +1,5 @@
 package org.dhis2.mobile.login.main.di
 
-import android.content.Context
-import android.content.pm.ApplicationInfo
 import org.dhis2.mobile.login.accounts.data.repository.AccountRepository
 import org.dhis2.mobile.login.accounts.data.repository.AccountRepositoryImpl
 import org.dhis2.mobile.login.accounts.ui.viewmodel.AccountsViewModel
@@ -17,12 +15,10 @@ import org.koin.dsl.module
 internal actual val accountModule =
     module {
         factory<AccountRepository> {
-            val context = get<Context>()
-            val isDebug = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
             AccountRepositoryImpl(
-                get(),
-                get(),
-                isDebug = isDebug,
+                d2 = get(),
+                preferenceProvider = get(),
+                context = get(),
                 isTrainingFlavor = getProperty("isTrainingFlavor", false),
             )
         }

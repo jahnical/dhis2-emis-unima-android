@@ -11,9 +11,7 @@
         android:name="android.hardware.telephony"
         android:required="false" />
 
-    <application
-        android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher">
+    <application>
 
         <activity android:name=".usescases.development.DevelopmentActivity" />
 
