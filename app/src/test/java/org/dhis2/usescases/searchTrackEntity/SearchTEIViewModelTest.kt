@@ -6,11 +6,14 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.outlined.Map
+import androidx.paging.PagingData
+import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
-import com.mapbox.geojson.BoundingBox
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -20,27 +23,37 @@ import org.dhis2.commons.filters.FilterManager
 import org.dhis2.commons.network.NetworkUtils
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.commons.viewmodel.DispatcherProvider
-import org.dhis2.data.search.SearchParametersModel
-import org.dhis2.form.model.FieldUiModel
-import org.dhis2.form.model.FieldUiModelImpl
-import org.dhis2.form.ui.intent.FormIntent
+import org.dhis2.form.ui.customintent.CustomIntentResult
 import org.dhis2.form.ui.provider.DisplayNameProvider
 import org.dhis2.maps.geometry.mapper.EventsByProgramStage
 import org.dhis2.maps.usecases.MapStyleConfiguration
+import org.dhis2.mobile.commons.model.CustomIntentModel
+import org.dhis2.tracker.input.model.TrackerInputType
+import org.dhis2.tracker.input.ui.action.TrackerInputAction
+import org.dhis2.tracker.input.ui.state.TrackerInputUiState
+import org.dhis2.tracker.search.domain.FetchOptionSetOptions
+import org.dhis2.tracker.search.domain.FetchSearchParameters
+import org.dhis2.tracker.search.domain.SearchTrackedEntities
+import org.dhis2.tracker.search.model.SearchTrackedEntitiesInput
 import org.dhis2.usescases.searchTrackEntity.listView.SearchResult.SearchResultType
 import org.dhis2.utils.customviews.navigationbar.NavigationPage
-import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.program.Program
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityType
+import org.hisp.dhis.mobile.ui.designsystem.component.Orientation
 import org.hisp.dhis.mobile.ui.designsystem.component.navigationBar.NavigationBarItem
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.maplibre.geojson.BoundingBox
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -51,7 +64,7 @@ class SearchTEIViewModelTest {
 
     private lateinit var viewModel: SearchTEIViewModel
     private val initialProgram = "programUid"
-    private val initialQuery = mutableMapOf<String, String>()
+    private val initialQuery = mutableMapOf<String, List<String>?>()
     private val repository: SearchRepository = mock()
     private val repositoryKt: SearchRepositoryKt = mock()
     private val pageConfigurator: SearchPageConfigurator = mock()
@@ -61,6 +74,13 @@ class SearchTEIViewModelTest {
     private val resourceManager: ResourceManager = mock()
     private val displayNameProvider: DisplayNameProvider = mock()
     private val filterManager: FilterManager = mock()
+    private val searchTrackedEntities: SearchTrackedEntities =
+        mock {
+            onBlocking { invoke(any()) } doReturn Result.success(flowOf(PagingData.empty()))
+        }
+
+    private val fetchSearchParameters: FetchSearchParameters = mock()
+    private val fetchOptionSetOptions: FetchOptionSetOptions = mock()
 
     @ExperimentalCoroutinesApi
     private val testingDispatcher = StandardTestDispatcher()
@@ -74,32 +94,32 @@ class SearchTEIViewModelTest {
         whenever(repository.canCreateInProgramWithoutSearch()) doReturn true
         whenever(repository.getTrackedEntityType()) doReturn testingTrackedEntityType()
         whenever(repository.filtersApplyOnGlobalSearch()) doReturn true
-        viewModel = SearchTEIViewModel(
-            initialProgram,
-            initialQuery,
-            repository,
-            repositoryKt,
-            pageConfigurator,
-            mapDataRepository,
-            networkUtils,
-            object : DispatcherProvider {
-                override fun io(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+        whenever(repositoryKt.getExcludeValues()) doReturn HashSet<String>()
+        whenever(repositoryKt.saveSearchValuesAndGetAllowCache(any(), any())) doReturn true
+        viewModel =
+            SearchTEIViewModel(
+                initialProgram,
+                initialQuery,
+                repository,
+                repositoryKt,
+                pageConfigurator,
+                mapDataRepository,
+                networkUtils,
+                object : DispatcherProvider {
+                    override fun io(): CoroutineDispatcher = testingDispatcher
 
-                override fun computation(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+                    override fun computation(): CoroutineDispatcher = testingDispatcher
 
-                override fun ui(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
-            },
-            mapStyleConfiguration,
-            resourceManager = resourceManager,
-            displayNameProvider = displayNameProvider,
-            filterManager = filterManager,
-        )
+                    override fun ui(): CoroutineDispatcher = testingDispatcher
+                },
+                mapStyleConfiguration,
+                resourceManager = resourceManager,
+                displayNameProvider = displayNameProvider,
+                filterManager = filterManager,
+                searchTrackedEntities = searchTrackedEntities,
+                fetchSearchParameters = fetchSearchParameters,
+                fetchOptionSetOptions = fetchOptionSetOptions,
+            )
         testingDispatcher.scheduler.advanceUntilIdle()
     }
 
@@ -190,84 +210,124 @@ class SearchTEIViewModelTest {
 
     @Test
     fun `Should update query data`() {
-        viewModel.onParameterIntent(
-            FormIntent.OnSave(
-                uid = "testingUid",
-                value = "testingValue",
-                valueType = ValueType.TEXT,
-            ),
+        viewModel.onValueChange(
+            fieldUid = "testingUid",
+            value = "testingValue",
         )
 
-        val queryData = viewModel.queryData
+        val queryData = viewModel.queryDataList
 
         assertTrue(queryData.isNotEmpty())
+        assertTrue(queryData.size == 1)
+        val data = queryData.first { it.attributeId == "testingUid" }
+        assertTrue(data.values?.get(0) == "testingValue")
+    }
+
+    @Test
+    fun `Should update query data when list of values is passed`() {
+        viewModel.onValueChange(
+            fieldUid = "testingUid",
+            value = "testingValue,testingValue2",
+        )
+
+        val queryData = viewModel.queryDataList
+
+        assertTrue(queryData.isNotEmpty())
+        assertTrue(queryData.any { it.attributeId == "testingUid" })
+        val data = queryData.first { it.attributeId == "testingUid" }
+        assertTrue(data.values?.size == 2)
+        assertTrue(data.values?.contains("testingValue") == true)
+        assertTrue(data.values?.contains("testingValue2") == true)
+    }
+
+    @Test
+    fun `Should update query data when various list of values are passed`() {
+        viewModel.onValueChange(
+            fieldUid = "testingUid",
+            value = "testingValue,testingValue2",
+        )
+        viewModel.onValueChange(
+            fieldUid = "testingUid2",
+            value = "testingValue,testingValue2",
+        )
+
+        val queryData = viewModel.queryDataList
+
+        assertTrue(queryData.isNotEmpty())
+        assertTrue(queryData.any { it.attributeId == "testingUid" })
+        val data1 = queryData.first { it.attributeId == "testingUid" }
+        assertTrue(data1.values?.size == 2)
+        assertTrue(data1.values?.contains("testingValue") == true)
+        assertTrue(data1.values?.contains("testingValue2") == true)
+
+        assertTrue(queryData.any { it.attributeId == "testingUid2" })
+        val data2 = queryData.first { it.attributeId == "testingUid2" }
+        assertTrue(data2.values?.size == 2)
+        assertTrue(data2.values?.contains("testingValue") == true)
+        assertTrue(data2.values?.contains("testingValue2") == true)
     }
 
     @ExperimentalCoroutinesApi
     @Test
-    fun `Should return local results LiveData if not searching and displayInList is true`() {
-        val testingProgram = testingProgram()
-        setCurrentProgram(testingProgram)
-        viewModel.fetchListResults {}
-        testingDispatcher.scheduler.advanceUntilIdle()
-        verify(repositoryKt).searchTrackedEntities(
-            SearchParametersModel(
-                selectedProgram = testingProgram,
-                queryData = mutableMapOf(),
-            ),
-            false,
-        )
-    }
+    fun `Should return local results LiveData if not searching and displayInList is true`() =
+        runTest {
+            val testingProgram = testingProgram()
+            setCurrentProgram(testingProgram)
 
-    @Test
-    fun `Should return null if not searching and displayInList is false`() {
-        val testingProgram = testingProgram(displayFrontPageList = false)
-        setCurrentProgram(testingProgram)
-        viewModel.fetchListResults {}
+            viewModel.searchPagingData.take(1).asSnapshot()
 
-        verify(repositoryKt, times(0)).searchTrackedEntities(
-            SearchParametersModel(
-                selectedProgram = testingProgram,
-                queryData = mutableMapOf(),
-            ),
-            true,
-        )
-
-        verify(repositoryKt, times(0)).searchTrackedEntities(
-            SearchParametersModel(
-                selectedProgram = testingProgram,
-                queryData = mutableMapOf(),
-            ),
-            false,
-        )
-    }
-
-    @Test
-    fun `Should return null global results if not searching`() {
-        viewModel.fetchListResults {
-            assertTrue(it == null)
+            verify(searchTrackedEntities).invoke(
+                eq(
+                    SearchTrackedEntitiesInput(
+                        selectedProgram = testingProgram.uid(),
+                        queryDataList = mutableListOf(),
+                        allowCache = true,
+                        excludeValues = emptySet(),
+                        hasStateFilters = false,
+                        isOnline = false,
+                    ),
+                ),
+            )
         }
-    }
+
+    @Test
+    fun `Should return null if not searching and displayInList is false`() =
+        runTest {
+            val testingProgram = testingProgram(displayFrontPageList = false)
+            setCurrentProgram(testingProgram)
+            viewModel.searchPagingData.test {
+                awaitItem()
+                verify(searchTrackedEntities, never()).invoke(any())
+            }
+        }
+
+    @Test
+    fun `Should return empty global results if not searching`() =
+        runTest {
+            val result = viewModel.searchPagingData.take(1).asSnapshot()
+            assertTrue(result.isEmpty())
+        }
 
     @ExperimentalCoroutinesApi
     @Test
     fun `Should fetch map results`() {
-        val trackerMapData = TrackerMapData(
-            EventsByProgramStage("tag", mapOf()),
-            mutableListOf(),
-            hashMapOf(),
-            BoundingBox.fromLngLats(
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-            ),
-            mutableMapOf(),
-        )
+        val trackerMapData =
+            TrackerMapData(
+                EventsByProgramStage("tag", mapOf()),
+                mutableListOf(),
+                hashMapOf(),
+                BoundingBox.fromLngLats(
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
+                mutableMapOf(),
+            )
         whenever(
             mapDataRepository.getTrackerMapData(
                 testingProgram(),
-                viewModel.queryData,
+                viewModel.queryDataAsMap(),
             ),
         ) doReturn trackerMapData
 
@@ -281,26 +341,26 @@ class SearchTEIViewModelTest {
     }
 
     @Test
-    fun `Should use callback to perform min attributes warning`() = runTest {
-        setCurrentProgram(testingProgram(displayFrontPageList = false))
-        viewModel.onSearch()
-        viewModel.uiState.shouldShowMinAttributeWarning.test {
-            assertTrue(awaitItem())
+    fun `Should use callback to perform min attributes warning`() =
+        runTest {
+            setCurrentProgram(testingProgram(displayFrontPageList = false))
+            setAllowCreateBeforeSearch(false)
+            viewModel.onSearch()
+            viewModel.searchParametersUiState.shouldShowMinAttributeWarning.test {
+                assertTrue(awaitItem())
+            }
         }
-    }
 
     @Test
     fun `Should search for list result`() {
         setCurrentProgram(testingProgram())
         viewModel.setListScreen()
         viewModel.setSearchScreen()
-        viewModel.onParameterIntent(
-            FormIntent.OnSave(
-                uid = "testingUid",
-                value = "testingValue",
-                valueType = ValueType.TEXT,
-            ),
+        viewModel.onValueChange(
+            fieldUid = "testingUid",
+            value = "testingValue",
         )
+
         viewModel.onSearch()
 
         assertTrue(viewModel.refreshData.value != null)
@@ -312,30 +372,29 @@ class SearchTEIViewModelTest {
         whenever(
             mapDataRepository.getTrackerMapData(
                 testingProgram(),
-                viewModel.queryData,
+                viewModel.queryDataAsMap(),
             ),
-        ) doReturn TrackerMapData(
-            EventsByProgramStage("tag", mapOf()),
-            mutableListOf(),
-            hashMapOf(),
-            BoundingBox.fromLngLats(
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-            ),
-            mutableMapOf(),
-        )
+        ) doReturn
+            TrackerMapData(
+                EventsByProgramStage("tag", mapOf()),
+                mutableListOf(),
+                hashMapOf(),
+                BoundingBox.fromLngLats(
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
+                mutableMapOf(),
+            )
         setCurrentProgram(testingProgram())
         viewModel.setMapScreen()
         viewModel.setSearchScreen()
-        viewModel.onParameterIntent(
-            FormIntent.OnSave(
-                uid = "testingUid",
-                value = "testingValue",
-                valueType = ValueType.TEXT,
-            ),
+        viewModel.onValueChange(
+            fieldUid = "testingUid",
+            value = "testingValue",
         )
+
         viewModel.onSearch()
 
         testingDispatcher.scheduler.advanceUntilIdle()
@@ -343,14 +402,14 @@ class SearchTEIViewModelTest {
         assertTrue(viewModel.refreshData.value != null)
         verify(mapDataRepository).getTrackerMapData(
             testingProgram(),
-            viewModel.queryData,
+            viewModel.queryDataAsMap(),
         )
     }
 
     @Test
     fun `Should filter query data for new program`() {
         viewModel.queryDataByProgram("programUid")
-        verify(repository).filterQueryForProgram(viewModel.queryData, "programUid")
+        verify(repository).filterQueryForProgram(viewModel.queryDataAsMap(), "programUid")
     }
 
     @Test
@@ -442,8 +501,11 @@ class SearchTEIViewModelTest {
         setCurrentProgram(testingProgram(maxTeiCountToReturn = 1))
         setAllowCreateBeforeSearch(false)
         whenever(
-            repository.filterQueryForProgram(viewModel.queryData, null),
-        ) doReturn mapOf("field" to "value")
+            repository.filterQueryForProgram(
+                any(),
+                anyOrNull(),
+            ),
+        ) doReturn mapOf("testingUid" to listOf("testingValue"))
 
         performSearch()
         viewModel.onDataLoaded(1)
@@ -458,7 +520,7 @@ class SearchTEIViewModelTest {
     fun `Should return unable to search outside result for search`() {
         setCurrentProgram(testingProgram(maxTeiCountToReturn = 1))
         setAllowCreateBeforeSearch(false)
-        whenever(repository.filterQueryForProgram(viewModel.queryData, null)) doReturn mapOf()
+        whenever(repository.filterQueryForProgram(viewModel.queryDataAsMap(), null)) doReturn mapOf()
         whenever(repository.trackedEntityTypeFields()) doReturn listOf("Field_1", "Field_2")
 
         performSearch()
@@ -614,10 +676,11 @@ class SearchTEIViewModelTest {
 
     @Test
     fun `should return selected program uid and set theme`() {
-        val programs = listOf(
-            ProgramSpinnerModel("program1", "program1", false),
-            ProgramSpinnerModel("program2", "program2", false),
-        )
+        val programs =
+            listOf(
+                ProgramSpinnerModel("program1", "program1", false),
+                ProgramSpinnerModel("program2", "program2", false),
+            )
 
         viewModel.onProgramSelected(2, programs) {
             assertTrue(it == "program2")
@@ -627,9 +690,10 @@ class SearchTEIViewModelTest {
 
     @Test
     fun `should return first program uid and set theme`() {
-        val programs = listOf(
-            ProgramSpinnerModel("program1", "program1", false),
-        )
+        val programs =
+            listOf(
+                ProgramSpinnerModel("program1", "program1", false),
+            )
 
         viewModel.onProgramSelected(2, programs) {
             assertTrue(it == "program1")
@@ -647,17 +711,19 @@ class SearchTEIViewModelTest {
 
     @Test
     fun `should return user-friendly names on search parameters fields`() {
-        viewModel.uiState = viewModel.uiState.copy(items = getFieldUIModels())
-        val expectedMap = mapOf(
-            "uid1" to "Friendly OrgUnit Name",
-            "uid2" to "Male",
-            "uid3" to "21/02/2024",
-            "uid4" to "21/02/2024 - 01:00",
-            "uid5" to "Boolean: false",
-            "uid6" to "Yes Only",
-            "uid7" to "Text value",
-            "uid9" to "18%",
-        )
+        viewModel.searchParametersUiState =
+            viewModel.searchParametersUiState.copy(items = getTrackerInputModels())
+        val expectedMap =
+            mapOf(
+                "uid1" to "Friendly OrgUnit Name",
+                "uid2" to "Male",
+                "uid3" to "21/02/2024",
+                "uid4" to "21/02/2024 - 01:00",
+                "uid5" to "Boolean: false",
+                "uid6" to "Yes Only: true",
+                "uid7" to "Text value",
+                "uid9" to "18%",
+            )
 
         val formattedMap = viewModel.getFriendlyQueryData()
 
@@ -666,20 +732,23 @@ class SearchTEIViewModelTest {
 
     @Test
     fun `should clear uiState when clearing data`() {
-        viewModel.uiState = viewModel.uiState.copy(items = getFieldUIModels())
+        viewModel.searchParametersUiState =
+            viewModel.searchParametersUiState.copy(items = getTrackerInputModels())
         performSearch()
         viewModel.clearQueryData()
-        assert(viewModel.queryData.isEmpty())
-        assert(viewModel.uiState.items.all { it.value == null })
-        assert(viewModel.uiState.searchedItems.isEmpty())
+        assert(viewModel.queryDataList.isEmpty())
+        assert(viewModel.searchParametersUiState.items.all { it.value == null })
+        assert(viewModel.searchParametersUiState.searchedItems.isEmpty())
     }
 
     @Test
     fun `should return date without format`() {
-        viewModel.uiState = viewModel.uiState.copy(items = getMalformedDateFieldUIModels())
-        val expectedMap = mapOf(
-            "uid1" to "04",
-        )
+        viewModel.searchParametersUiState =
+            viewModel.searchParametersUiState.copy(items = getMalformedDateFieldUIModels())
+        val expectedMap =
+            mapOf(
+                "uid1" to "04",
+            )
 
         val formattedMap = viewModel.getFriendlyQueryData()
 
@@ -689,40 +758,41 @@ class SearchTEIViewModelTest {
     @Test
     fun `when there is only one navigation item, navigation items list should be empty`() {
         // given
-        val searchNavPageConfigurator: SearchPageConfigurator = mock {
-            on { displayListView() } doReturn true
-            on { displayMapView() } doReturn true
-            on { displayAnalytics() } doReturn false
-        }
+        val searchNavPageConfigurator: SearchPageConfigurator =
+            mock {
+                on { displayListView() } doReturn true
+                on { displayMapView() } doReturn false
+                on { displayAnalytics() } doReturn false
+            }
 
-        val viewModel = SearchTEIViewModel(
-            initialProgramUid = initialProgram,
-            initialQuery = initialQuery,
-            searchRepository = repository,
-            searchRepositoryKt = repositoryKt,
-            searchNavPageConfigurator = mock {
-                on { initVariables() } doReturn searchNavPageConfigurator
-            },
-            mapDataRepository = mapDataRepository,
-            networkUtils = networkUtils,
-            dispatchers = object : DispatcherProvider {
-                override fun io(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+        whenever(searchNavPageConfigurator.initVariables()) doReturn searchNavPageConfigurator
+        whenever(resourceManager.getString(any())) doReturn "label"
 
-                override fun computation(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+        val viewModel =
+            SearchTEIViewModel(
+                initialProgramUid = initialProgram,
+                initialQuery = initialQuery,
+                searchRepository = repository,
+                searchRepositoryKt = repositoryKt,
+                searchNavPageConfigurator = searchNavPageConfigurator,
+                mapDataRepository = mapDataRepository,
+                networkUtils = networkUtils,
+                dispatchers =
+                    object : DispatcherProvider {
+                        override fun io(): CoroutineDispatcher = testingDispatcher
 
-                override fun ui(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
-            },
-            mapStyleConfig = mapStyleConfiguration,
-            resourceManager = resourceManager,
-            displayNameProvider = displayNameProvider,
-            filterManager = filterManager,
-        )
+                        override fun computation(): CoroutineDispatcher = testingDispatcher
+
+                        override fun ui(): CoroutineDispatcher = testingDispatcher
+                    },
+                mapStyleConfig = mapStyleConfiguration,
+                resourceManager = resourceManager,
+                displayNameProvider = displayNameProvider,
+                filterManager = filterManager,
+                searchTrackedEntities = searchTrackedEntities,
+                fetchSearchParameters = fetchSearchParameters,
+                fetchOptionSetOptions = fetchOptionSetOptions,
+            )
         testingDispatcher.scheduler.advanceUntilIdle()
 
         // then
@@ -733,188 +803,389 @@ class SearchTEIViewModelTest {
     @Test
     fun `when there is more than one navigation item, navigation items list should not be empty`() {
         // given
-        val searchNavPageConfigurator: SearchPageConfigurator = mock {
-            on { displayListView() } doReturn true
-            on { displayMapView() } doReturn true
-            on { displayAnalytics() } doReturn false
-        }
+        val searchNavPageConfigurator: SearchPageConfigurator =
+            mock {
+                on { displayListView() } doReturn true
+                on { displayMapView() } doReturn true
+                on { displayAnalytics() } doReturn false
+            }
 
-        val viewModel = SearchTEIViewModel(
-            initialProgramUid = initialProgram,
-            initialQuery = initialQuery,
-            searchRepository = repository,
-            searchRepositoryKt = repositoryKt,
-            searchNavPageConfigurator = mock {
-                on { initVariables() } doReturn searchNavPageConfigurator
-            },
-            mapDataRepository = mapDataRepository,
-            networkUtils = networkUtils,
-            dispatchers = object : DispatcherProvider {
-                override fun io(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+        val viewModel =
+            SearchTEIViewModel(
+                initialProgramUid = initialProgram,
+                initialQuery = initialQuery,
+                searchRepository = repository,
+                searchRepositoryKt = repositoryKt,
+                searchNavPageConfigurator =
+                    mock {
+                        on { initVariables() } doReturn searchNavPageConfigurator
+                    },
+                mapDataRepository = mapDataRepository,
+                networkUtils = networkUtils,
+                dispatchers =
+                    object : DispatcherProvider {
+                        override fun io(): CoroutineDispatcher = testingDispatcher
 
-                override fun computation(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+                        override fun computation(): CoroutineDispatcher = testingDispatcher
 
-                override fun ui(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
-            },
-            mapStyleConfig = mapStyleConfiguration,
-            resourceManager = mock {
-                on { getString(R.string.navigation_list_view) } doReturn "List"
-                on { getString(R.string.navigation_map_view) } doReturn "Map"
-            },
-            displayNameProvider = displayNameProvider,
-            filterManager = filterManager,
-        )
+                        override fun ui(): CoroutineDispatcher = testingDispatcher
+                    },
+                mapStyleConfig = mapStyleConfiguration,
+                resourceManager =
+                    mock {
+                        on { getString(R.string.navigation_list_view) } doReturn "List"
+                        on { getString(R.string.navigation_map_view) } doReturn "Map"
+                    },
+                displayNameProvider = displayNameProvider,
+                filterManager = filterManager,
+                searchTrackedEntities = searchTrackedEntities,
+                fetchSearchParameters = fetchSearchParameters,
+                fetchOptionSetOptions = fetchOptionSetOptions,
+            )
         testingDispatcher.scheduler.advanceUntilIdle()
 
         // then
         val navBarUIState = viewModel.navigationBarUIState.value
         assertTrue(navBarUIState.items.isNotEmpty())
         assertTrue(
-            navBarUIState.items == listOf(
-                NavigationBarItem(
-                    id = NavigationPage.LIST_VIEW,
-                    icon = Icons.AutoMirrored.Outlined.List,
-                    selectedIcon = Icons.AutoMirrored.Filled.List,
-                    label = "List",
+            navBarUIState.items ==
+                listOf(
+                    NavigationBarItem(
+                        id = NavigationPage.LIST_VIEW,
+                        icon = Icons.AutoMirrored.Outlined.List,
+                        selectedIcon = Icons.AutoMirrored.Filled.List,
+                        label = "List",
+                    ),
+                    NavigationBarItem(
+                        id = NavigationPage.MAP_VIEW,
+                        icon = Icons.Outlined.Map,
+                        selectedIcon = Icons.Filled.Map,
+                        label = "Map",
+                    ),
                 ),
-                NavigationBarItem(
-                    id = NavigationPage.MAP_VIEW,
-                    icon = Icons.Outlined.Map,
-                    selectedIcon = Icons.Filled.Map,
-                    label = "Map",
-                ),
-            ),
         )
     }
 
-    private fun getMalformedDateFieldUIModels(): List<FieldUiModel> {
-        return listOf(
-            FieldUiModelImpl(
+    @Test
+    fun `should send launch custom intent action`() =
+        runTest {
+            val customIntentModel: CustomIntentModel = mock()
+            whenever(repositoryKt.getCustomIntent(any())) doReturn customIntentModel
+            viewModel.searchActions.test {
+                viewModel.launchCustomIntent("fieldUid", "customIntentUid")
+                assertTrue(awaitItem() is TrackerInputAction.LaunchCustomIntent)
+            }
+        }
+
+    @Test
+    fun `should set error if custom intent result is error`() {
+        whenever(resourceManager.getString(R.string.custom_intent_error)) doReturn "Custom intent error message"
+        viewModel.searchParametersUiState =
+            viewModel.searchParametersUiState.copy(items = customIntentFieldUIModels())
+        viewModel.handleCustomIntentResult(
+            CustomIntentResult.Error("fieldUid"),
+        )
+        assertTrue(
+            viewModel.searchParametersUiState.items
+                .first()
+                .error != null,
+        )
+    }
+
+    @Test
+    fun `should update values if custom intent result is successful`() =
+        runTest {
+            viewModel.searchParametersUiState =
+                viewModel.searchParametersUiState.copy(items = customIntentFieldUIModels())
+            viewModel.handleCustomIntentResult(
+                CustomIntentResult.Success("fieldUid", "customValue"),
+            )
+            assertTrue(
+                viewModel.searchParametersUiState.items
+                    .first()
+                    .error == null,
+            )
+            assertTrue(
+                viewModel.searchParametersUiState.items
+                    .first()
+                    .value == "customValue",
+            )
+        }
+
+    private fun customIntentFieldUIModels() =
+        listOf(
+            TrackerInputUiState(
+                uid = "fieldUid",
+                label = "CustomIntent",
+                value = null,
+                focused = false,
+                valueType = TrackerInputType.ORGANISATION_UNIT,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
+                optionSetConfiguration = null,
+                customIntentUid = "customIntentUid",
+                displayName = "Friendly OrgUnit Name",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
+            ),
+        )
+
+    private fun getMalformedDateFieldUIModels(): List<TrackerInputUiState> =
+        listOf(
+            TrackerInputUiState(
                 uid = "uid1",
                 label = "Date",
                 value = "04",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.DATE,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.DATE,
+                customIntentUid = null,
+                displayName = "Friendly OrgUnit Name",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
         )
-    }
 
-    private fun getFieldUIModels(): List<FieldUiModel> {
-        return listOf(
-            FieldUiModelImpl(
+    private fun getTrackerInputModels(): List<TrackerInputUiState> =
+        listOf(
+            TrackerInputUiState(
                 uid = "uid1",
                 label = "Org Unit",
                 value = "orgUnitUid",
-                displayName = "Friendly OrgUnit Name",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.ORGANISATION_UNIT,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.ORGANISATION_UNIT,
+                customIntentUid = null,
+                displayName = "Friendly OrgUnit Name",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid2",
                 label = "Gender",
                 value = "M",
-                displayName = "Male",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.MULTI_SELECTION,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.MULTI_TEXT,
+                customIntentUid = null,
+                displayName = "Male",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid3",
                 label = "Date",
                 value = "2024-02-21",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.DATE,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.DATE,
+                customIntentUid = null,
+                displayName = "21/02/2024",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid4",
                 label = "Date and Time",
                 value = "2024-02-21T01:00",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.DATE_TIME,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.DATETIME,
+                customIntentUid = null,
+                displayName = "21/02/2024 - 01:00",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid5",
                 label = "Boolean",
                 value = "false",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.HORIZONTAL_CHECKBOXES,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.BOOLEAN,
+                customIntentUid = null,
+                displayName = "Boolean: false",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid6",
                 label = "Yes Only",
                 value = "true",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.YES_ONLY_SWITCH,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.TRUE_ONLY,
+                customIntentUid = null,
+                displayName = "Yes Only; true",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid7",
                 label = "Text",
                 value = "Text value",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.TEXT,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.TEXT,
+                customIntentUid = null,
+                displayName = "Text value",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid8",
                 label = "Other field",
                 value = null,
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.TEXT,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.TEXT,
+                customIntentUid = null,
+                displayName = "Male",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
-            FieldUiModelImpl(
+            TrackerInputUiState(
                 uid = "uid9",
                 label = "Percentage",
                 value = "18",
-                autocompleteList = emptyList(),
+                focused = false,
+                valueType = TrackerInputType.PERCENTAGE,
+                description = null,
+                mandatory = false,
+                editable = true,
+                legend = null,
+                orientation = Orientation.HORIZONTAL,
                 optionSetConfiguration = null,
-                valueType = ValueType.PERCENTAGE,
+                customIntentUid = null,
+                displayName = "18%",
+                orgUnitSelectorScope = null,
+                searchOperator = null,
+                minCharactersToSearch = null,
+                optionSet = null,
+                error = null,
+                warning = null,
             ),
         )
-    }
 
     private fun testingProgram(
         displayFrontPageList: Boolean = true,
         minAttributesToSearch: Int = 1,
         maxTeiCountToReturn: Int? = null,
-    ) = Program.builder()
+    ) = Program
+        .builder()
         .uid("initialProgram")
         .displayName("programName")
         .displayFrontPageList(displayFrontPageList)
         .minAttributesRequiredToSearch(minAttributesToSearch)
         .trackedEntityType(TrackedEntityType.builder().uid("teTypeUid").build())
+        .categoryCombo(ObjectWithUid.create("categoryComboUid"))
+        .enrollmentCategoryCombo(ObjectWithUid.create("categoryComboUid"))
         .apply {
             maxTeiCountToReturn?.let {
                 maxTeiCountToReturn(maxTeiCountToReturn)
             }
-        }
-        .build()
+        }.build()
 
-    private fun testingTrackedEntityType() = TrackedEntityType.builder()
-        .uid("teiTypeUid")
-        .displayName("teTypeName")
-        .build()
+    private fun testingTrackedEntityType() =
+        TrackedEntityType
+            .builder()
+            .uid("teiTypeUid")
+            .displayName("teTypeName")
+            .build()
 
     @ExperimentalCoroutinesApi
     private fun performSearch() {
-        viewModel.onParameterIntent(
-            FormIntent.OnSave(
-                uid = "testingUid",
-                value = "testingValue",
-                valueType = ValueType.TEXT,
-            ),
+        viewModel.onValueChange(
+            fieldUid = "testingUid",
+            value = "testingValue",
         )
         viewModel.setListScreen()
         viewModel.setSearchScreen()

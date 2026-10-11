@@ -1,0 +1,61 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!-- Warnings and error messages -->
+    <string name="error">Error</string>
+    <!-- SyncService strings: -->
+
+    <string name="sync_events">Events</string>
+
+    <string name="account_recovery">Account recovery</string>
+
+    <!--PERIOD-->
+    <string name="DAILY">Daily</string>
+    <string name="WEEKLY">Weekly</string>
+    <string name="MONTHLY">Monthly</string>
+    <string name="YEARLY">Yearly</string>
+    <!-- Status -->
+
+    <string name="event_open">Open</string>
+    <string name="read_only">Read only</string>
+    <string name="active">Active</string>
+
+    <string name="state_error">Error</string>
+
+    <!--Completion-->
+
+    <!--Event initial-->
+    <string name="update">Update</string>
+    <!--Event Detail-->
+    <string name="due_date">Due date</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="wipe_data_no">Cancel</string>
+    <string name="SYNC_MANAGER">Settings</string>
+    <string name="settingsTwoFAStatus">Status</string>
+    <!--EVENT SUMMARY-->
+
+    <!--AGE CUSTOM VIEW-->
+    <string name="incident_date">Incident date</string>
+    <!-- RELATIONSHIPS -->
+    <string name="next">Next</string>
+    <string name="button_ok">OK</string>
+    <string name="qr_events">Events</string>
+    <string name="about">About</string>
+    <string name="save">Save</string>
+    <string name="please_wait">Please wait</string>
+    <string name="state_warning">Warning</string>
+    <string name="action_close">Close</string>
+    <string name="filter_period_last_week">Last week</string>
+    <string name="filter_period_last_month">Last month</string>
+    <string name="filter_period_other">Other</string>
+    <string name="filter_event_status_open">Open</string>
+    <string name="data_sets">Data sets</string>
+    <string name="enrollment_status_active">Open</string>
+    <string name="filters_title_date">Date</string>
+    <string name="section_charts">Charts</string>
+    <string name="navigation_programs">Programs</string>
+    <string name="navigation_charts">Charts</string>
+    <string name="navigation_tei_data">Details</string>
+    <string name="section_feedback">Feedback</string>
+    <string name="section_indicators">Indicators</string>
+    <string name="programs">Programs</string>
+    </resources>

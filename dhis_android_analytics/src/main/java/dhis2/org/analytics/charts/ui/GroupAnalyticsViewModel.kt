@@ -1,20 +1,23 @@
 package dhis2.org.analytics.charts.ui
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dhis2.org.analytics.charts.Charts
 import dhis2.org.analytics.charts.data.AnalyticGroup
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
+import dhis2.org.analytics.charts.domain.GetEnrollmentAnalyticsUseCase
+import dhis2.org.analytics.charts.idling.AnalyticsCountingIdlingResource
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.dhis2.commons.matomo.Actions
 import org.dhis2.commons.matomo.Categories
 import org.dhis2.commons.matomo.Labels
 import org.dhis2.commons.matomo.MatomoAnalyticsController
+import org.dhis2.commons.viewmodel.DispatcherProvider
 import org.hisp.dhis.android.core.common.RelativePeriod
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit
+import timber.log.Timber
 
 const val MIN_SIZE_TO_SHOW = 2
 
@@ -23,32 +26,40 @@ class GroupAnalyticsViewModel(
     private val uid: String?,
     private val charts: Charts,
     private val matomoAnalyticsController: MatomoAnalyticsController,
+    private val getEnrollmentAnalyticsUseCase: GetEnrollmentAnalyticsUseCase,
+    private val dispatchers: DispatcherProvider,
 ) : ViewModel() {
-
-    private val _chipItems = MutableLiveData<Result<List<AnalyticGroup>>>()
-    val chipItems: LiveData<Result<List<AnalyticGroup>>> = _chipItems
-    private val _analytics = MutableLiveData<Result<List<AnalyticsModel>>>()
-    val analytics: LiveData<Result<List<AnalyticsModel>>> = _analytics
+    private val _chipItems = MutableStateFlow<Result<List<AnalyticGroup>>?>(null)
+    val chipItems: StateFlow<Result<List<AnalyticGroup>>?> = _chipItems.asStateFlow()
+    private val _analytics = MutableStateFlow<Result<List<AnalyticsModel>>?>(null)
+    val analytics: StateFlow<Result<List<AnalyticsModel>>?> = _analytics.asStateFlow()
     private var currentGroup: String? = null
 
     init {
         fetchAnalyticsGroup {
-            fetchAnalytics(_chipItems.value?.getOrNull()?.firstOrNull()?.uid)
+            fetchAnalytics(
+                _chipItems.value
+                    ?.getOrNull()
+                    ?.firstOrNull()
+                    ?.uid,
+            )
         }
     }
 
     private fun fetchAnalyticsGroup(onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            val result = async(context = Dispatchers.IO) {
-                charts.getVisualizationGroups(uid).map {
+        AnalyticsCountingIdlingResource.increment()
+        viewModelScope.launch(dispatchers.io()) {
+            try {
+                val groups = charts.getVisualizationGroups(uid).map {
                     AnalyticGroup(it.id(), it.name())
                 }
-            }
-            try {
-                _chipItems.value = Result.success(result.await())
+                _chipItems.value = Result.success(groups)
                 onSuccess()
             } catch (e: Exception) {
                 _chipItems.value = Result.failure(e)
+            }
+            finally {
+                AnalyticsCountingIdlingResource.decrement()
             }
         }
     }
@@ -85,75 +96,101 @@ class GroupAnalyticsViewModel(
         }
     }
 
-    fun filterLineListingRows(chartModel: ChartModel, column: Int, filterValue: String?) {
+    fun filterLineListingRows(
+        chartModel: ChartModel,
+        column: Int,
+        filterValue: String?,
+    ) {
         chartModel.graph.visualizationUid?.let {
             charts.setLineListingFilter(it, column, filterValue)
             fetchAnalytics(currentGroup)
         }
     }
 
-    fun resetFilter(chartModel: ChartModel, filterType: ChartFilter) {
+    fun resetFilter(
+        chartModel: ChartModel,
+        filterType: ChartFilter,
+    ) {
         chartModel.graph.visualizationUid?.let {
             when (filterType) {
-                ChartFilter.PERIOD -> charts.setVisualizationPeriods(
-                    chartModel.graph.visualizationUid,
-                    null,
-                    emptyList(),
-                )
+                ChartFilter.PERIOD ->
+                    charts.setVisualizationPeriods(
+                        chartModel.graph.visualizationUid,
+                        null,
+                        emptyList(),
+                    )
 
-                ChartFilter.ORG_UNIT -> charts.setVisualizationOrgUnits(
-                    chartModel.graph.visualizationUid,
-                    null,
-                    emptyList(),
-                    OrgUnitFilterType.NONE,
-                )
+                ChartFilter.ORG_UNIT ->
+                    charts.setVisualizationOrgUnits(
+                        chartModel.graph.visualizationUid,
+                        null,
+                        emptyList(),
+                        OrgUnitFilterType.NONE,
+                    )
 
-                ChartFilter.COLUMN -> charts.setLineListingFilter(
-                    chartModel.graph.visualizationUid,
-                    -1,
-                    null,
-                )
+                ChartFilter.COLUMN ->
+                    charts.setLineListingFilter(
+                        chartModel.graph.visualizationUid,
+                        -1,
+                        null,
+                    )
             }
             fetchAnalytics(currentGroup)
         }
     }
 
     fun fetchAnalytics(groupUid: String?) {
+        AnalyticsCountingIdlingResource.increment()
         currentGroup = groupUid
-        viewModelScope.launch {
-            val result = async(context = Dispatchers.IO) {
-                when (mode) {
-                    AnalyticMode.ENROLLMENT -> uid?.let {
-                        charts.geEnrollmentCharts(uid)
-                            .map { ChartModel(it) }
-                    } ?: emptyList()
-
-                    AnalyticMode.TRACKER_PROGRAM -> uid?.let {
-                        charts.getProgramVisualizations(groupUid, uid)
-                            .map { ChartModel(it) }
-                    } ?: emptyList()
-
-                    AnalyticMode.EVENT_PROGRAM -> uid?.let {
-                        charts.getProgramVisualizations(groupUid, uid)
-                            .map { ChartModel(it) }
-                    } ?: emptyList()
-
-                    AnalyticMode.HOME ->
-                        charts.getHomeVisualizations(groupUid)
-                            .map { ChartModel(it) }
-
-                    AnalyticMode.DATASET -> uid?.let {
-                        charts.getDataSetVisualizations(groupUid, uid)
-                            .map { ChartModel(it) }
-                    } ?: emptyList()
+        when (mode) {
+            AnalyticMode.ENROLLMENT ->
+                viewModelScope.launch {
+                    uid?.let {
+                        getEnrollmentAnalyticsUseCase(uid)
+                            .onSuccess { graphs ->
+                                _analytics.value = Result.success(graphs.map { ChartModel(it) })
+                            }.onFailure { e ->
+                                Timber.e(e)
+                                _analytics.value = Result.failure(e)
+                            }
+                    } ?: run {
+                        _analytics.value = Result.success(emptyList())
+                    }
                 }
-            }
-            try {
-                _analytics.value = Result.success(result.await())
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _analytics.value = Result.failure(e)
-            }
+
+            else ->
+                viewModelScope.launch(dispatchers.io()) {
+                    try {
+                        val result = when (mode) {
+                            AnalyticMode.TRACKER_PROGRAM ->
+                                uid?.let {
+                                    charts.getProgramVisualizations(groupUid, uid)
+                                        .map { ChartModel(it) }
+                                } ?: emptyList()
+
+                            AnalyticMode.EVENT_PROGRAM ->
+                                uid?.let {
+                                    charts.getProgramVisualizations(groupUid, uid)
+                                        .map { ChartModel(it) }
+                                } ?: emptyList()
+
+                            AnalyticMode.HOME ->
+                                charts.getHomeVisualizations(groupUid).map { ChartModel(it) }
+
+                            AnalyticMode.DATASET ->
+                                uid?.let {
+                                    charts.getDataSetVisualizations(groupUid, uid)
+                                        .map { ChartModel(it) }
+                                } ?: emptyList()
+
+                            AnalyticMode.ENROLLMENT -> emptyList()
+                        }
+                        _analytics.value = Result.success(result)
+                    } catch (e: Exception) {
+                        Timber.e(e)
+                        _analytics.value = Result.failure(e)
+                    }
+                }
         }
     }
 
@@ -189,13 +226,12 @@ class GroupAnalyticsViewModel(
         )
     }
 
-    private fun analyticsCategory(mode: AnalyticMode): String {
-        return when (mode) {
+    private fun analyticsCategory(mode: AnalyticMode): String =
+        when (mode) {
             AnalyticMode.ENROLLMENT -> Categories.DASHBOARD
             AnalyticMode.HOME -> Categories.HOME
             AnalyticMode.DATASET -> Categories.DATASET_LIST
             AnalyticMode.EVENT_PROGRAM -> Categories.EVENT_LIST
             AnalyticMode.TRACKER_PROGRAM -> Categories.SEARCH
         }
-    }
 }

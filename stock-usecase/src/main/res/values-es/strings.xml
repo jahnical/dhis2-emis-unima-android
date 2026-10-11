@@ -1,36 +1,95 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">Gestión de Inventarios en Farmacias</string>
     <string name="title_activity_home">Inicio</string>
-    <string name="title_activity_review">Revisar</string>
-    <string name="action_settings">Configuración</string>
 
+    <string name="distribution">Distribución</string>
     <string name="discard">Descartar</string>
-    <string name="sign_in">Iniciar sesión</string>
+    <string name="correction">Corrección</string>
+
+    <!-- Sign in -->
     <string name="username">Nombre de usuario</string>
-    <string name="password">Contraseña</string>
+
+    <!-- Sync -->
+    <string name="metadata_sync_error">No se pudo completar la sincronización de metadatos</string>
+
     <!-- FloatingActionButtons -->
-    <string name="proceed">Proceder</string>
     <string name="review">Revisar</string>
 
+    <string name="search">Buscar elemento</string>
+    <string name="search_placeholder">Buscar...</string>
     <string name="delete">Eliminar</string>
     <string name="ok">Correcto</string>
     <string name="cancel">Cancelar</string>
+
     <string name="from">De</string>
-    <string name="language">Idioma</string>
-    <string name="logout">Cerrar sesión</string>
+    <string name="to">Entregar a...</string>
+    <string name="subtitle">%s</string>
 
+    <!-- Languages -->
 
-    <string name="prompt_email">Correo-e</string>
-    <string name="prompt_password">Contraseña</string>
-    <string name="action_sign_in_short">Iniciar sesión</string>
-    <string name="content_desc_search">Buscar</string>
-    <string name="content_desc_remove">Quitar elemento</string>
+    <!-- Settings -->
+
+    <!-- Stock table -->
+    <string name="quantity">Cantidad</string>
+
+    <!-- Messages -->
+    <string name="mandatory_facility_selection">
+        Debe seleccionar el establecimiento antes de poder continuar
+    </string>
+    <string name="transaction_completed">
+       ¡La transacción se completó exitosamente!
+    </string>
+
+    <!-- Errors -->
+    <string name="facilities_load_error">No se pueden cargar la lista de establecimientos disponibles</string>
+    <string name="destinations_load_error">
+        No se puede cargar la lista de destinos disponibles
+    </string>
+
+    <!-- Content descriptions for accessibility -->
+
     <string name="confirm_transaction_label">Confirmar</string>
-    <string name="invalid_quantity">No válido</string>
+
+    <string name="stock_on_hand_exceeded_message">
+        No se puede superar el inventario disponible
+    </string>
+
+    <string name="permission_granted">Permiso concedido</string>
+    <string name="permission_denied">Permiso denegado</string>
+
+    <!-- Speech error messages -->
+    <string name="insufficient_speech_permissions_error">
+        Permisos insuficientes. Solicitar 
+android.permission.RECORD_AUDIO
+    </string>
+    <string name="speech_audio_error">Error de grabación de audio</string>
+    <string name="speech_client_error">
+        Error del lado del cliente. ¡Por favor, verifica tu conexión a Internet!
+    </string>
     <string name="speech_network_error">Error de red</string>
+    <string name="speech_network_timeout_error">La operación de red ha expirado</string>
+    <string name="no_speech_match_error">No se encontró ningún resultado de reconocimiento.</string>
+    <string name="speech_recognition_service_busy_error">El servicio de reconocimiento está ocupado en este momento</string>
+    <string name="speech_server_error">An error occurred on the speech server</string>
+    <string name="speech_timeout_error">No se detectó entrada de voz</string>
+    <string name="unknown_speech_error">Se ha producido un error desconocido.</string>
+    <string name="non_numeric_speech_input_error">No se permiten entradas no numéricas: \"%s\"</string>
+    <string name="negative_number_speech_input_error">
+        No se permite la entrada de números negativos: \"%s\"
+    </string>
+
+    <string name="unable_to_sync_data_no_network_available">
+        No se puede sincronizar los datos porque no hay conexión de red disponible
+    </string>
+
     <!--SDK error codes-->
     <string name="login_error_unsuccessful_response">Algo ha ido mal. Por favor, compruebe que tanto la url del servidor como el usuario y contraseña son correctos y pruebe otra vez.</string>
+    <string name="login_error_error_response">¡Ups! Algo salió mal en el lado del servidor.</string>
+    <string name="login_error_no_dhis_instance">La URL entregada no es un servidor de DHIS2.</string>
+    <string name="login_error_bad_credentials">El usuario y/o la contraseña son incorrectas</string>
     <string name="login_error_unknown_host">Servidor desconocido</string>
     <string name="online_search_parsing_error">Error al obtener los resultados</string>
+    <string name="error_unexpected">Disculpe, algo inesperado salió mal.</string>
     <string name="error_many_requests">El servidor se encuentra ocupado en estos momentos. Por favor inténtelo más tarde.</string>
     <string name="error_already_authenticated">Este usuario ya ha iniciado sesión.</string>
     <string name="error_already_executed">La petición ya ha sido evaluada.</string>
@@ -46,6 +105,7 @@
     <string name="error_different_offline_user">Estás intentando iniciar sesión offline con un usuario diferente.</string>
     <string name="error_object_update">No se ha podido actualizar.</string>
     <string name="error_object_insert">No se ha podido crear.</string>
+    <string name="error_ownership_access">No tienes acceso.</string>
     <string name="error_null_url">Falta la URL del servidor. Ingrese la URL.</string>
     <string name="error_server_malformed">La URL del servidor está mal. Por favor revísela.</string>
     <string name="error_settings_app_not_supported">Esta versión de Settings Web App no está soportada.</string>
@@ -58,10 +118,14 @@
     <string name="error_ssl">Hay un problema con los certificados del servidor. Por favor contacte con su administrador.</string>
     <string name="done_task">Inicio</string>
     <string name="back">Atrás</string>
-    <string name="no_conflicts_message">Este programa no tiene conflictos</string>
-    <string name="action_sync">Enviar</string>
+    <string name="from_facility">Desde el establecimiento</string>
+    <string name="to_facility">Al establecimiento</string>
+    <string name="stock">Inventario</string>
     <string name="not_saved">No guardado</string>
+    <string name="transaction_not_confirmed">La transacción no ha sido confirmada. Si sale ahora los datos ingresados serán descartados.</string>
+    <string name="transaction_discarted">Esta transacción no ha sido confirmada. Si cambia la configuración, los datos ingresados serán descartados.</string>
     <string name="count">Conteo</string>
+    <string name="under_review">En revisión</string>
     <string name="formatting_error">Error de formato</string>
     <string name="invalid_possitive_zero">Solo se permiten números positivos o cero</string>
     <string name="leading_zero_error">No se permiten números con ceros a la izquierda</string>

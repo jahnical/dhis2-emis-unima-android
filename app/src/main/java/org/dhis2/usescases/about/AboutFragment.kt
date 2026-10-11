@@ -16,8 +16,9 @@ import org.dhis2.usescases.general.FragmentGlobalAbstract
 import org.hisp.dhis.android.core.user.User
 import javax.inject.Inject
 
-class AboutFragment : FragmentGlobalAbstract(), AboutView {
-
+class AboutFragment :
+    FragmentGlobalAbstract(),
+    AboutView {
     @Inject
     lateinit var presenter: AboutPresenter
     private lateinit var aboutBinding: FragmentAboutBinding

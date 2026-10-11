@@ -12,7 +12,6 @@ class SearchTEViewHolder(
     private val colorUtils: ColorUtils,
     private val onTeiClick: (teiUid: String, enrollmentUid: String?, isOnline: Boolean) -> Unit,
 ) : BaseTeiViewHolder(binding, colorUtils) {
-
     override fun itemConfiguration() {
         binding.sortingFieldName.text = teiModel.sortingKey
         binding.sortingFieldValue.text = teiModel.sortingValue
@@ -20,38 +19,38 @@ class SearchTEViewHolder(
 
     override fun itemViewClick() {
         binding.syncState.setOnClickListener {
-            if (teiModel.tei.deleted()!! ||
-                teiModel.selectedEnrollment != null &&
-                teiModel.selectedEnrollment.deleted()!!
+            if (teiModel.tei.deleted ||
+                teiModel.tei.selectedEnrollment == null
             ) {
-                Toast.makeText(
-                    itemView.context,
-                    itemView.context.getString(R.string.record_marked_for_deletion),
-                    Toast.LENGTH_SHORT,
-                ).show()
+                Toast
+                    .makeText(
+                        itemView.context,
+                        itemView.context.getString(R.string.record_marked_for_deletion),
+                        Toast.LENGTH_SHORT,
+                    ).show()
             } else {
-                onSyncIconClick(teiModel.selectedEnrollment.uid())
+                onSyncIconClick(teiModel.selectedEnrollment.uid)
             }
         }
 
         binding.download.setOnClickListener {
             onDownloadTei(
-                teiModel.tei.uid(),
-                teiModel.selectedEnrollment?.uid(),
+                teiModel.tei.uid,
+                teiModel.selectedEnrollment?.uid,
             )
         }
 
         binding.cardView.setOnClickListener {
-            if (teiModel.isOnline) {
+            if (teiModel.tei.isOnline) {
                 onDownloadTei(
-                    teiModel.tei.uid(),
-                    teiModel.selectedEnrollment?.uid(),
+                    teiModel.tei.uid,
+                    teiModel.selectedEnrollment?.uid,
                 )
             } else {
                 onTeiClick(
-                    teiModel.tei.uid(),
-                    teiModel.selectedEnrollment?.uid(),
-                    teiModel.isOnline,
+                    teiModel.tei.uid,
+                    teiModel.selectedEnrollment?.uid,
+                    teiModel.tei.isOnline,
                 )
             }
         }

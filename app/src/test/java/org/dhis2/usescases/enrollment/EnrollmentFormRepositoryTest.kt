@@ -3,6 +3,7 @@ package org.dhis2.usescases.enrollment
 import org.dhis2.data.dhislogic.DhisEnrollmentUtils
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.arch.repositories.`object`.ReadOnlyOneObjectRepositoryFinalImpl
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.enrollment.EnrollmentObjectRepository
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
@@ -18,7 +19,6 @@ import org.mockito.kotlin.whenever
 import java.util.Date
 
 class EnrollmentFormRepositoryTest {
-
     private lateinit var repository: EnrollmentFormRepository
     private val d2: D2 = Mockito.mock(D2::class.java, Mockito.RETURNS_DEEP_STUBS)
     private val enrollmentRepository: EnrollmentObjectRepository = mock()
@@ -31,34 +31,48 @@ class EnrollmentFormRepositoryTest {
         whenever(
             (programRepository as ReadOnlyOneObjectRepositoryFinalImpl<Program>)
                 .blockingGet(),
-        ) doReturn Program.builder()
-            .uid("programUid")
-            .displayName("programName")
-            .build()
-        whenever(enrollmentRepository.blockingGet()) doReturn Enrollment.builder()
-            .uid("enrollmentUid")
-            .organisationUnit("enrollmentOrgUnitUid")
-            .enrollmentDate(Date())
-            .status(EnrollmentStatus.ACTIVE)
-            .build()
+        ) doReturn
+            Program
+                .builder()
+                .uid("programUid")
+                .displayName("programName")
+                .categoryCombo(ObjectWithUid.create("categoryComboUid"))
+                .enrollmentCategoryCombo(ObjectWithUid.create("categoryComboUid"))
+                .build()
+        whenever(enrollmentRepository.blockingGet()) doReturn
+            Enrollment
+                .builder()
+                .uid("enrollmentUid")
+                .organisationUnit("enrollmentOrgUnitUid")
+                .enrollmentDate(Date())
+                .status(EnrollmentStatus.ACTIVE)
+                .build()
         whenever(
-            d2.organisationUnitModule().organisationUnits()
-                .uid("enrollmentOrgUnitUid").blockingGet(),
-        ) doReturn OrganisationUnit.builder()
-            .uid("enrollmentOrgUnitUid")
-            .code("orgUnitCode")
-            .build()
+            d2
+                .organisationUnitModule()
+                .organisationUnits()
+                .uid("enrollmentOrgUnitUid")
+                .blockingGet(),
+        ) doReturn
+            OrganisationUnit
+                .builder()
+                .uid("enrollmentOrgUnitUid")
+                .code("orgUnitCode")
+                .build()
 
-        whenever(teiRepository.blockingGet()) doReturn TrackedEntityInstance.builder()
-            .uid("teiInstance")
-            .build()
+        whenever(teiRepository.blockingGet()) doReturn
+            TrackedEntityInstance
+                .builder()
+                .uid("teiInstance")
+                .build()
 
-        repository = EnrollmentFormRepositoryImpl(
-            d2,
-            enrollmentRepository,
-            programRepository,
-            teiRepository,
-            enrollmentService,
-        )
+        repository =
+            EnrollmentFormRepositoryImpl(
+                d2,
+                enrollmentRepository,
+                programRepository,
+                teiRepository,
+                enrollmentService,
+            )
     }
 }

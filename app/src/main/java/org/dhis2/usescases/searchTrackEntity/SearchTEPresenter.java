@@ -27,18 +27,17 @@ import org.dhis2.commons.filters.FilterManager;
 import org.dhis2.commons.filters.data.FilterRepository;
 import org.dhis2.commons.matomo.MatomoAnalyticsController;
 import org.dhis2.commons.orgunitselector.OUTreeFragment;
-import org.dhis2.commons.orgunitselector.OrgUnitSelectorScope;
 import org.dhis2.commons.prefs.Preference;
 import org.dhis2.commons.prefs.PreferenceProvider;
 import org.dhis2.commons.resources.ColorUtils;
-import org.dhis2.commons.resources.MetadataIconProvider;
 import org.dhis2.commons.resources.ObjectStyleUtils;
 import org.dhis2.commons.resources.ResourceManager;
 import org.dhis2.commons.schedulers.SchedulerProvider;
 import org.dhis2.commons.schedulers.SingleEventEnforcer;
 import org.dhis2.commons.schedulers.SingleEventEnforcerImpl;
-import org.dhis2.data.service.SyncStatusController;
 import org.dhis2.maps.model.StageStyle;
+import org.dhis2.mobile.commons.orgunit.OrgUnitSelectorScope;
+import org.dhis2.mobile.sync.domain.SyncStatusController;
 import org.dhis2.utils.analytics.AnalyticsHelper;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.common.FeatureType;
@@ -85,7 +84,6 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
     private final DisableHomeFiltersFromSettingsApp disableHomeFilters;
     private final MatomoAnalyticsController matomoAnalyticsController;
     private final SyncStatusController syncStatusController;
-
     private final ColorUtils colorUtils;
 
     public SearchTEPresenter(SearchTEContractsModule.View view,
@@ -268,14 +266,14 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
     }
 
     @Override
-    public void onEnrollClick(HashMap<String, String> queryData) {
+    public void onEnrollClick(HashMap<String, List<String>> queryData) {
         singleEventEnforcer.processEvent(() -> {
             manageEnrollClick(queryData);
             return Unit.INSTANCE;
         });
     }
 
-    public void manageEnrollClick(HashMap<String, String> queryData) {
+    public void manageEnrollClick(HashMap<String, List<String>> queryData) {
         if (selectedProgram != null)
             if (canCreateTei())
                 enroll(selectedProgram.uid(), null, queryData);
@@ -295,7 +293,7 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
     }
 
     @Override
-    public void enroll(String programUid, String uid, HashMap<String, String> queryData) {
+    public void enroll(String programUid, String uid, HashMap<String, List<String>> queryData) {
 
         compositeDisposable.add(getOrgUnits()
                 .subscribeOn(schedulerProvider.io())
@@ -321,7 +319,7 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
         );
     }
 
-    private void enrollInOrgUnit(String orgUnitUid, String programUid, String uid,  HashMap<String, String> queryData) {
+    private void enrollInOrgUnit(String orgUnitUid, String programUid, String uid, HashMap<String, List<String>> queryData) {
         compositeDisposable.add(
                 searchRepository.saveToEnroll(trackedEntity.uid(), orgUnitUid, programUid, uid, queryData, view.fromRelationshipTEI())
                         .subscribeOn(schedulerProvider.computation())
@@ -329,7 +327,7 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
                         .subscribe(enrollmentAndTEI -> {
                                     analyticsHelper.setEvent(CREATE_ENROLL, CLICK, CREATE_ENROLL);
                                     view.goToEnrollment(
-                                            enrollmentAndTEI.val0(),
+                                            enrollmentAndTEI.getFirst(),
                                             selectedProgram.uid()
                                     );
                                 },

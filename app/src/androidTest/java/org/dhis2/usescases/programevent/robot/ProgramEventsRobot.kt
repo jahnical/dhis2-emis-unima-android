@@ -9,12 +9,6 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import org.dhis2.R
 import org.dhis2.common.BaseRobot
 
 fun programEventsRobot(
@@ -30,12 +24,13 @@ class ProgramEventsRobot(val composeTestRule: ComposeContentTestRule) : BaseRobo
 
     @OptIn(ExperimentalTestApi::class)
     fun clickOnEvent(eventDate: String) {
-        composeTestRule.waitUntilAtLeastOneExists(hasText(eventDate),5000)
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntilAtLeastOneExists(hasText(eventDate))
         composeTestRule.onNodeWithText(eventDate).performClick()
     }
 
     fun clickOnAddEvent() {
-        onView(withId(R.id.addEventButton)).perform(click())
+        composeTestRule.onNodeWithTag("ADD_EVENT_BUTTON").performClick()
     }
 
     fun clickOnMap() {
@@ -61,12 +56,13 @@ class ProgramEventsRobot(val composeTestRule: ComposeContentTestRule) : BaseRobo
 
     @OptIn(ExperimentalTestApi::class)
     fun checkEventIsComplete(eventDate: String) {
-        composeTestRule.waitUntilAtLeastOneExists(hasText("Event completed", true), 2000)
+        composeTestRule.waitUntilAtLeastOneExists(hasText("Event completed", true), TIMEOUT)
         composeTestRule.onNodeWithText(eventDate,true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Event completed",true).assertIsDisplayed()
     }
 
     fun checkEventWasDeleted(eventDate: String) {
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(eventDate).assertDoesNotExist()
     }
 

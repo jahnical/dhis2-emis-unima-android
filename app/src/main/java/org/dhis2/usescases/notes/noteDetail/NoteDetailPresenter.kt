@@ -2,6 +2,7 @@ package org.dhis2.usescases.notes.noteDetail
 
 import io.reactivex.disposables.CompositeDisposable
 import org.dhis2.commons.schedulers.SchedulerProvider
+import org.dhis2.usescases.notes.NotesIdlingResource
 import timber.log.Timber
 
 class NoteDetailPresenter(
@@ -10,12 +11,12 @@ class NoteDetailPresenter(
     private val noteId: String?,
     private val repository: NoteDetailRepository,
 ) {
-
     val disposable = CompositeDisposable()
 
     fun init() {
         disposable.add(
-            repository.getNote(noteId!!)
+            repository
+                .getNote(noteId!!)
                 .subscribeOn(scheduler.io())
                 .observeOn(scheduler.ui())
                 .subscribe(
@@ -26,17 +27,25 @@ class NoteDetailPresenter(
     }
 
     fun save() {
+        NotesIdlingResource.increment()
         val data = view.getNewNote()
-        val noteType = data.val0() ?: throw IllegalArgumentException("")
-        val uid = data.val1()!!
-        val message = data.val2()!!
+        val noteType = data.first
+        val uid = data.second
+        val message = data.third
         disposable.add(
-            repository.saveNote(noteType, uid, message)
+            repository
+                .saveNote(noteType, uid, message)
                 .subscribeOn(scheduler.io())
                 .observeOn(scheduler.ui())
                 .subscribe(
-                    { view.noteSaved() },
-                    Timber::d,
+                    {
+                        view.noteSaved()
+                        NotesIdlingResource.decrement()
+                    },
+                    { error ->
+                        Timber.d(error)
+                        NotesIdlingResource.decrement()
+                    },
                 ),
         )
     }

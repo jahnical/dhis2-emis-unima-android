@@ -21,14 +21,23 @@ data class Graph(
     val hasError: Boolean = false,
     val errorMessage: String? = null,
 ) {
+    private fun minDate() =
+        series
+            .filter { it.coordinates.isNotEmpty() }
+            .minOfOrNull { serie ->
+                serie.coordinates.minOf { point -> point.eventDate }
+            }?.toInstant()
+            ?.atZone(ZoneId.systemDefault())
+            ?.toLocalDate() ?: LocalDate.now()
 
-    private fun minDate() = series.filter { it.coordinates.isNotEmpty() }.minOfOrNull { serie ->
-        serie.coordinates.minOf { point -> point.eventDate }
-    }?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate() ?: LocalDate.now()
-
-    private fun maxDate() = series.filter { it.coordinates.isNotEmpty() }.maxOfOrNull { serie ->
-        serie.coordinates.maxOf { point -> point.eventDate }
-    }?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate() ?: LocalDate.now()
+    private fun maxDate() =
+        series
+            .filter { it.coordinates.isNotEmpty() }
+            .maxOfOrNull { serie ->
+                serie.coordinates.maxOf { point -> point.eventDate }
+            }?.toInstant()
+            ?.atZone(ZoneId.systemDefault())
+            ?.toLocalDate() ?: LocalDate.now()
 
     fun xAxixMaximun(): Float {
         return if (categories.isNotEmpty()) {
@@ -39,10 +48,11 @@ data class Graph(
             return when (eventPeriodType) {
                 PeriodType.Daily,
                 PeriodType.Weekly,
+                PeriodType.WeeklyWednesday,
+                PeriodType.WeeklyThursday,
+                PeriodType.WeeklyFriday,
                 PeriodType.WeeklySaturday,
                 PeriodType.WeeklySunday,
-                PeriodType.WeeklyThursday,
-                PeriodType.WeeklyWednesday,
                 PeriodType.BiWeekly,
                 PeriodType.Monthly,
                 PeriodType.BiMonthly,
@@ -56,8 +66,11 @@ data class Graph(
                 }
 
                 PeriodType.Yearly,
+                PeriodType.FinancialFeb,
                 PeriodType.FinancialApril,
                 PeriodType.FinancialJuly,
+                PeriodType.FinancialAug,
+                PeriodType.FinancialSep,
                 PeriodType.FinancialOct,
                 PeriodType.FinancialNov,
                 -> {
@@ -69,22 +82,32 @@ data class Graph(
         }
     }
 
-    fun numberOfStepsToDate(date: Date): Float {
-        return if (baseSeries().isEmpty() || baseSeries().first().coordinates.isEmpty()) {
+    fun numberOfStepsToDate(date: Date): Float =
+        if (baseSeries().isEmpty() || baseSeries().first().coordinates.isEmpty()) {
             0f
         } else {
-            val initialDate = baseSeries().first().coordinates.first().eventDate.time
+            val initialDate =
+                baseSeries()
+                    .first()
+                    .coordinates
+                    .first()
+                    .eventDate.time
             val dateDiff = date.time - initialDate
             val stepsFromInitialDate = (dateDiff / periodStep).toFloat()
             stepsFromInitialDate
         }
-    }
 
     fun numberOfStepsToLastDate(): Float {
         return if (baseSeries().isEmpty() || baseSeries().first().coordinates.isEmpty()) {
             return 0f
         } else {
-            numberOfStepsToDate(baseSeries().first().coordinates.last().eventDate)
+            numberOfStepsToDate(
+                baseSeries()
+                    .first()
+                    .coordinates
+                    .last()
+                    .eventDate,
+            )
         }
     }
 
@@ -93,20 +116,25 @@ data class Graph(
             return null
         } else {
             Date(
-                baseSeries().first().coordinates.first().eventDate.time +
+                baseSeries()
+                    .first()
+                    .coordinates
+                    .first()
+                    .eventDate.time +
                     numberOfSteps * periodStep,
             )
         }
     }
 
-    fun localDateFromSteps(numberOfSteps: Long): LocalDate {
-        return when (eventPeriodType) {
+    fun localDateFromSteps(numberOfSteps: Long): LocalDate =
+        when (eventPeriodType) {
             PeriodType.Daily,
             PeriodType.Weekly,
+            PeriodType.WeeklyWednesday,
+            PeriodType.WeeklyThursday,
+            PeriodType.WeeklyFriday,
             PeriodType.WeeklySaturday,
             PeriodType.WeeklySunday,
-            PeriodType.WeeklyThursday,
-            PeriodType.WeeklyWednesday,
             PeriodType.BiWeekly,
             PeriodType.Monthly,
             PeriodType.BiMonthly,
@@ -121,8 +149,11 @@ data class Graph(
             }
 
             PeriodType.Yearly,
+            PeriodType.FinancialFeb,
             PeriodType.FinancialApril,
             PeriodType.FinancialJuly,
+            PeriodType.FinancialAug,
+            PeriodType.FinancialSep,
             PeriodType.FinancialOct,
             PeriodType.FinancialNov,
             -> {
@@ -130,34 +161,30 @@ data class Graph(
                 YearMonth.from(date).atDay(1)
             }
         }
-    }
 
-    fun maxValue(): Float {
-        return series.maxOfOrNull {
+    fun maxValue(): Float =
+        series.maxOfOrNull {
             it.coordinates.maxOfOrNull { points -> points.numericValue() } ?: 0f
         } ?: 0f
-    }
 
-    fun minValue(): Float {
-        return series.minOfOrNull {
+    fun minValue(): Float =
+        series.minOfOrNull {
             it.coordinates.minOfOrNull { points -> points.numericValue() } ?: 0f
         } ?: 0f
-    }
 
-    private fun baseSeries(): List<SerieData> = if (chartType == ChartType.NUTRITION) {
-        listOfNotNull(series.lastOrNull())
-    } else {
-        series
-    }
+    private fun baseSeries(): List<SerieData> =
+        if (chartType == ChartType.NUTRITION) {
+            listOfNotNull(series.lastOrNull())
+        } else {
+            series
+        }
 
-    fun canBeShown(): Boolean {
-        return graphFilters?.canDisplayChart(series.isNotEmpty()) ?: series.isNotEmpty()
-    }
+    fun canBeShown(): Boolean = graphFilters?.canDisplayChart(series.isNotEmpty()) ?: series.isNotEmpty()
 
     fun isSingleValue() = series.size == 1 && series[0].coordinates.size == 1
 
-    fun orgUnitsSelected(lineListingColumnIndex: Int? = null): List<String> {
-        return when (graphFilters) {
+    fun orgUnitsSelected(lineListingColumnIndex: Int? = null): List<String> =
+        when (graphFilters) {
             is GraphFilters.LineListing ->
                 lineListingColumnIndex?.let { graphFilters.orgUnitsSelected[lineListingColumnIndex] } ?: emptyList()
 
@@ -166,7 +193,6 @@ data class Graph(
 
             null -> emptyList()
         }
-    }
 }
 
 data class SerieData(
@@ -174,7 +200,10 @@ data class SerieData(
     val coordinates: List<GraphPoint>,
 )
 
-data class LegendValue(val color: Int, val label: String?)
+data class LegendValue(
+    val color: Int,
+    val label: String?,
+)
 
 data class GraphPoint(
     val eventDate: Date,
@@ -183,22 +212,33 @@ data class GraphPoint(
     val legend: String? = null,
     val legendValue: LegendValue? = null,
 ) {
-    fun numericValue() = when (fieldValue) {
-        is GraphFieldValue.Numeric -> fieldValue.value
-        is GraphFieldValue.Text -> 0f
-    }
+    fun numericValue() =
+        when (fieldValue) {
+            is GraphFieldValue.Text -> 0f
+            is GraphFieldValue.Decimal -> fieldValue.value
+            is GraphFieldValue.Integer -> fieldValue.value.toFloat()
+        }
 
-    fun textValue() = when (fieldValue) {
-        is GraphFieldValue.Numeric -> fieldValue.value.toString()
-        is GraphFieldValue.Text -> fieldValue.value
-    }
+    fun textValue() =
+        when (fieldValue) {
+            is GraphFieldValue.Text -> fieldValue.value
+            is GraphFieldValue.Decimal -> fieldValue.value.toString()
+            is GraphFieldValue.Integer -> fieldValue.value.toString()
+        }
 }
 
 sealed class GraphFieldValue {
-    data class Numeric(val value: Float) : GraphFieldValue()
-    data class Text(val value: String) : GraphFieldValue()
+    data class Decimal(
+        val value: Float,
+    ) : GraphFieldValue()
+
+    data class Text(
+        val value: String,
+    ) : GraphFieldValue()
+
+    data class Integer(
+        val value: Int,
+    ) : GraphFieldValue()
 }
 
-fun Graph.toChartBuilder(): Chart.ChartBuilder {
-    return Chart.ChartBuilder()
-}
+fun Graph.toChartBuilder(): Chart.ChartBuilder = Chart.ChartBuilder()

@@ -6,16 +6,16 @@ import dhis2.org.analytics.charts.data.GraphFieldValue
 import dhis2.org.analytics.charts.data.GraphPoint
 import dhis2.org.analytics.charts.data.SerieData
 import dhis2.org.analytics.charts.mappers.AnalyticsTeiSettingsToGraph
-import dhis2.org.analytics.charts.mappers.DataElementToGraph
-import dhis2.org.analytics.charts.mappers.ProgramIndicatorToGraph
 import dhis2.org.analytics.charts.mappers.VisualizationToGraph
 import dhis2.org.analytics.charts.providers.AnalyticsFilterProvider
 import dhis2.org.analytics.charts.ui.OrgUnitFilterType
+import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.analytics.AnalyticsException
 import org.hisp.dhis.android.core.analytics.aggregated.DimensionItem
 import org.hisp.dhis.android.core.analytics.aggregated.GridAnalyticsResponse
 import org.hisp.dhis.android.core.arch.helpers.Result
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.RelativeOrganisationUnit
 import org.hisp.dhis.android.core.common.RelativePeriod
 import org.hisp.dhis.android.core.common.ValueType
@@ -49,33 +49,34 @@ class ChartsRepositoryTest {
     private val d2: D2 = Mockito.mock(D2::class.java, Mockito.RETURNS_DEEP_STUBS)
     private val visualizationToGraph: VisualizationToGraph = mock()
     private val analyticsTeiSettingsToGraph: AnalyticsTeiSettingsToGraph = mock()
-    private val dataElementToGraph: DataElementToGraph = mock()
-    private val programIndicatorToGraph: ProgramIndicatorToGraph = mock()
     private val analyticsResources: AnalyticResources = mock()
     private val analyticsFilterProvider: AnalyticsFilterProvider = mock()
 
-    private val repository = ChartsRepositoryImpl(
-        d2,
-        visualizationToGraph,
-        analyticsTeiSettingsToGraph,
-        dataElementToGraph,
-        programIndicatorToGraph,
-        analyticsResources,
-        analyticsFilterProvider,
-    )
+    private val repository =
+        ChartsRepositoryImpl(
+            d2,
+            visualizationToGraph,
+            analyticsTeiSettingsToGraph,
+            analyticsResources,
+            analyticsFilterProvider,
+        )
 
     @Test
-    fun `Should return empty list if enrollment teiUid is null`() {
+    fun `Should return empty list if enrollment teiUid is null`() = runTest {
         whenever(
-            d2.enrollmentModule()
+            d2
+                .enrollmentModule()
                 .enrollments()
                 .uid(any())
                 .blockingGet(),
-        ) doReturn Enrollment.builder()
-            .uid("enrollmentUid")
-            .program("programUid")
-            .trackedEntityInstance(null)
-            .build()
+        ) doReturn
+                Enrollment
+                    .builder()
+                    .uid("enrollmentUid")
+                    .program("programUid")
+                    .trackedEntityInstance(null)
+                    .attributeOptionCombo("attributeOptionComboUid")
+                    .build()
         val result = repository.getAnalyticsForEnrollment("enrollmentUid")
         assertTrue(
             result.isEmpty(),
@@ -83,7 +84,7 @@ class ChartsRepositoryTest {
     }
 
     @Test
-    fun `Should get analytics if settings is not null`() {
+    fun `Should get analytics if settings is not null`() = runTest {
         mockEnrollmentCall()
         mockAnalyticsSettingsCall(mockedAnalyticsSettings())
         whenever(
@@ -93,88 +94,13 @@ class ChartsRepositoryTest {
         val result = repository.getAnalyticsForEnrollment("enrollmentUid")
         assertTrue(
             result.isNotEmpty() &&
-                result.size == mockedSettingsGraphs().size &&
-                result[0].title == "settings_1",
+                    result.size == mockedSettingsGraphs().size &&
+                    result[0].title == "settings_1",
         )
     }
 
     @Test
-    fun `Should get default analytics if settings is null`() {
-        mockEnrollmentCall()
-        mockAnalyticsSettingsCall(null)
-        mockRepeatableStagesCall()
-        mockNumericDataElements(false)
-
-        whenever(
-            dataElementToGraph.map(any(), any(), any(), any(), anyOrNull(), anyOrNull(), any()),
-        ) doReturn mockedDataElementGraph()
-        mockIndicators(false)
-        whenever(
-            programIndicatorToGraph.map(
-                any(),
-                any(),
-                any(),
-                any(),
-                anyOrNull(),
-                anyOrNull(),
-                any(),
-            ),
-        ) doReturn mockedIndicatorGraph()
-        val result = repository.getAnalyticsForEnrollment("enrollmentUid")
-        assertTrue(
-            result.isNotEmpty() &&
-                result.size == 2 &&
-                result[0].title == "de_graph_1" &&
-                result[1].title == "indicator_graph_1",
-        )
-    }
-
-    @Test
-    fun `Should get default analytics if settings is null and return only dataElement graphs`() {
-        mockEnrollmentCall()
-        mockAnalyticsSettingsCall(null)
-        mockRepeatableStagesCall()
-        mockNumericDataElements(false)
-        whenever(
-            dataElementToGraph.map(any(), any(), any(), any(), anyOrNull(), anyOrNull(), any()),
-        ) doReturn mockedDataElementGraph()
-        mockIndicators(true)
-        val result = repository.getAnalyticsForEnrollment("enrollmentUid")
-        assertTrue(
-            result.isNotEmpty() &&
-                result.size == 1 &&
-                result[0].title == "de_graph_1",
-        )
-    }
-
-    @Test
-    fun `Should get default analytics if settings is null and return only indicator graphs`() {
-        mockEnrollmentCall()
-        mockAnalyticsSettingsCall(null)
-        mockRepeatableStagesCall()
-        mockNumericDataElements(true)
-        mockIndicators(false)
-        whenever(
-            programIndicatorToGraph.map(
-                any(),
-                any(),
-                any(),
-                any(),
-                anyOrNull(),
-                anyOrNull(),
-                any(),
-            ),
-        ) doReturn mockedIndicatorGraph()
-        val result = repository.getAnalyticsForEnrollment("enrollmentUid")
-        assertTrue(
-            result.isNotEmpty() &&
-                result.size == 1 &&
-                result[0].title == "indicator_graph_1",
-        )
-    }
-
-    @Test
-    fun `Should get default analytics if settings is null and return empty list`() {
+    fun `Should get default analytics if settings is null and return empty list`() = runTest {
         mockEnrollmentCall()
         mockAnalyticsSettingsCall(null)
         mockRepeatableStagesCall()
@@ -190,7 +116,11 @@ class ChartsRepositoryTest {
     fun `Should return visualization groups in home`() {
         val visualizationSetting: AnalyticsDhisVisualizationsSetting = mock()
         whenever(
-            d2.settingModule().analyticsSetting().visualizationsSettings().blockingGet(),
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .visualizationsSettings()
+                .blockingGet(),
         ) doReturn visualizationSetting
         repository.getVisualizationGroups(null)
         verify(visualizationSetting).home()
@@ -199,11 +129,21 @@ class ChartsRepositoryTest {
     @Test
     fun `Should return visualization groups in program`() {
         val mockedVisualizationGroup: AnalyticsDhisVisualizationsGroup = mock()
-        val visualizationSetting: AnalyticsDhisVisualizationsSetting = mock {
-            on { program() } doReturn mapOf(Pair("programUid", listOf(mockedVisualizationGroup)))
-        }
+        val visualizationSetting: AnalyticsDhisVisualizationsSetting =
+            mock {
+                on { program() } doReturn mapOf(
+                    Pair(
+                        "programUid",
+                        listOf(mockedVisualizationGroup)
+                    )
+                )
+            }
         whenever(
-            d2.settingModule().analyticsSetting().visualizationsSettings().blockingGet(),
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .visualizationsSettings()
+                .blockingGet(),
         ) doReturn visualizationSetting
         val result = repository.getVisualizationGroups("programUid")
         assertTrue(result == listOf(mockedVisualizationGroup))
@@ -212,12 +152,22 @@ class ChartsRepositoryTest {
     @Test
     fun `Should return visualization groups in data set`() {
         val mockedVisualizationGroup: AnalyticsDhisVisualizationsGroup = mock()
-        val visualizationSetting: AnalyticsDhisVisualizationsSetting = mock {
-            on { program() } doReturn mapOf()
-            on { dataSet() } doReturn mapOf(Pair("dataSetUid", listOf(mockedVisualizationGroup)))
-        }
+        val visualizationSetting: AnalyticsDhisVisualizationsSetting =
+            mock {
+                on { program() } doReturn mapOf()
+                on { dataSet() } doReturn mapOf(
+                    Pair(
+                        "dataSetUid",
+                        listOf(mockedVisualizationGroup)
+                    )
+                )
+            }
         whenever(
-            d2.settingModule().analyticsSetting().visualizationsSettings().blockingGet(),
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .visualizationsSettings()
+                .blockingGet(),
         ) doReturn visualizationSetting
         val result = repository.getVisualizationGroups("dataSetUid")
         assertTrue(result == listOf(mockedVisualizationGroup))
@@ -225,13 +175,19 @@ class ChartsRepositoryTest {
 
     @Test
     fun `Should return empty list if no visualization configured`() {
-        val emptyVisualizations = AnalyticsDhisVisualizationsSetting.builder()
-            .home(emptyList())
-            .dataSet(emptyMap())
-            .program(emptyMap())
-            .build()
+        val emptyVisualizations =
+            AnalyticsDhisVisualizationsSetting
+                .builder()
+                .home(emptyList())
+                .dataSet(emptyMap())
+                .program(emptyMap())
+                .build()
         whenever(
-            d2.settingModule().analyticsSetting().visualizationsSettings().blockingGet(),
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .visualizationsSettings()
+                .blockingGet(),
         ) doReturn emptyVisualizations
         val result = repository.getVisualizationGroups("dataSetUid")
         assertTrue(result.isEmpty())
@@ -239,12 +195,17 @@ class ChartsRepositoryTest {
 
     @Test
     fun `Should return empty list if no visualization found`() {
-        val visualizationSetting: AnalyticsDhisVisualizationsSetting = mock {
-            on { program() } doReturn mapOf()
-            on { dataSet() } doReturn mapOf()
-        }
+        val visualizationSetting: AnalyticsDhisVisualizationsSetting =
+            mock {
+                on { program() } doReturn mapOf()
+                on { dataSet() } doReturn mapOf()
+            }
         whenever(
-            d2.settingModule().analyticsSetting().visualizationsSettings().blockingGet(),
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .visualizationsSettings()
+                .blockingGet(),
         ) doReturn visualizationSetting
         val result = repository.getVisualizationGroups("uid")
         assertTrue(result.isEmpty())
@@ -326,18 +287,20 @@ class ChartsRepositoryTest {
 
     @Test
     fun `Should add period filter`() {
-        val periods: List<RelativePeriod> = mock {
-            on { isEmpty() } doReturn false
-        }
+        val periods: List<RelativePeriod> =
+            mock {
+                on { isEmpty() } doReturn false
+            }
         repository.setVisualizationPeriods("uid", null, periods)
         verify(analyticsFilterProvider).addPeriodFilter("uid", null, periods)
     }
 
     @Test
     fun `Should delete period filter`() {
-        val periods: List<RelativePeriod> = mock {
-            on { isEmpty() } doReturn true
-        }
+        val periods: List<RelativePeriod> =
+            mock {
+                on { isEmpty() } doReturn true
+            }
         repository.setVisualizationPeriods("uid", null, periods)
         verify(analyticsFilterProvider).removePeriodFilter("uid", null)
     }
@@ -371,23 +334,28 @@ class ChartsRepositoryTest {
         returnDataSet: Boolean = false,
         returnHome: Boolean = false,
     ) {
-        val mockedAnalyticsVisualization: AnalyticsDhisVisualization = mock {
-            on { name() } doReturn "name"
-            on { uid() } doReturn "visualizationUid"
-            on { type() } doReturn AnalyticsDhisVisualizationType.VISUALIZATION
-        }
-        val mockedVisualizationGroup: AnalyticsDhisVisualizationsGroup = mock {
-            on { id() } doReturn "groupUid"
-            on { visualizations() } doReturn listOf(mockedAnalyticsVisualization)
-        }
+        val mockedAnalyticsVisualization: AnalyticsDhisVisualization =
+            mock {
+                on { name() } doReturn "name"
+                on { uid() } doReturn "visualizationUid"
+                on { type() } doReturn AnalyticsDhisVisualizationType.VISUALIZATION
+            }
+        val mockedVisualizationGroup: AnalyticsDhisVisualizationsGroup =
+            mock {
+                on { id() } doReturn "groupUid"
+                on { visualizations() } doReturn listOf(mockedAnalyticsVisualization)
+            }
         val mockedSetting = mapOf(Pair(settingsUid, listOf(mockedVisualizationGroup)))
-        val visualizationSetting: AnalyticsDhisVisualizationsSetting = mock {
-            on { program() } doReturn if (returnProgram) mockedSetting else emptyMap()
-            on { dataSet() } doReturn if (returnDataSet) mockedSetting else emptyMap()
-            on { home() } doReturn if (returnHome) listOf(mockedVisualizationGroup) else emptyList()
-        }
+        val visualizationSetting: AnalyticsDhisVisualizationsSetting =
+            mock {
+                on { program() } doReturn if (returnProgram) mockedSetting else emptyMap()
+                on { dataSet() } doReturn if (returnDataSet) mockedSetting else emptyMap()
+                on { home() } doReturn if (returnHome) listOf(mockedVisualizationGroup) else emptyList()
+            }
         whenever(
-            d2.settingModule().analyticsSetting()
+            d2
+                .settingModule()
+                .analyticsSetting()
                 .visualizationsSettings()
                 .blockingGet(),
         ) doReturn visualizationSetting
@@ -396,7 +364,8 @@ class ChartsRepositoryTest {
     private fun mockVisualization() {
         val mockedVisualization: Visualization = mock { }
         whenever(
-            d2.visualizationModule()
+            d2
+                .visualizationModule()
                 .visualizations()
                 .uid("visualizationUid")
                 .blockingGet(),
@@ -411,11 +380,15 @@ class ChartsRepositoryTest {
     ) {
         val mockedAnalyticResponse: GridAnalyticsResponse = mock()
         whenever(
-            d2.analyticsModule().visualizations()
+            d2
+                .analyticsModule()
+                .visualizations()
                 .withVisualization("visualizationUid"),
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().visualizations()
+            d2
+                .analyticsModule()
+                .visualizations()
                 .withVisualization("visualizationUid")
                 .run {
                     relativePeriod?.let {
@@ -424,7 +397,9 @@ class ChartsRepositoryTest {
                 },
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().visualizations()
+            d2
+                .analyticsModule()
+                .visualizations()
                 .withVisualization("visualizationUid")
                 .run {
                     relativePeriod?.let {
@@ -449,7 +424,9 @@ class ChartsRepositoryTest {
                 },
         ) doReturn mock()
         whenever(
-            d2.analyticsModule().visualizations()
+            d2
+                .analyticsModule()
+                .visualizations()
                 .withVisualization("visualizationUid")
                 .run {
                     relativePeriod?.let {
@@ -461,8 +438,7 @@ class ChartsRepositoryTest {
                             listOf(DimensionItem.OrganisationUnitItem.Absolute(absoluteOrgUnit)),
                         )
                     } ?: this
-                }
-                .run {
+                }.run {
                     userOrgUnit?.let {
                         withOrganisationUnits(
                             listOf(
@@ -472,26 +448,30 @@ class ChartsRepositoryTest {
                             ),
                         )
                     } ?: this
+                }.blockingEvaluate(),
+        ) doReturn
+                if (analyticsException == null) {
+                    Result.Success(mockedAnalyticResponse)
+                } else {
+                    Result.Failure(analyticsException)
                 }
-                .blockingEvaluate(),
-        ) doReturn if (analyticsException == null) {
-            Result.Success(mockedAnalyticResponse)
-        } else {
-            Result.Failure(analyticsException)
-        }
     }
 
     private fun mockEnrollmentCall() {
         whenever(
-            d2.enrollmentModule()
+            d2
+                .enrollmentModule()
                 .enrollments()
                 .uid(any())
                 .blockingGet(),
-        ) doReturn Enrollment.builder()
-            .uid("enrollmentUid")
-            .program("programUid")
-            .trackedEntityInstance("teiUid")
-            .build()
+        ) doReturn
+                Enrollment
+                    .builder()
+                    .uid("enrollmentUid")
+                    .program("programUid")
+                    .trackedEntityInstance("teiUid")
+                    .attributeOptionCombo("attributeOptionComboUid")
+                    .build()
     }
 
     private fun mockAnalyticsSettingsCall(result: List<AnalyticsTeiSetting>?) {
@@ -499,122 +479,188 @@ class ChartsRepositoryTest {
             d2.settingModule().analyticsSetting().teis(),
         ) doReturn mock()
         whenever(
-            d2.settingModule().analyticsSetting().teis()
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .teis()
                 .byProgram(),
         ) doReturn mock()
         whenever(
-            d2.settingModule().analyticsSetting().teis()
-                .byProgram().eq("programUid"),
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .teis()
+                .byProgram()
+                .eq("programUid"),
         ) doReturn mock()
         whenever(
-            d2.settingModule().analyticsSetting().teis()
-                .byProgram().eq("programUid")
+            d2
+                .settingModule()
+                .analyticsSetting()
+                .teis()
+                .byProgram()
+                .eq("programUid")
                 .blockingGet(),
         ) doReturn (result ?: emptyList())
     }
 
     private fun mockRepeatableStagesCall() {
         whenever(
-            d2.programModule().programStages()
-                .byProgramUid().eq("programUid"),
+            d2
+                .programModule()
+                .programStages()
+                .byProgramUid()
+                .eq("programUid"),
         ) doReturn mock()
         whenever(
-            d2.programModule().programStages()
-                .byProgramUid().eq("programUid")
+            d2
+                .programModule()
+                .programStages()
+                .byProgramUid()
+                .eq("programUid")
                 .byRepeatable(),
         ) doReturn mock()
         whenever(
-            d2.programModule().programStages()
-                .byProgramUid().eq("programUid")
-                .byRepeatable().eq(true),
+            d2
+                .programModule()
+                .programStages()
+                .byProgramUid()
+                .eq("programUid")
+                .byRepeatable()
+                .eq(true),
         ) doReturn mock()
         whenever(
-            d2.programModule().programStages()
-                .byProgramUid().eq("programUid")
-                .byRepeatable().eq(true)
+            d2
+                .programModule()
+                .programStages()
+                .byProgramUid()
+                .eq("programUid")
+                .byRepeatable()
+                .eq(true)
                 .blockingGet(),
-        ) doReturn listOf(
-            ProgramStage.builder()
-                .uid("stage_1")
-                .build(),
-        )
+        ) doReturn
+                listOf(
+                    ProgramStage
+                        .builder()
+                        .uid("stage_1")
+                        .build(),
+                )
     }
 
     private fun mockIndicators(emptyList: Boolean) {
         whenever(
-            d2.programModule().programIndicators()
-                .byDisplayInForm().isTrue,
+            d2
+                .programModule()
+                .programIndicators()
+                .byDisplayInForm()
+                .isTrue,
         ) doReturn mock()
         whenever(
-            d2.programModule().programIndicators()
-                .byDisplayInForm().isTrue
+            d2
+                .programModule()
+                .programIndicators()
+                .byDisplayInForm()
+                .isTrue
                 .byProgramUid(),
         ) doReturn mock()
         whenever(
-            d2.programModule().programIndicators()
-                .byDisplayInForm().isTrue
-                .byProgramUid().eq("programUid"),
+            d2
+                .programModule()
+                .programIndicators()
+                .byDisplayInForm()
+                .isTrue
+                .byProgramUid()
+                .eq("programUid"),
         ) doReturn mock()
         if (emptyList) {
             whenever(
-                d2.programModule().programIndicators()
-                    .byDisplayInForm().isTrue
-                    .byProgramUid().eq("programUid")
+                d2
+                    .programModule()
+                    .programIndicators()
+                    .byDisplayInForm()
+                    .isTrue
+                    .byProgramUid()
+                    .eq("programUid")
                     .blockingGet(),
             ) doReturn emptyList()
         } else {
             whenever(
-                d2.programModule().programIndicators()
-                    .byDisplayInForm().isTrue
-                    .byProgramUid().eq("programUid")
+                d2
+                    .programModule()
+                    .programIndicators()
+                    .byDisplayInForm()
+                    .isTrue
+                    .byProgramUid()
+                    .eq("programUid")
                     .blockingGet(),
-            ) doReturn listOf(
-                ProgramIndicator.builder()
-                    .uid("indicator_1")
-                    .build(),
-            )
+            ) doReturn
+                    listOf(
+                        ProgramIndicator
+                            .builder()
+                            .uid("indicator_1")
+                            .build(),
+                    )
         }
     }
 
     private fun mockNumericDataElements(emptyList: Boolean) {
-        val de = DataElement.builder().uid("de_1")
-            .valueType(ValueType.NUMBER)
-            .build()
+        val de =
+            DataElement
+                .builder()
+                .uid("de_1")
+                .valueType(ValueType.NUMBER)
+                .categoryCombo(ObjectWithUid.create("categoryOptionComboUid"))
+                .build()
         whenever(
-            d2.programModule().programStageDataElements()
-                .byProgramStage().eq("stage_1"),
+            d2
+                .programModule()
+                .programStageDataElements()
+                .byProgramStage()
+                .eq("stage_1"),
         ) doReturn mock()
         if (emptyList) {
             whenever(
-                d2.programModule().programStageDataElements()
-                    .byProgramStage().eq("stage_1")
+                d2
+                    .programModule()
+                    .programStageDataElements()
+                    .byProgramStage()
+                    .eq("stage_1")
                     .blockingGet(),
             ) doReturn listOf()
         } else {
             whenever(
-                d2.programModule().programStageDataElements()
-                    .byProgramStage().eq("stage_1")
+                d2
+                    .programModule()
+                    .programStageDataElements()
+                    .byProgramStage()
+                    .eq("stage_1")
                     .blockingGet(),
-            ) doReturn listOf(
-                ProgramStageDataElement.builder()
-                    .uid("psde_uid_1")
-                    .dataElement(DataElement.builder().uid("de_1").build())
-                    .build(),
-            )
+            ) doReturn
+                    listOf(
+                        ProgramStageDataElement
+                            .builder()
+                            .uid("psde_uid_1")
+                            .dataElement(ObjectWithUid.create("de_1"))
+                            .build(),
+                    )
         }
 
         whenever(
             d2.dataElementModule().dataElements().uid("de_1"),
         ) doReturn mock()
         whenever(
-            d2.dataElementModule().dataElements().uid("de_1")
+            d2
+                .dataElementModule()
+                .dataElements()
+                .uid("de_1")
                 .blockingGet(),
         ) doReturn de
     }
 
-    private fun mockedAnalyticsSettings(): List<AnalyticsTeiSetting> {
-        return arrayListOf(
-            AnalyticsTeiSetting.builder()
+    private fun mockedAnalyticsSettings(): List<AnalyticsTeiSetting> =
+        arrayListOf(
+            AnalyticsTeiSetting
+                .builder()
                 .uid("analyticsTeiSettings_1")
                 .name("settings_1")
                 .shortName("settings_1")
@@ -624,10 +670,9 @@ class ChartsRepositoryTest {
                 .data(AnalyticsTeiData.builder().build())
                 .build(),
         )
-    }
 
-    private fun mockedSettingsGraphs(): List<Graph> {
-        return arrayListOf(
+    private fun mockedSettingsGraphs(): List<Graph> =
+        arrayListOf(
             Graph(
                 "settings_1",
                 emptyList(),
@@ -637,31 +682,30 @@ class ChartsRepositoryTest {
                 dhis2.org.analytics.charts.data.ChartType.LINE_CHART,
             ),
         )
-    }
 
-    private fun mockedDataElementGraph(): Graph {
-        return Graph(
+    private fun mockedDataElementGraph(): Graph =
+        Graph(
             title = "de_graph_1",
-            series = listOf(
-                SerieData(
-                    "de_field",
-                    listOf(GraphPoint(Date(), null, GraphFieldValue.Numeric(30f))),
+            series =
+                listOf(
+                    SerieData(
+                        "de_field",
+                        listOf(GraphPoint(Date(), null, GraphFieldValue.Decimal(30f))),
+                    ),
                 ),
-            ),
             periodToDisplayDefault = null,
             eventPeriodType = PeriodType.Daily,
             periodStep = 0L,
             chartType = dhis2.org.analytics.charts.data.ChartType.LINE_CHART,
         )
-    }
 
-    private fun mockedIndicatorGraph(): Graph {
-        return Graph(
+    private fun mockedIndicatorGraph(): Graph =
+        Graph(
             "indicator_graph_1",
             listOf(
                 SerieData(
                     "indicator_field",
-                    listOf(GraphPoint(Date(), null, GraphFieldValue.Numeric(30f))),
+                    listOf(GraphPoint(Date(), null, GraphFieldValue.Decimal(30f))),
                 ),
             ),
             null,
@@ -669,17 +713,18 @@ class ChartsRepositoryTest {
             0L,
             dhis2.org.analytics.charts.data.ChartType.LINE_CHART,
         )
-    }
 
     private fun mockedVisualizationPeriodFilter() {
         whenever(
-            d2.dataStoreModule().localDataStore().value(any()).blockingExists(),
+            d2
+                .dataStoreModule()
+                .localDataStore()
+                .value(any())
+                .blockingExists(),
         ) doReturn false
     }
 
-    private fun mockedVisualizationPeriodFilterWithValue(
-        relativePeriods: List<RelativePeriod>? = null,
-    ) {
+    private fun mockedVisualizationPeriodFilterWithValue(relativePeriods: List<RelativePeriod>? = null) {
         whenever(
             analyticsFilterProvider.visualizationPeriod(any()),
         ) doReturn relativePeriods

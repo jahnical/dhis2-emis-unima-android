@@ -2,25 +2,34 @@ package org.dhis2.usescases.teiDashboard.dashboardfragments.relationships;
 
 import android.content.Context;
 
+import org.dhis2.R;
 import org.dhis2.commons.data.ProgramConfigurationRepository;
 import org.dhis2.commons.date.DateLabelProvider;
+import org.dhis2.commons.date.DateUtils;
 import org.dhis2.commons.di.dagger.PerFragment;
+import org.dhis2.commons.network.NetworkUtils;
+import org.dhis2.commons.resources.D2ErrorUtils;
 import org.dhis2.commons.resources.MetadataIconProvider;
 import org.dhis2.commons.resources.ResourceManager;
 import org.dhis2.commons.viewmodel.DispatcherProvider;
+import org.dhis2.data.enrollment.EnrollmentUiDataHelper;
+import org.dhis2.data.sorting.SearchSortingValueSetter;
 import org.dhis2.maps.geometry.bound.GetBoundingBox;
 import org.dhis2.maps.geometry.line.MapLineRelationshipToFeature;
 import org.dhis2.maps.geometry.mapper.featurecollection.MapRelationshipsToFeatureCollection;
 import org.dhis2.maps.geometry.point.MapPointToFeature;
 import org.dhis2.maps.geometry.polygon.MapPolygonToFeature;
+import org.dhis2.maps.model.MapScope;
 import org.dhis2.maps.usecases.MapStyleConfiguration;
 import org.dhis2.tracker.data.ProfilePictureProvider;
 import org.dhis2.tracker.relationships.data.EventRelationshipsRepository;
 import org.dhis2.tracker.relationships.data.RelationshipsRepository;
 import org.dhis2.tracker.relationships.data.TrackerRelationshipsRepository;
+import org.dhis2.tracker.relationships.domain.AddRelationship;
 import org.dhis2.tracker.relationships.domain.DeleteRelationships;
 import org.dhis2.tracker.relationships.domain.GetRelationshipsByType;
 import org.dhis2.tracker.relationships.ui.RelationshipsViewModel;
+import org.dhis2.tracker.relationships.ui.mapper.RelationshipsUiStateMapper;
 import org.dhis2.tracker.ui.AvatarProvider;
 import org.dhis2.usescases.events.EventInfoProvider;
 import org.dhis2.usescases.teiDashboard.TeiAttributesProvider;
@@ -76,7 +85,12 @@ public class RelationshipModule {
                 relationshipMapsRepository,
                 analyticsHelper,
                 mapRelationshipsToFeatureCollection,
-                new MapStyleConfiguration(d2, programUid, programConfigurationRepository),
+                new MapStyleConfiguration(
+                        d2,
+                        programUid,
+                        MapScope.PROGRAM,
+                        programConfigurationRepository
+                ),
                 relationshipsRepository,
                 avatarProvider,
                 dateLabelProvider,
@@ -96,7 +110,9 @@ public class RelationshipModule {
             D2 d2,
             ResourceManager resourceManager,
             MetadataIconProvider metadataIconProvider,
-            DateLabelProvider dateLabelProvider
+            DateLabelProvider dateLabelProvider,
+            DateUtils dateUtils,
+            SearchSortingValueSetter sortingValueSetter
     ) {
         RelationshipConfiguration config;
         if (teiUid != null) {
@@ -112,17 +128,55 @@ public class RelationshipModule {
                         d2,
                         profilePictureProvider,
                         dateLabelProvider,
-                        metadataIconProvider
+                        metadataIconProvider,
+                        sortingValueSetter
                 ),
                 new EventInfoProvider(
                         d2,
                         resourceManager,
                         dateLabelProvider,
                         metadataIconProvider,
-                        profilePictureProvider
+                        profilePictureProvider,
+                        dateUtils
                 )
         );
     }
+
+    @Provides
+    @PerFragment
+    SearchSortingValueSetter searchSortingValueSetter(
+            Context context,
+            D2 d2,
+            EnrollmentUiDataHelper enrollmentUiDataHelper,
+            ResourceManager resourceManager) {
+        String unknownLabel = context.getString(R.string.unknownValue);
+        String eventDateLabel = context.getString(R.string.most_recent_event_date);
+        String enrollmentStatusLabel = resourceManager.formatWithEnrollmentLabel(
+                null,
+                R.string.filters_title_enrollment_status,
+                1,
+                false);
+        String enrollmentDateDefaultLabel = resourceManager.formatWithEnrollmentLabel(
+                null,
+                R.string.enrollment_date_V2,
+                1,
+                false);
+        String uiDateFormat = DateUtils.SIMPLE_DATE_FORMAT;
+        return new SearchSortingValueSetter(d2,
+                unknownLabel,
+                eventDateLabel,
+                enrollmentStatusLabel,
+                enrollmentDateDefaultLabel,
+                uiDateFormat,
+                enrollmentUiDataHelper);
+    }
+
+    @Provides
+    @PerFragment
+    EnrollmentUiDataHelper enrollmentUiDataHelper(Context context) {
+        return new EnrollmentUiDataHelper(context);
+    }
+
 
     @Provides
     @PerFragment
@@ -146,27 +200,34 @@ public class RelationshipModule {
     RelationshipsViewModel provideRelationshipsViewModel(
             GetRelationshipsByType getRelationshipsByType,
             DeleteRelationships deleteRelationships,
-            DispatcherProvider dispatcherProvider
+            DispatcherProvider dispatcherProvider,
+            AddRelationship addRelationship,
+            D2ErrorUtils d2ErrorUtils,
+            RelationshipsUiStateMapper relationshipsUiStateMapper
     ) {
         return new RelationshipsViewModel(
+                dispatcherProvider,
                 getRelationshipsByType,
                 deleteRelationships,
-                dispatcherProvider
+                addRelationship,
+                d2ErrorUtils,
+                relationshipsUiStateMapper
         );
     }
 
     @Provides
     @PerFragment
-    GetRelationshipsByType provideGetRelationshipsByType(
-            RelationshipsRepository relationshipsRepository,
-            DateLabelProvider dateLabelProvider,
-            AvatarProvider avatarProvider
+    DateUtils provideDateUtils(
     ) {
-        return new GetRelationshipsByType(
-                relationshipsRepository,
-                dateLabelProvider,
-                avatarProvider
-        );
+        return DateUtils.getInstance();
+    }
+
+    @Provides
+    @PerFragment
+    GetRelationshipsByType provideGetRelationshipsByType(
+            RelationshipsRepository relationshipsRepository
+    ) {
+        return new GetRelationshipsByType(relationshipsRepository);
     }
 
     @Provides
@@ -175,6 +236,14 @@ public class RelationshipModule {
             RelationshipsRepository relationshipsRepository
     ) {
         return new DeleteRelationships(relationshipsRepository);
+    }
+
+    @Provides
+    @PerFragment
+    AddRelationship provideAddRelationship(
+            RelationshipsRepository relationshipsRepository
+    ) {
+        return new AddRelationship(relationshipsRepository);
     }
 
     @Provides
@@ -221,5 +290,22 @@ public class RelationshipModule {
             MetadataIconProvider metadataIconProvider
     ) {
         return new AvatarProvider(metadataIconProvider);
+    }
+
+    @Provides
+    @PerFragment
+    D2ErrorUtils provideD2ErrorUtils(
+            NetworkUtils networkUtils
+    ) {
+        return new D2ErrorUtils(moduleContext, networkUtils);
+    }
+
+    @Provides
+    @PerFragment
+    RelationshipsUiStateMapper provideRelationshipsUiStateMapper(
+            AvatarProvider avatarProvider,
+            DateLabelProvider dateLabelProvider
+    ) {
+        return new RelationshipsUiStateMapper(avatarProvider, dateLabelProvider);
     }
 }

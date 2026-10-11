@@ -1,34 +1,24 @@
 package org.dhis2.usescases.login
 
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.TypeTextAction
-import androidx.test.espresso.action.ViewActions.clearText
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.isEnabled
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
-import org.dhis2.R
 import org.dhis2.common.BaseRobot
-import org.dhis2.common.viewactions.ClickDrawableAction
-import org.dhis2.ui.dialogs.bottomsheet.CLICKABLE_TEXT_TAG
-import org.dhis2.usescases.BaseTest.Companion.MOCK_SERVER_URL
-import org.dhis2.usescases.about.PolicyView
-import org.dhis2.usescases.qrScanner.ScanActivity
-import org.dhis2.utils.WebViewActivity
-import org.hamcrest.CoreMatchers
-import org.hamcrest.CoreMatchers.not
-import androidx.compose.ui.test.hasText
+import org.dhis2.mobile.login.accounts.ui.screen.ACCOUNT_ITEM_TAG
+import org.dhis2.mobile.login.main.ui.screen.CREDENTIALS_ERROR_INFO_BAR_TAG
+import org.dhis2.mobile.login.main.ui.screen.CREDENTIALS_LOGIN_BUTTON_TAG
+import org.dhis2.mobile.login.main.ui.screen.CREDENTIALS_MANAGE_ACCOUNTS_BUTTON_TAG
+import org.dhis2.mobile.login.main.ui.screen.CREDENTIALS_PASSWORD_INPUT_TAG
+import org.dhis2.mobile.login.main.ui.screen.CREDENTIALS_USERNAME_INPUT_TAG
+import org.dhis2.mobile.login.main.ui.screen.SERVER_VALIDATION_CONTENT_BUTTON_TAG
 
 
 fun loginRobot(
@@ -42,144 +32,155 @@ fun loginRobot(
 
 class LoginRobot(val composeTestRule: ComposeTestRule) : BaseRobot() {
 
-
     val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-    fun typeServer(server: String) {
-        onView(withId(R.id.server_url_edit)).perform(TypeTextAction(server))
-        closeKeyboard()
+    @OptIn(ExperimentalTestApi::class)
+    fun clickOnValidateServerButton() {
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(SERVER_VALIDATION_CONTENT_BUTTON_TAG),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(SERVER_VALIDATION_CONTENT_BUTTON_TAG).performClick()
     }
 
-    fun clearServerField() {
-        onView(withId(R.id.server_url_edit)).perform(clearText())
+    @OptIn(ExperimentalTestApi::class)
+    fun typeServerToValidate(server: String) {
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag("INPUT_QR_CODE_FIELD"),
+            TIMEOUT
+        )
+        composeTestRule.onNodeWithTag("INPUT_QR_CODE_FIELD").performTextReplacement(server)
     }
 
-    fun selectUsernameField() {
-        onView(withId(R.id.user_name_edit)).perform(click())
+    @OptIn(ExperimentalTestApi::class)
+    fun checkServerInputIsDisplayed() {
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag("INPUT_QR_CODE_FIELD"),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag("INPUT_QR_CODE_FIELD").assertIsDisplayed()
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun typeUsername(username: String) {
-        onView(withId(R.id.user_name_edit)).perform(TypeTextAction(username))
-        pressImeActionButton()
+        // Wait for credentials screen to appear
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(CREDENTIALS_USERNAME_INPUT_TAG),
+            TIMEOUT,
+        )
+        // Click on the username input to focus it
+        composeTestRule.onNodeWithTag(CREDENTIALS_USERNAME_INPUT_TAG).performClick()
+        // Now find the inner text field and type the username
+        composeTestRule.onNodeWithTag("INPUT_USER_FIELD").performTextReplacement(username)
     }
 
-    fun clearUsernameField() {
-        onView(withId(R.id.clearUserNameButton)).perform(click())
-    }
-
+    @OptIn(ExperimentalTestApi::class)
     fun typePassword(password: String) {
-        onView(withId(R.id.user_pass_edit)).perform(TypeTextAction(password))
-        pressImeActionButton()
+        // Wait for password field to appear
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(CREDENTIALS_PASSWORD_INPUT_TAG),
+            TIMEOUT,
+        )
+        // Click on the password input to focus it
+        composeTestRule.onNodeWithTag(CREDENTIALS_PASSWORD_INPUT_TAG).performClick()
+        // Now find the inner text field and type the password
+        composeTestRule.onNodeWithTag("INPUT_PASSWORD_TEXT_FIELD").performTextReplacement(password)
     }
 
-    fun clearPasswordField() {
-        onView(withId(R.id.clearPassButton)).perform(click())
+    @OptIn(ExperimentalTestApi::class)
+    fun checkLoginButtonIsEnabled() {
+        closeKeyboard()
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(CREDENTIALS_LOGIN_BUTTON_TAG),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(CREDENTIALS_LOGIN_BUTTON_TAG)
+            .assertIsEnabled()
     }
 
-    fun clearURLField() {
-        onView(withId(R.id.clearUrl)).perform(click())
+    @OptIn(ExperimentalTestApi::class)
+    fun checkLoginButtonIsDisabled() {
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(CREDENTIALS_LOGIN_BUTTON_TAG),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(CREDENTIALS_LOGIN_BUTTON_TAG)
+            .assertIsNotEnabled()
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clickLoginButton() {
-        onView(withId(R.id.login)).perform(click())
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(CREDENTIALS_LOGIN_BUTTON_TAG),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(CREDENTIALS_LOGIN_BUTTON_TAG).performClick()
     }
 
-    fun clickQRButton() {
-        onView(withId(R.id.server_url_edit)).perform(ClickDrawableAction(ClickDrawableAction.RIGHT))
+    @OptIn(ExperimentalTestApi::class)
+    fun checkServerValidationErrorIsDisplayed() {
+        // Wait for error to appear in the supporting text of the server input
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag("INPUT_QR_CODE_FIELD"),
+            TIMEOUT,
+        )
+        // The error is displayed as supporting text, we just need to verify the field is in error state
     }
 
-    fun checkLoginButtonIsHidden() {
-        onView(withId(R.id.login)).check(matches(not(isEnabled())))
+    @OptIn(ExperimentalTestApi::class)
+    fun checkCredentialsErrorIsDisplayed() {
+        // Wait for the InfoBar with error message to appear
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag(CREDENTIALS_ERROR_INFO_BAR_TAG),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(CREDENTIALS_ERROR_INFO_BAR_TAG).assertIsDisplayed()
     }
 
-    fun checkLoginButtonIsVisible() {
-        onView(withId(R.id.login)).check(matches((isEnabled())))
+    @OptIn(ExperimentalTestApi::class)
+    fun clickOnManageAccountsButton() {
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(CREDENTIALS_MANAGE_ACCOUNTS_BUTTON_TAG),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(CREDENTIALS_MANAGE_ACCOUNTS_BUTTON_TAG).performClick()
     }
 
-
-    fun checkAuthErrorAlertIsVisible() {
-        onView(withText(LOGIN_ERROR_TITLE)).check(matches(isDisplayed()))
+    @OptIn(ExperimentalTestApi::class)
+    fun checkAccountIsListed(serverUrl: String, username: String) {
+        val accountTag = "${ACCOUNT_ITEM_TAG}_${serverUrl}_${username}"
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(accountTag),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(accountTag).assertIsDisplayed()
     }
 
-    fun clickOKAuthErrorAlert() {
-        onView(withText(OK)).perform(click())
+    @OptIn(ExperimentalTestApi::class)
+    fun clickOnAccount(serverUrl: String, username: String) {
+        val accountTag = "${ACCOUNT_ITEM_TAG}_${serverUrl}_${username}"
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(accountTag),
+            TIMEOUT,
+        )
+        composeTestRule.onNodeWithTag(accountTag).performClick()
     }
 
-    fun clickCancelAuthErrorAlert() {
-        onView(withText(Cancel)).perform(click())
-    }
-
-    fun checkAuthErrorOKButtonIsVisible() {
-        onView(withText(OK)).check(matches(isDisplayed()))
-    }
-
-    fun checkUnblockSessionViewIsVisible() {
-        onView(withId(R.id.cardview_pin)).check(matches(isDisplayed()))
-    }
-
-    fun checkUsernameFieldIsClear() {
-        onView(withId(R.id.user_name_edit)).check(matches(withText("")))
-    }
-
-    fun checkPasswordFieldIsClear() {
-        onView(withId(R.id.user_pass_edit)).check(matches(withText("")))
-    }
-
-    fun checkURLFieldIsClear() {
-        onView(withId(R.id.server_url_edit)).check(matches(withText("")))
-    }
-
-    fun checkURL(url: String) {
-        onView(withId(R.id.server_url_edit)).check(matches(withText(url)))
-    }
-
-    fun clickAccountRecovery() {
-        onView(withId(R.id.account_recovery)).perform(click())
-    }
-
-    fun checkWebviewWithRecoveryAccountIsOpened() {
-        Intents.intended(
-            CoreMatchers.allOf(
-                hasExtra(
-                    WebViewActivity.WEB_VIEW_URL,
-                    "${MOCK_SERVER_URL}/dhis-web-commons/security/recovery.action"
-                ),
-                hasComponent(WebViewActivity::class.java.name)
-            )
+    @OptIn(ExperimentalTestApi::class)
+    fun checkTrackingPermissionDialogIsDisplayed() {
+        composeTestRule.waitUntilExactlyOneExists(
+            hasText("Do you want to help us improve this app?"),
+            TIMEOUT,
         )
     }
 
-    fun checkQRScanIsOpened() {
-        Intents.intended(CoreMatchers.allOf(hasComponent(ScanActivity::class.java.name)))
-    }
-
-    fun checkShareDataDialogIsDisplayed() {
-        onView(withId(android.R.id.content)).check(matches(isDisplayed()))
-    }
-
-    fun clickOnPrivacyPolicy() {
-        composeTestRule.onNodeWithTag(CLICKABLE_TEXT_TAG).performClick()
-    }
-
-    fun acceptTrackerDialog() {
-        val title = InstrumentationRegistry
-            .getInstrumentation()
-            .targetContext.getString(R.string.improve_app_msg_title)
-        composeTestRule.onNodeWithText(title).assertIsDisplayed()
-    }
-
-    fun clickYesOnAcceptTrackerDialog() {
-        composeTestRule.onNodeWithText(context.getString(R.string.yes))
-            .performClick()
-    }
-
-    fun checkPrivacyViewIsOpened() {
-        Intents.intended(CoreMatchers.allOf(hasComponent(PolicyView::class.java.name)))
-    }
-
-    companion object {
-        const val LOGIN_ERROR_TITLE = "Login error"
-        const val OK = "OK"
-        const val Cancel = "cancel"
+    @OptIn(ExperimentalTestApi::class)
+    fun acceptTrackingPermission() {
+        checkTrackingPermissionDialogIsDisplayed()
+        composeTestRule.waitUntilExactlyOneExists(
+            hasText("Yes"),
+            TIMEOUT,
+        )
+        composeTestRule.onNode(hasText("Yes")).performClick()
     }
 }

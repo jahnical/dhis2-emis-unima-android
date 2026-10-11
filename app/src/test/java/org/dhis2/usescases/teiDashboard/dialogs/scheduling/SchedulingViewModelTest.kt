@@ -3,106 +3,105 @@ package org.dhis2.usescases.teiDashboard.dialogs.scheduling
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import org.dhis2.commons.bindings.enrollment
-import org.dhis2.commons.bindings.programStage
 import org.dhis2.commons.data.EventCreationType
 import org.dhis2.commons.viewmodel.DispatcherProvider
+import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.arch.helpers.DateUtils
-import org.hisp.dhis.android.core.arch.repositories.`object`.ReadOnlyOneObjectRepositoryFinalImpl
 import org.hisp.dhis.android.core.enrollment.Enrollment
-import org.hisp.dhis.android.core.enrollment.EnrollmentCollectionRepository
-import org.hisp.dhis.android.core.enrollment.EnrollmentModule
-import org.hisp.dhis.android.core.enrollment.EnrollmentObjectRepository
-import org.hisp.dhis.android.core.program.ProgramModule
+import org.hisp.dhis.android.core.event.EventCollectionRepository
+import org.hisp.dhis.android.core.program.ProgramCollectionRepository
 import org.hisp.dhis.android.core.program.ProgramStage
-import org.hisp.dhis.android.core.program.ProgramStageCollectionRepository
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.spy
+import org.mockito.Mockito
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SchedulingViewModelTest {
-
     private lateinit var schedulingViewModel: SchedulingViewModel
 
-    private val testingDispatcher = UnconfinedTestDispatcher()
+    private val testingDispatcher = StandardTestDispatcher()
 
-    private val enrollment = Enrollment.builder().uid("enrollment-uid").build()
-    private val programStage = ProgramStage.builder().uid("program-stage").build()
+    private val enrollment =
+        Enrollment
+            .builder()
+            .uid(ENROLLMENT_UID)
+            .attributeOptionCombo("attributeOptionComboUid")
+            .build()
 
-    private val enrollmentObjectRepository: EnrollmentObjectRepository = mock {
-        on { blockingGet() } doReturn enrollment
-    }
-    private val enrollmentCollectionRepository: EnrollmentCollectionRepository = mock {
-        on { uid("enrollment-uid") } doReturn enrollmentObjectRepository
-    }
-    private val enrollmentModule: EnrollmentModule = mock {
-        on { enrollments() } doReturn enrollmentCollectionRepository
-    }
+    private val d2: D2 = Mockito.mock(D2::class.java, Mockito.RETURNS_DEEP_STUBS)
 
-    private val readOnlyOneObjectRepositoryFinalImpl: ReadOnlyOneObjectRepositoryFinalImpl<ProgramStage> = mock {
-        on { blockingGet() } doReturn programStage
-    }
-    private val programStageCollectionRepository: ProgramStageCollectionRepository = mock {
-        on { uid("program-stage") } doReturn readOnlyOneObjectRepositoryFinalImpl
-    }
-    private val programModule: ProgramModule = mock {
-        on { programStages() } doReturn programStageCollectionRepository
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
         Dispatchers.setMain(testingDispatcher)
-        schedulingViewModel = SchedulingViewModel(
-            d2 = mock {
-                on { enrollmentModule() } doReturn enrollmentModule
-                on { programModule() } doReturn programModule
-            },
-            resourceManager = mock(),
-            eventResourcesProvider = mock(),
-            periodUtils = mock(),
-            dateUtils = mock(),
-            dispatchersProvider = object : DispatcherProvider {
-                override fun io(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+        whenever(d2.enrollmentModule().enrollments().uid(ENROLLMENT_UID).blockingGet()) doReturn enrollment
+        whenever(d2.programModule().programStages().uid(STAGE).blockingGet()) doReturn
+            ProgramStage.builder().uid(STAGE).build()
+        whenever(d2.eventModule().events()) doReturn
+            Mockito.mock(EventCollectionRepository::class.java, Mockito.RETURNS_DEEP_STUBS)
+        whenever(d2.programModule().programs()) doReturn
+            Mockito.mock(ProgramCollectionRepository::class.java, Mockito.RETURNS_DEEP_STUBS)
+        schedulingViewModel =
+            SchedulingViewModel(
+                d2 = d2,
+                resourceManager = mock(),
+                eventResourcesProvider = mock(),
+                periodUtils = mock(),
+                dateUtils = mock(),
+                dispatchersProvider =
+                    object : DispatcherProvider {
+                        override fun io(): CoroutineDispatcher = testingDispatcher
 
-                override fun computation(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
+                        override fun computation(): CoroutineDispatcher = testingDispatcher
 
-                override fun ui(): CoroutineDispatcher {
-                    return testingDispatcher
-                }
-            },
-            launchMode = SchedulingDialog.LaunchMode.NewSchedule(
-                enrollmentUid = "enrollment-uid",
-                programStagesUids = listOf("program-stage"),
-                showYesNoOptions = false,
-                eventCreationType = EventCreationType.SCHEDULE,
-            ),
-        )
+                        override fun ui(): CoroutineDispatcher = testingDispatcher
+                    },
+                launchMode =
+                    SchedulingDialog.LaunchMode.NewSchedule(
+                        enrollmentUid = ENROLLMENT_UID,
+                        programStagesUids = listOf(STAGE),
+                        showYesNoOptions = false,
+                        eventCreationType = EventCreationType.SCHEDULE,
+                        ownerOrgUnitUid = OWNER_ORG_UNIT_UID,
+                    ),
+                getEventPeriods = mock(),
+            )
     }
 
     @Test
     fun shouldSetReportDate() {
-        val date = DateUtils.DATE_FORMAT.parse("2024-04-14T00:00:00.000")
-        val spy = spy(schedulingViewModel)
+        val date = DateUtils.DATE_FORMAT.parse(REPORT_DATE)
+        val spy = Mockito.spy(schedulingViewModel)
         spy.onDateSet(2024, 4, 14)
         verify(spy).setUpEventReportDate(date)
     }
 
     @Test
     fun shouldSetReportDateForIncreasedNumberOfMonth() {
-        val date = DateUtils.DATE_FORMAT.parse("2025-01-31T00:00:00.000")
-        val spy = spy(schedulingViewModel)
+        val date = DateUtils.DATE_FORMAT.parse(REPORT_DATE_INCREASED_MONTH)
+        val spy = Mockito.spy(schedulingViewModel)
         spy.onDateSet(2024, 13, 31)
         verify(spy).setUpEventReportDate(date)
+    }
+
+    companion object {
+        const val REPORT_DATE = "2024-04-14T00:00:00.000"
+        const val REPORT_DATE_INCREASED_MONTH = "2025-01-31T00:00:00.000"
+        const val STAGE = "program-stage"
+        const val OWNER_ORG_UNIT_UID = "ownerOrgUnitUid"
+        const val ENROLLMENT_UID = "enrollment-uid"
     }
 }

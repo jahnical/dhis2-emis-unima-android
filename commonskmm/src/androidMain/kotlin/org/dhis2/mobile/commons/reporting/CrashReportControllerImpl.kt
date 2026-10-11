@@ -1,0 +1,126 @@
+package org.dhis2.mobile.commons.reporting
+
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import io.sentry.Breadcrumb
+import io.sentry.Sentry
+import io.sentry.SentryLevel
+import io.sentry.SentryOptions.BeforeSendCallback
+import io.sentry.android.core.SentryAndroid
+import io.sentry.android.core.SentryAndroidOptions
+import org.hisp.dhis.android.core.D2Manager
+import timber.log.Timber
+
+const val DATA_STORE_CRASH_PERMISSION_KEY = "analytics_permission"
+
+class CrashReportControllerImpl(
+    private val context: Context,
+    private val sentryDsn: String,
+    private val isDebug: Boolean = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0,
+) : CrashReportController {
+    override fun init() {
+        val resolvedDsn = resolveSentryDsn()
+        if (resolvedDsn.isBlank()) {
+            Timber.w("Sentry DSN is empty. Skipping Sentry initialization.")
+            return
+        }
+        SentryAndroid.init(context) { options: SentryAndroidOptions? ->
+            options!!.setDsn(resolvedDsn)
+            options.isAnrReportInDebug = true
+            options.beforeSend =
+                BeforeSendCallback { event, _ ->
+                    if (SentryLevel.DEBUG == event.level) null else event
+                }
+            options.environment = if (isDebug) "debug" else "production"
+            options.isDebug = isDebug
+            options.isAttachViewHierarchy = true
+            options.setTracesSampleRate(if (isDebug) 1.0 else 0.1)
+            options.setProfilesSampleRate(if (isDebug) 1.0 else 0.1)
+        }
+    }
+
+    override fun close() {
+        Sentry.close()
+    }
+
+    override fun trackServer(
+        server: String?,
+        serverDhisVersion: String?,
+    ) {
+        if (isCrashReportPermissionGranted()) {
+            Sentry.configureScope { scope ->
+                scope.setTag(SERVER_NAME, server ?: "")
+                scope.setTag(SERVER_VERSION, serverDhisVersion ?: "")
+            }
+        }
+    }
+
+    override fun trackError(
+        exception: Exception,
+        message: String?,
+    ) {
+        if (isCrashReportPermissionGranted()) {
+            val breadcrumb = Breadcrumb()
+            message?.let {
+                breadcrumb.type = "Info"
+                breadcrumb.message = message
+                Sentry.addBreadcrumb(breadcrumb)
+            }
+            Sentry.captureException(exception)
+        }
+    }
+
+    override fun addBreadCrumb(
+        category: String,
+        message: String,
+    ) {
+        if (isCrashReportPermissionGranted()) {
+            val breadcrumb = Breadcrumb()
+            breadcrumb.type = "info"
+            breadcrumb.category = category
+            breadcrumb.message = message
+            Sentry.addBreadcrumb(breadcrumb)
+        }
+    }
+
+    companion object {
+        const val SERVER_NAME = "server_name"
+        const val SERVER_VERSION = "server_version"
+    }
+
+    private fun isCrashReportPermissionGranted(): Boolean =
+        (
+            D2Manager.isD2Instantiated() &&
+                D2Manager
+                    .getD2()
+                    .dataStoreModule()
+                    .localDataStore()
+                    .value(DATA_STORE_CRASH_PERMISSION_KEY)
+                    .blockingGet()
+                    ?.value()
+                    ?.toBoolean() == true
+        ).also { granted ->
+            if (!granted) {
+                Timber.d("Tracking is disabled")
+            }
+        }
+
+    private fun resolveSentryDsn(): String {
+        if (sentryDsn.isNotBlank()) {
+            return sentryDsn
+        }
+
+        return try {
+            val buildConfigClass = Class.forName("${context.packageName}.BuildConfig")
+            (buildConfigClass.getField("SENTRY_DSN")[null] as? String).orEmpty()
+        } catch (_: ClassNotFoundException) {
+            ""
+        } catch (_: NoSuchFieldException) {
+            ""
+        } catch (_: IllegalAccessException) {
+            ""
+        } catch (_: SecurityException) {
+            ""
+        }
+    }
+}

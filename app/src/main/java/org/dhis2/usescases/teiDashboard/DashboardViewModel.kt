@@ -15,15 +15,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dhis2.R
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.commons.viewmodel.DispatcherProvider
+import org.dhis2.mobile.commons.coroutine.CoroutineTracker
 import org.dhis2.tracker.NavigationBarUIState
 import org.dhis2.tracker.TEIDashboardItems
-import org.dhis2.tracker.relationships.model.RelationshipTopBarIconState
+import org.dhis2.tracker.relationships.ui.state.RelationshipTopBarIconState
 import org.dhis2.utils.AuthorityException
 import org.dhis2.utils.analytics.ACTIVE_FOLLOW_UP
 import org.dhis2.utils.analytics.AnalyticsHelper
@@ -43,7 +49,6 @@ class DashboardViewModel(
     private val pageConfigurator: NavigationPageConfigurator,
     private val resourcesManager: ResourceManager,
 ) : ViewModel() {
-
     private val eventUid = MutableLiveData<String>()
 
     private val selectedEventUid = MutableLiveData<String>()
@@ -65,119 +70,143 @@ class DashboardViewModel(
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _dashboardModel = MutableLiveData<DashboardModel?>()
-    var dashboardModel: LiveData<DashboardModel?> = _dashboardModel
+    private val _dashboardModel = MutableStateFlow<DashboardModel?>(null)
+    var dashboardModel: StateFlow<DashboardModel?> =
+        _dashboardModel
+            .onStart {
+                if (repository.isProgramSelected()) fetchDashboardModel()
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000L),
+                null,
+            )
 
-    private val _groupByStage = MutableLiveData<Boolean>()
-    val groupByStage: LiveData<Boolean> = _groupByStage
+    private val _groupByStage = MutableStateFlow(false)
+    val groupByStage: StateFlow<Boolean> =
+        _groupByStage
+            .onStart {
+                fetchGrouping()
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000L),
+                false,
+            )
 
     private val _noEnrollmentSelected = MutableLiveData(false)
     val noEnrollmentSelected: LiveData<Boolean> = _noEnrollmentSelected
 
     private val _navigationBarUIState =
         MutableStateFlow<NavigationBarUIState<TEIDashboardItems>>(NavigationBarUIState())
-    val navigationBarUIState = _navigationBarUIState.asStateFlow()
+    val navigationBarUIState =
+        _navigationBarUIState
+            .onStart {
+                loadNavigationBarItems()
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000L),
+                NavigationBarUIState(),
+            )
 
     private val _relationshipTopBarIconState =
         MutableStateFlow<RelationshipTopBarIconState>(RelationshipTopBarIconState.List())
     val relationshipTopBarIconState = _relationshipTopBarIconState.asStateFlow()
 
-    init {
-        fetchDashboardModel()
-        fetchGrouping()
-    }
-
     private fun fetchDashboardModel() {
         viewModelScope.launch(dispatcher.io()) {
-            val result = async {
-                repository.getDashboardModel()
-            }
-            withContext(dispatcher.ui()) {
-                try {
-                    val model = result.await()
-                    _dashboardModel.postValue(model)
-                    if (model is DashboardEnrollmentModel) {
-                        _showFollowUpBar.value =
-                            model.currentEnrollment.followUp() ?: false
-                        _syncNeeded.value =
-                            model.currentEnrollment.aggregatedSyncState() != SYNCED
-                        _showStatusBar.value = model.currentEnrollment.status()
-                        _state.value =
-                            model.currentEnrollment.aggregatedSyncState()
-                        _noEnrollmentSelected.value = false
-                        loadNavigationBarItems()
-                    } else {
-                        _noEnrollmentSelected.value = true
-                    }
-                } catch (e: Exception) {
-                    Timber.e(e)
+            CoroutineTracker.unconditionalIncrement()
+            try {
+                val model = repository.getDashboardModel()
+                _dashboardModel.emit(model)
+                if (model is DashboardEnrollmentModel) {
+                    _showFollowUpBar.value =
+                        model.currentEnrollment.followUp() ?: false
+                    _syncNeeded.value =
+                        model.currentEnrollment.aggregatedSyncState() != SYNCED
+                    _showStatusBar.value = model.currentEnrollment.status()
+                    _state.value =
+                        model.currentEnrollment.aggregatedSyncState()
+                    _noEnrollmentSelected.postValue(false)
+                } else {
+                    _noEnrollmentSelected.postValue(true)
                 }
+            } catch (e: Exception) {
+                Timber.e(e)
+            } finally {
+                CoroutineTracker.unconditionalDecrement()
             }
         }
     }
 
-    private fun loadNavigationBarItems() {
-        val enrollmentItems = mutableListOf<NavigationBarItem<TEIDashboardItems>>()
+    private suspend fun loadNavigationBarItems() =
+        withContext(dispatcher.io()) {
+            CoroutineTracker.unconditionalIncrement()
+            try {
+                val enrollmentItems = mutableListOf<NavigationBarItem<TEIDashboardItems>>()
 
-        if (isPortrait()) {
-            enrollmentItems.add(
-                NavigationBarItem(
-                    id = TEIDashboardItems.DETAILS,
-                    icon = Icons.AutoMirrored.Outlined.Assignment,
+                if (isPortrait()) {
+                    enrollmentItems.add(
+                        NavigationBarItem(
+                            id = TEIDashboardItems.DETAILS,
+                            icon = Icons.AutoMirrored.Outlined.Assignment,
+                            selectedIcon = Icons.AutoMirrored.Filled.Assignment,
+                            label = resourcesManager.getString(R.string.navigation_tei_data),
+                        ),
+                    )
+                }
 
-                    selectedIcon = Icons.AutoMirrored.Filled.Assignment,
-                    label = resourcesManager.getString(R.string.navigation_tei_data),
-                ),
-            )
+                if (repository.programHasAnalytics()) {
+                    enrollmentItems.add(
+                        NavigationBarItem(
+                            id = TEIDashboardItems.ANALYTICS,
+                            icon = Icons.Outlined.BarChart,
+                            selectedIcon = Icons.Filled.BarChart,
+                            label = resourcesManager.getString(R.string.navigation_analytics),
+                        ),
+                    )
+                }
+
+                if (pageConfigurator.displayRelationships()) {
+                    enrollmentItems.add(
+                        NavigationBarItem(
+                            id = TEIDashboardItems.RELATIONSHIPS,
+                            icon = Icons.Outlined.Hub,
+                            selectedIcon = Icons.Filled.Hub,
+                            label = resourcesManager.getString(R.string.navigation_relations),
+                        ),
+                    )
+                }
+
+                enrollmentItems.add(
+                    NavigationBarItem(
+                        id = TEIDashboardItems.NOTES,
+                        icon = Icons.AutoMirrored.Outlined.StickyNote2,
+                        selectedIcon = Icons.AutoMirrored.Filled.StickyNote2,
+                        label = resourcesManager.getString(R.string.navigation_notes),
+                    ),
+                )
+
+                _navigationBarUIState.update {
+                    it.copy(items = enrollmentItems)
+                }
+
+                if (enrollmentItems.none { it.id == _navigationBarUIState.value.selectedItem }) {
+                    val selectedItem = enrollmentItems.first()
+                    onNavigationItemSelected(selectedItem.id)
+                }
+            } finally {
+                CoroutineTracker.unconditionalDecrement()
+            }
         }
-
-        if (pageConfigurator.displayAnalytics()) {
-            enrollmentItems.add(
-                NavigationBarItem(
-                    id = TEIDashboardItems.ANALYTICS,
-                    icon = Icons.Outlined.BarChart,
-                    selectedIcon = Icons.Filled.BarChart,
-                    label = resourcesManager.getString(R.string.navigation_analytics),
-                ),
-            )
-        }
-
-        if (pageConfigurator.displayRelationships()) {
-            enrollmentItems.add(
-                NavigationBarItem(
-                    id = TEIDashboardItems.RELATIONSHIPS,
-                    icon = Icons.Outlined.Hub,
-                    selectedIcon = Icons.Filled.Hub,
-                    label = resourcesManager.getString(R.string.navigation_relations),
-                ),
-            )
-        }
-
-        enrollmentItems.add(
-            NavigationBarItem(
-                id = TEIDashboardItems.NOTES,
-                icon = Icons.AutoMirrored.Outlined.StickyNote2,
-                selectedIcon = Icons.AutoMirrored.Filled.StickyNote2,
-                label = resourcesManager.getString(R.string.navigation_notes),
-            ),
-        )
-
-        _navigationBarUIState.value = _navigationBarUIState.value.copy(items = enrollmentItems)
-
-        if (navigationBarUIState.value.items.none { it.id == navigationBarUIState.value.selectedItem }) {
-            onNavigationItemSelected(navigationBarUIState.value.items.first().id)
-        }
-    }
 
     private fun fetchGrouping() {
         viewModelScope.launch(dispatcher.io()) {
-            val result = async {
-                repository.getGrouping()
-            }
+            CoroutineTracker.unconditionalIncrement()
             try {
-                _groupByStage.postValue(result.await())
+                _groupByStage.emit(repository.getGrouping())
             } catch (e: Exception) {
                 Timber.e(e)
+            } finally {
+                CoroutineTracker.unconditionalDecrement()
             }
         }
     }
@@ -187,9 +216,7 @@ class DashboardViewModel(
         _groupByStage.value = groupEvents
     }
 
-    fun eventUid(): LiveData<String> {
-        return eventUid
-    }
+    fun eventUid(): LiveData<String> = eventUid
 
     fun updateDashboard() {
         fetchDashboardModel()
@@ -212,18 +239,17 @@ class DashboardViewModel(
         }
     }
 
-    fun updateEnrollmentStatus(
-        status: EnrollmentStatus,
-    ) {
+    fun updateEnrollmentStatus(status: EnrollmentStatus) {
         viewModelScope.launch(dispatcher.io()) {
             if (dashboardModel.value is DashboardEnrollmentModel) {
-                val result = repository.updateEnrollmentStatus(
-                    (dashboardModel.value as DashboardEnrollmentModel).currentEnrollment.uid(),
-                    status,
-                ).blockingFirst()
+                val result =
+                    repository
+                        .updateEnrollmentStatus(
+                            (dashboardModel.value as DashboardEnrollmentModel).currentEnrollment.uid(),
+                            status,
+                        ).blockingFirst()
 
                 if (result == StatusChangeResultCode.CHANGED) {
-                    _showStatusBar.value = status
                     _syncNeeded.value = true
                     _state.value = State.TO_UPDATE
                     fetchDashboardModel()
@@ -239,16 +265,18 @@ class DashboardViewModel(
         onAuthorityError: () -> Unit,
     ) {
         viewModelScope.launch(dispatcher.io()) {
-            val result = async {
-                dashboardModel.value.takeIf { it is DashboardEnrollmentModel }?.let {
-                    repository.deleteEnrollment((it as DashboardEnrollmentModel).currentEnrollment.uid())
-                        .blockingGet()
+            val result =
+                async {
+                    dashboardModel.value.takeIf { it is DashboardEnrollmentModel }?.let {
+                        repository
+                            .deleteEnrollment((it as DashboardEnrollmentModel).currentEnrollment.uid())
+                            .blockingGet()
+                    }
                 }
-            }
             try {
                 val hasMoreEnrollments = result.await()
                 onSuccess(hasMoreEnrollments)
-            } catch (e: AuthorityException) {
+            } catch (_: AuthorityException) {
                 onAuthorityError()
             } catch (e: Exception) {
                 Timber.e(e)
@@ -256,9 +284,7 @@ class DashboardViewModel(
         }
     }
 
-    fun selectedEventUid(): LiveData<String> {
-        return selectedEventUid
-    }
+    fun selectedEventUid(): LiveData<String> = selectedEventUid
 
     fun updateSelectedEventUid(uid: String?) {
         if (selectedEventUid.value != uid) {
@@ -267,24 +293,24 @@ class DashboardViewModel(
     }
 
     fun updateNoteCounter(numberOfNotes: Int) {
-        _navigationBarUIState.value = _navigationBarUIState.value.copy(
-            items = _navigationBarUIState.value.items.map {
-                if (it.id == TEIDashboardItems.NOTES) {
-                    it.copy(showBadge = numberOfNotes > 0)
-                } else {
-                    it
-                }
-            },
-        )
+        _navigationBarUIState.value =
+            _navigationBarUIState.value.copy(
+                items =
+                    _navigationBarUIState.value.items.map {
+                        if (it.id == TEIDashboardItems.NOTES) {
+                            it.copy(showBadge = numberOfNotes > 0)
+                        } else {
+                            it
+                        }
+                    },
+            )
     }
 
     fun onNavigationItemSelected(itemId: TEIDashboardItems) {
         _navigationBarUIState.value = _navigationBarUIState.value.copy(selectedItem = itemId)
     }
 
-    fun checkIfTeiCanBeTransferred(): Boolean {
-        return repository.teiCanBeTransferred()
-    }
+    fun checkIfTeiCanBeTransferred(): Boolean = repository.teiCanBeTransferred()
 
     fun transferTei(
         newOrgUnitId: String,

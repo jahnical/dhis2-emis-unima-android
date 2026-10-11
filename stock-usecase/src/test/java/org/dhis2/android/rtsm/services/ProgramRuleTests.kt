@@ -3,9 +3,11 @@ package org.dhis2.android.rtsm.services
 import com.google.common.collect.Lists
 import org.dhis2.mobileProgramRules.toRuleEngineInstant
 import org.dhis2.mobileProgramRules.toRuleEngineLocalDate
+import org.hisp.dhis.android.core.arch.helpers.DateUtils
 import org.hisp.dhis.android.core.program.ProgramRuleActionType
 import org.hisp.dhis.rules.api.RuleEngine
 import org.hisp.dhis.rules.api.RuleEngineContext
+import org.hisp.dhis.rules.api.RuleSupplementaryData
 import org.hisp.dhis.rules.models.Rule
 import org.hisp.dhis.rules.models.RuleAction
 import org.hisp.dhis.rules.models.RuleDataValue
@@ -30,54 +32,55 @@ class ProgramRuleTests {
      */
     private fun getRuleEngineContext(rules: List<Rule>): RuleEngineContext {
         // Variable used by the program rules in the program rule expressions and actions
-        val rulesVariables = listOf<RuleVariable>(
-            RuleVariablePreviousEvent(
-                "PSM- Initial stock on hand - Previous event",
-                false,
-                emptyList(),
-                "ypCQAFr1a5l",
-                RuleValueType.NUMERIC,
-            ),
-            RuleVariableCurrentEvent(
-                "PSM- Previous stock balance",
-                false,
-                emptyList(),
-                "oc8tn8CewiP",
-                RuleValueType.NUMERIC,
-            ),
-            RuleVariableCurrentEvent(
-                "PSM- Stock consumed distributed",
-                false,
-                emptyList(),
-                "lpGYJoVUudr",
-                RuleValueType.NUMERIC,
-            ),
-            RuleVariableCurrentEvent(
-                "PSM- Stock corrected",
-                false,
-                emptyList(),
-                "ej1YwWaYGmm",
-                RuleValueType.NUMERIC,
-            ),
-            RuleVariableCurrentEvent(
-                "PSM- Stock discarded",
-                false,
-                emptyList(),
-                "I7cmT3iXT0y",
-                RuleValueType.NUMERIC,
-            ),
-            RuleVariableCurrentEvent(
-                "PSM- Stock received",
-                false,
-                emptyList(),
-                "j3ydinp6Qp8",
-                RuleValueType.NUMERIC,
-            ),
-        )
+        val rulesVariables =
+            listOf<RuleVariable>(
+                RuleVariablePreviousEvent(
+                    "PSM- Initial stock on hand - Previous event",
+                    false,
+                    emptyList(),
+                    "ypCQAFr1a5l",
+                    RuleValueType.NUMERIC,
+                ),
+                RuleVariableCurrentEvent(
+                    "PSM- Previous stock balance",
+                    false,
+                    emptyList(),
+                    "oc8tn8CewiP",
+                    RuleValueType.NUMERIC,
+                ),
+                RuleVariableCurrentEvent(
+                    "PSM- Stock consumed distributed",
+                    false,
+                    emptyList(),
+                    "lpGYJoVUudr",
+                    RuleValueType.NUMERIC,
+                ),
+                RuleVariableCurrentEvent(
+                    "PSM- Stock corrected",
+                    false,
+                    emptyList(),
+                    "ej1YwWaYGmm",
+                    RuleValueType.NUMERIC,
+                ),
+                RuleVariableCurrentEvent(
+                    "PSM- Stock discarded",
+                    false,
+                    emptyList(),
+                    "I7cmT3iXT0y",
+                    RuleValueType.NUMERIC,
+                ),
+                RuleVariableCurrentEvent(
+                    "PSM- Stock received",
+                    false,
+                    emptyList(),
+                    "j3ydinp6Qp8",
+                    RuleValueType.NUMERIC,
+                ),
+            )
         return RuleEngineContext(
             rules,
             rulesVariables,
-            emptyMap(),
+            RuleSupplementaryData(),
             emptyMap(),
         )
     }
@@ -102,14 +105,15 @@ class ProgramRuleTests {
                 ProgramRuleActionType.ASSIGN.name,
                 mapOf(Pair("field", "ypCQAFr1a5l")),
             )
-        val rule1 = Rule(
-            "true",
-            listOf(assignAction),
-            "rule1Uid",
-            "PSM- Assign Stock on Hand",
-            null,
-            1,
-        )
+        val rule1 =
+            Rule(
+                "true",
+                listOf(assignAction),
+                "rule1Uid",
+                "PSM- Assign Stock on Hand",
+                null,
+                1,
+            )
         rules.add(rule1)
 
         // TODO Add the two remaining program rules
@@ -121,7 +125,199 @@ class ProgramRuleTests {
     @Throws(Exception::class)
     fun evaluateTOneRuleTest() {
         val ruleEngineContext = getRuleEngineContext(createRules())
-        val enrollment = RuleEnrollment(
+        val enrollment = getEmptyRuleEnrollment()
+
+        val ruleEvent =
+            RuleEvent(
+                "test_event",
+                "test_program_stage",
+                "",
+                RuleEventStatus.ACTIVE,
+                Date().toRuleEngineLocalDate(),
+                Date().toRuleEngineInstant(),
+                Date().toRuleEngineInstant(),
+                Date().toRuleEngineLocalDate(),
+                null,
+                "",
+                "",
+                listOf(
+                    // PRevious Stock Balance
+                    RuleDataValue(
+                        "oc8tn8CewiP",
+                        "3",
+                    ),
+                    // PSM Stock received
+                    RuleDataValue(
+                        "j3ydinp6Qp8",
+                        "4",
+                    ),
+                    // PSM- Stock consumed distributed
+                    RuleDataValue(
+                        "lpGYJoVUudr",
+                        "2",
+                    ),
+                    // PSM- Stock discarded
+                    RuleDataValue(
+                        "I7cmT3iXT0y",
+                        "1",
+                    ),
+                    // PSM- Stock corrected
+                    RuleDataValue(
+                        "ej1YwWaYGmm",
+                        "3",
+                    ),
+                ),
+            )
+
+        val ruleEffects =
+            RuleEngine.getInstance().evaluate(
+                ruleEvent,
+                enrollment,
+                listOf(),
+                ruleEngineContext,
+            )
+        assertEquals(ruleEffects.find { it.ruleId == "rule1Uid" }?.data, "1")
+    }
+
+    @Test
+    fun evaluateMostRecentEvent() {
+        val dataElement1 = "oc8tn8CewiP"
+        val dataElement2 = "eEZWHV8OFG0"
+        val ruleEventAndroid =
+            getRuleEvent(
+                uid = "event_android",
+                eventDate = "2025-09-25T11:04:13.783",
+                created = "2025-09-25T13:04:13.783",
+                createdAtClient = "2025-09-25T11:04:13.783",
+                dataValues =
+                    listOf(
+                        RuleDataValue(
+                            dataElement1,
+                            "3",
+                        ),
+                    ),
+            )
+        val ruleEventAndroidSameCreated =
+            getRuleEvent(
+                uid = "event_android",
+                eventDate = "2025-09-25T12:02:13.783",
+                created = "2025-09-25T13:04:13.783",
+                createdAtClient = "2025-09-25T12:02:13.783",
+                dataValues =
+                    listOf(
+                        RuleDataValue(
+                            dataElement1,
+                            "5",
+                        ),
+                    ),
+            )
+        val ruleEventWeb =
+            getRuleEvent(
+                uid = "event_web",
+                eventDate = "2025-09-25T00:00:00.000",
+                created = "2025-09-25T15:06:41.483",
+                createdAtClient = null,
+                dataValues =
+                    listOf(
+                        RuleDataValue(
+                            dataElement1,
+                            "10",
+                        ),
+                    ),
+            )
+        val ruleEventNew =
+            getRuleEvent(
+                uid = "event_new",
+                eventDate = "2025-09-25T18:06:41.483",
+                created = "2025-09-25T18:06:41.483",
+                createdAtClient = "2025-09-25T18:06:41.483",
+                dataValues = listOf(),
+            )
+
+        val ruleEngineContext =
+            RuleEngineContext(
+                rules =
+                    listOf(
+                        Rule(
+                            condition = "true",
+                            actions =
+                                listOf(
+                                    RuleAction(
+                                        data = "#{previousValue}",
+                                        type = ProgramRuleActionType.ASSIGN.name,
+                                        values =
+                                            mapOf(
+                                                "field" to dataElement2,
+                                            ),
+                                    ),
+                                ),
+                        ),
+                    ),
+                ruleVariables =
+                    listOf(
+                        RuleVariablePreviousEvent(
+                            name = "previousValue",
+                            useCodeForOptionSet = false,
+                            options = emptyList(),
+                            field = dataElement1,
+                            fieldType = RuleValueType.NUMERIC,
+                        ),
+                    ),
+            )
+
+        // Evaluate the Android and Web events
+        RuleEngine
+            .getInstance()
+            .evaluate(
+                ruleEventNew,
+                getEmptyRuleEnrollment(),
+                listOf(ruleEventAndroid, ruleEventWeb),
+                ruleEngineContext,
+            ).let { ruleEffects ->
+                // The rule effect must assign the value coming from event_web because its created date
+                // is most recent compared to event_android.
+                assertEquals(ruleEffects.size, 1)
+                assertEquals(ruleEffects.first().data, "10")
+            }
+
+        // Evaluate Android events with the same creation date
+        RuleEngine
+            .getInstance()
+            .evaluate(
+                ruleEventNew,
+                getEmptyRuleEnrollment(),
+                listOf(ruleEventAndroid, ruleEventAndroidSameCreated),
+                ruleEngineContext,
+            ).let { ruleEffects ->
+                assertEquals(ruleEffects.size, 1)
+                assertEquals(ruleEffects.first().data, "5")
+            }
+    }
+
+    private fun getRuleEvent(
+        uid: String,
+        eventDate: String,
+        created: String,
+        createdAtClient: String?,
+        dataValues: List<RuleDataValue>,
+    ): RuleEvent =
+        RuleEvent(
+            uid,
+            "test_program_stage",
+            "",
+            RuleEventStatus.ACTIVE,
+            DateUtils.DATE_FORMAT.parse(eventDate).toRuleEngineLocalDate(),
+            DateUtils.DATE_FORMAT.parse(created).toRuleEngineInstant(),
+            createdAtClient?.let { DateUtils.DATE_FORMAT.parse(it).toRuleEngineInstant() },
+            null,
+            null,
+            "",
+            "",
+            dataValues,
+        )
+
+    private fun getEmptyRuleEnrollment(): RuleEnrollment =
+        RuleEnrollment(
             "test_enrollment",
             "test_program",
             Date().toRuleEngineLocalDate(),
@@ -131,62 +327,4 @@ class ProgramRuleTests {
             "test_ou_code",
             emptyList(),
         )
-
-        val ruleEvent = RuleEvent(
-            "test_event",
-            "test_program_stage",
-            "",
-            RuleEventStatus.ACTIVE,
-            Date().toRuleEngineInstant(),
-            Date().toRuleEngineLocalDate(),
-            null,
-            "",
-            "",
-            listOf(
-                // PRevious Stock Balance
-                RuleDataValue(
-                    Date().toRuleEngineInstant(),
-                    "",
-                    "oc8tn8CewiP",
-                    "3",
-                ),
-                // PSM Stock received
-                RuleDataValue(
-                    Date().toRuleEngineInstant(),
-                    "",
-                    "j3ydinp6Qp8",
-                    "4",
-                ),
-                // PSM- Stock consumed distributed
-                RuleDataValue(
-                    Date().toRuleEngineInstant(),
-                    "",
-                    "lpGYJoVUudr",
-                    "2",
-                ),
-                // PSM- Stock discarded
-                RuleDataValue(
-                    Date().toRuleEngineInstant(),
-                    "",
-                    "I7cmT3iXT0y",
-                    "1",
-                ),
-                // PSM- Stock corrected
-                RuleDataValue(
-                    Date().toRuleEngineInstant(),
-                    "",
-                    "ej1YwWaYGmm",
-                    "3",
-                ),
-            ),
-        )
-
-        val ruleEffects = RuleEngine.getInstance().evaluate(
-            ruleEvent,
-            enrollment,
-            listOf(),
-            ruleEngineContext,
-        )
-        assertEquals(ruleEffects.find { it.ruleId == "rule1Uid" }?.data, "1")
-    }
 }

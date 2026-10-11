@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import org.dhis2.commons.di.dagger.PerFragment
 import org.dhis2.commons.featureconfig.data.FeatureConfigRepository
+import org.dhis2.commons.filters.FilterManager
 import org.dhis2.commons.filters.data.FilterPresenter
 import org.dhis2.commons.matomo.MatomoAnalyticsController
 import org.dhis2.commons.resources.ColorUtils
@@ -12,12 +13,14 @@ import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.commons.schedulers.SchedulerProvider
 import org.dhis2.commons.viewmodel.DispatcherProvider
 import org.dhis2.data.dhislogic.DhisProgramUtils
-import org.dhis2.data.service.SyncStatusController
+import org.dhis2.mobile.sync.domain.SyncStatusController
 import org.hisp.dhis.android.core.D2
 
 @Module
-class ProgramModule(private val view: ProgramView) {
-
+class ProgramModule(
+    private val view: ProgramView,
+    private val syncStatusController: SyncStatusController,
+) {
     @Provides
     @PerFragment
     internal fun programViewModelFactory(
@@ -25,17 +28,19 @@ class ProgramModule(private val view: ProgramView) {
         dispatcherProvider: DispatcherProvider,
         featureConfigRepository: FeatureConfigRepository,
         matomoAnalyticsController: MatomoAnalyticsController,
-        syncStatusController: SyncStatusController,
-    ): ProgramViewModelFactory {
-        return ProgramViewModelFactory(
+        filterManager: FilterManager,
+        schedulerProvider: SchedulerProvider,
+    ): ProgramViewModelFactory =
+        ProgramViewModelFactory(
             view,
             programRepository,
             featureConfigRepository,
             dispatcherProvider,
             matomoAnalyticsController,
+            filterManager,
             syncStatusController,
+            schedulerProvider,
         )
-    }
 
     @Provides
     @PerFragment
@@ -46,8 +51,8 @@ class ProgramModule(private val view: ProgramView) {
         schedulerProvider: SchedulerProvider,
         colorUtils: ColorUtils,
         metadataIconProvider: MetadataIconProvider,
-    ): ProgramRepository {
-        return ProgramRepositoryImpl(
+    ): ProgramRepository =
+        ProgramRepositoryImpl(
             d2,
             filterPresenter,
             dhisProgramUtils,
@@ -55,11 +60,4 @@ class ProgramModule(private val view: ProgramView) {
             metadataIconProvider,
             schedulerProvider,
         )
-    }
-
-    @Provides
-    @PerFragment
-    fun provideAnimations(): ProgramAnimation {
-        return ProgramAnimation()
-    }
 }

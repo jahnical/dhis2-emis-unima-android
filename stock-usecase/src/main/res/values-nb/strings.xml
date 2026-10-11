@@ -1,0 +1,23 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="title_activity_home">Hjem</string>
+
+    <string name="discard">Forkast</string>
+    <!-- Sign in -->
+    <string name="username">Brukernavn</string>
+
+    <string name="delete">Slett</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Avbryt</string>
+
+    <string name="from">Fra</string>
+    <!-- Content descriptions for accessibility -->
+
+    <string name="confirm_transaction_label">Bekreft</string>
+
+    <string name="online_search_parsing_error">Feil under analyse av resultater</string>
+    <string name="done_task">Hjem</string>
+    <string name="back">Tilbake</string>
+    <string name="count">Antall</string>
+    <string name="formatting_error">Formateringsfeil</string>
+    <string name="invalid_possitive_zero">Bare positive siffer eller null er tillatt</string>
+    </resources>

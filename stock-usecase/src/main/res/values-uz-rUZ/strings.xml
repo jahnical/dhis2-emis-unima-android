@@ -1,0 +1,79 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">Dorixona fondini boshqarish</string>
+    <string name="title_activity_home">Бош саҳифа</string>
+
+    <string name="distribution">Tarqatish</string>
+    <string name="discard">Bekor qilish</string>
+    <string name="correction">Tuzatish</string>
+
+    <!-- Sign in -->
+    <string name="username">Фойдаланувчи исми</string>
+
+    <!-- Sync -->
+    <string name="metadata_sync_error">Meta-maʼlumotlarni sinxronlash tugallanmadi</string>
+
+    <!-- FloatingActionButtons -->
+    <string name="review">Ko‘rib chiqish</string>
+
+    <string name="search">Elementni qidirish</string>
+    <string name="search_placeholder">Излаш...</string>
+    <string name="delete">Oʼchirib tashlash</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Бекор қилиш</string>
+
+    <string name="from">Dan</string>
+    <string name="to">Етказиб бериш ... га</string>
+    <string name="subtitle">%s</string>
+
+    <!-- Languages -->
+
+    <!-- Settings -->
+
+    <!-- Stock table -->
+    <string name="quantity">Миқдори</string>
+
+    <!-- Messages -->
+    <string name="mandatory_facility_selection">Davom etishdan oldin tashkilot maydoni to\'ldirilishi kerak</string>
+    <string name="transaction_completed">Tranzaksiya muvaffaqiyatli yakunlandi!</string>
+
+    <!-- Errors -->
+    <string name="facilities_load_error">Mavjud imkoniyatlar roʻyxatini yuklab boʻlmadi</string>
+    <string name="destinations_load_error">Mavjud manzillar roʻyxatini yuklab boʻlmadi</string>
+
+    <!-- Content descriptions for accessibility -->
+
+    <string name="confirm_transaction_label">Tasdiqlang</string>
+
+    <string name="stock_on_hand_exceeded_message">Qo\'ldagi mavjud zaxiradan oshib bo\'lmaydi</string>
+
+    <string name="permission_granted">Ruxsat berilgan</string>
+    <string name="permission_denied">Ruxsat berilmadi</string>
+
+    <!-- Speech error messages -->
+    <string name="insufficient_speech_permissions_error">Ruxsatlar yetarli emas. android.permission.RECORD_AUDIO soʻrovi</string>
+    <string name="speech_audio_error">Ovoz yozishda xato</string>
+    <string name="speech_client_error">Mijoz tomoni xatosi. Iltimos, internet aloqangizni tekshiring!</string>
+    <string name="speech_network_error">Тармоқда хатолик</string>
+    <string name="speech_network_timeout_error">Tarmoq ish vaqti chegaradan oshdi</string>
+    <string name="no_speech_match_error">Hech qanday tan olingan natija topilmadi.</string>
+    <string name="speech_recognition_service_busy_error">Tan olish xizmati band</string>
+    <string name="speech_server_error">Matnni aniqlash serverida xatolik yuz berdi</string>
+    <string name="speech_timeout_error">Ovozli matn aniqlanmadi</string>
+    <string name="unknown_speech_error">Номаълум хатолик юз берди</string>
+    <string name="non_numeric_speech_input_error">Raqamsiz kiritishga ruxsat berilmagan: \"%s\"</string>
+    <string name="negative_number_speech_input_error">Raqamni salbiy kiritish mumkin emas: \"%s\"
+    </string>
+
+    <string name="unable_to_sync_data_no_network_available">Maʼlumotlarni sinxronlash imkonsiz, chunki tarmoq ulanishi mavjud emas</string>
+
+    <!--SDK error codes-->
+    <string name="login_error_unsuccessful_response">Nimadir notoʼgʼri bajarildi. Server URL manzili, foydalanuvchi nomi va parol toʼgʼri ekanligini tekshiring va qaytadan urining.</string>
+    <string name="login_error_error_response">Server tomonida nimadir xato ketdi.</string>
+    <string name="login_error_no_dhis_instance">Taqdim etilgan URL DHIS2 serveri emas.</string>
+    <string name="online_search_parsing_error">Natijalarni tahlil qilishda xatolik yuz berdi</string>
+    <string name="done_task">Бош саҳифа</string>
+    <string name="back">Orqaga</string>
+    <string name="count">Ҳисоблаш</string>
+    <string name="formatting_error">Formatlashda xatolik</string>
+    <string name="invalid_possitive_zero">Faqat musbat raqamlar yoki nolga ruxsat beriladi</string>
+    </resources>

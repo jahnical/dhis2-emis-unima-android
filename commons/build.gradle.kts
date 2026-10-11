@@ -2,17 +2,14 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
-    kotlin("android")
-    kotlin("kapt")
+    alias(libs.plugins.legacy.kapt)
+    id("com.google.devtools.ksp")
     id("kotlin-parcelize")
     alias(libs.plugins.kotlin.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 apply(from = "${project.rootDir}/jacoco/jacoco.gradle.kts")
-
-repositories {
-    maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
-}
 
 android {
     compileSdk = libs.versions.sdk.get().toInt()
@@ -49,6 +46,7 @@ android {
     buildFeatures {
         compose = true
         dataBinding = true
+        viewBinding = true
     }
 
     configurations.all {
@@ -62,13 +60,15 @@ kotlin {
     }
 }
 
+kapt {
+    correctErrorTypes = true
+}
+
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-    api(project(":ui-components"))
+    implementation(project(":commonskmm"))
 
     api(libs.dhis2.android.sdk) {
-        exclude("org.hisp.dhis", "core-rules")
-        exclude("com.facebook.flipper")
         this.isChanging = true
     }
 
@@ -77,55 +77,53 @@ dependencies {
     }
 
     api(libs.dhis2.expressionparser)
-
-    api(libs.google.autoValue)
-    kapt(libs.google.autoValue)
     api(libs.androidx.coreKtx)
     api(libs.androidx.appcompat)
     api(libs.androidx.fragmentKtx)
     api(libs.androidx.viewModelKtx)
     api(libs.androidx.recyclerView)
     debugApi(libs.androidx.compose.uitooling)
-    api(libs.androidx.compose)
+    api(libs.androidx.compose.preview)
     api(libs.androidx.compose.ui)
     api(libs.androidx.compose.livedata)
     api(libs.androidx.compose.paging)
-
+    api(libs.koin.core)
+    api(libs.koin.compose)
+    api(libs.koin.composeVM)
     api(libs.google.material)
     api(libs.androidx.material3)
     api(libs.androidx.material3.window)
     api(libs.androidx.material3.adaptative.android)
     api(libs.google.gson)
     api(libs.dagger)
-    kapt(libs.dagger.compiler)
-    api(libs.google.material.themeadapter)
+    ksp(libs.dagger.compiler)
     api(libs.barcodeScanner.zxing)
     api(libs.rx.java)
     api(libs.rx.android)
     api(libs.analytics.timber)
     api(libs.github.glide)
-    kapt(libs.github.glide.compiler)
-    api(libs.barcodeScanner.scanner) {
-        exclude("com.google.zxing", "core")
-    }
+    ksp(libs.github.glide.compiler)
     api(libs.barcodeScanner.zxing.android) {
         exclude("com.google.zxing", "core")
     }
-    api(libs.rx.binding.compat)
-    testApi(libs.test.junit)
-    androidTestApi(libs.test.mockitoCore)
-    androidTestApi(libs.test.mockitoKotlin)
-    androidTestApi(libs.test.dexmaker.mockitoInline)
-    androidTestApi(libs.test.junit.ext)
-    androidTestApi(libs.test.espresso)
-    androidTestApi(libs.test.espresso.idlingresource)
+    testImplementation(libs.test.junit)
+    testImplementation(libs.test.mockitoCore)
+    testImplementation(libs.test.mockitoKotlin)
+    testImplementation(libs.test.mockitoInline)
+    androidTestImplementation(libs.test.mockitoCore)
+    androidTestImplementation(libs.test.mockitoKotlin)
+    androidTestImplementation(libs.test.dexmaker.mockitoInline)
+    androidTestImplementation(libs.test.junit.ext)
+    androidTestImplementation(libs.test.espresso)
+    androidTestImplementation(libs.test.espresso.idlingresource)
     api(libs.test.espresso.idlingresource)
     api(libs.test.espresso.idlingconcurrent)
     api(libs.analytics.sentry)
     api(libs.analytics.sentry.compose)
-    implementation(libs.github.treeView)
     api(libs.dhis2.mobile.designsystem) {
         isChanging = true
     }
+    api(libs.dates.jodatime)
+    api(libs.commons.text)
     coreLibraryDesugaring(libs.desugar)
 }

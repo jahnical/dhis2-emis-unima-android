@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
-    kotlin("android")
 }
 
 apply(from = "${project.rootDir}/jacoco/jacoco.gradle.kts")
@@ -45,5 +44,6 @@ dependencies {
     testImplementation(libs.test.mockitoCore)
     testImplementation(libs.test.mockitoInline)
     testImplementation(libs.test.mockitoKotlin)
+    testImplementation(libs.test.kotlinCoroutines)
     coreLibraryDesugaring(libs.desugar)
 }

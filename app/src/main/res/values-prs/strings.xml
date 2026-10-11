@@ -1,15 +1,14 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Warnings and error messages -->
     <string name="error">خطا</string>
+    <!-- SyncService strings: -->
+
     <string name="sync_events">پېښې</string>
-    <string name="add_new">اضافه کردن تجدید</string>
-    <string name="add">افزودن</string>
-    <string name="schedule_new">تقسیم اوقات جدید</string>
+
     <string name="referral">مراجعه</string>
 
-    <string name="user_hint">نام کاربر</string>
-    <string name="password_hint">کلید رمز</string>
     <string name="account_recovery">بهبود حساب</string>
+
     <!--PERIOD-->
     <string name="DAILY">روزنه</string>
     <string name="WEEKLY">هفته وار</string>
@@ -19,91 +18,73 @@
     <string name="action_share_zero_items">اشتراک</string>
     <!-- Input hints -->
     <string name="search">جستجو</string>
+    <!-- Status -->
+
     <string name="event_open">باز کردن</string>
     <string name="read_only">تنها قابل مطالعه میباشد</string>
     <string name="completed">تکمیل شد</string>
+    <string name="active">فعال</string>
+
     <string name="state_error">خطا</string>
+
+    <!--Completion-->
+
     <!--Event initial-->
-    <string name="create">ایجاد</string>
     <string name="update">تجدید</string>
-    <string name="date">تاریخ</string>
-    <string name="category_option">کتگوری گزینه ها</string>
     <string name="latitude">عرض البلد</string>
     <string name="longitude">طول البلد</string>
-    <string name="new_event">رویداد جدید</string>
+
     <!--DataSet initial-->
     <string name="report_period">معیاد گزارش</string>
     <!--Event Detail-->
     <string name="due_date">موعد مقرر</string>
     <string name="cancel">انصراف</string>
     <string name="delete">حذف</string>
-    <string name="total">مجموع</string>
+    <string name="no_options">هیچ گزینه موجود نیست</string>
+
     <string name="active_programs">برنامه های فعال</string>
     <string name="enroll">ثبت نام</string>
+
+    <!--TEI DASHBOARD-->
+    <string name="edit">تجدید</string>
     <string name="deactivate">غیر فعال</string>
     <string name="done_task">صفحه اصلی</string>
     <string name="wipe_data_ok">پذیرش</string>
     <string name="wipe_data_no">انصراف</string>
     <string name="SYNC_MANAGER">تنظیمات</string>
+    <string name="settingsTwoFAStatus">وضعیت</string>
     <!--endregion-->
-
-    <string name="enrollmment_date">تاریخ شمولیت</string>
 
     <!-- SEARCH OPTION SET -->
     <string name="search_optionset">جستجو</string>
     <!--FORM FRAGMENT-->
     <string name="report_date">تاریخ گزارش</string>
     <string name="add_note">افزودن یاداشت</string>
+    <!--EVENT SUMMARY-->
+
     <!--AGE CUSTOM VIEW-->
-    <string name="hint_day">روزها</string>
-    <string name="hint_month">ماه ها</string>
-    <string name="hint_year">سالانه</string>
-    <string name="week">هفته ها</string>
     <string name="incident_date">تاریخ رویداد/ واقعه</string>
-    <string name="date_dialog_clear">پاک کردن</string>
     <string name="period">دوره</string>
+    <!-- RELATIONSHIPS -->
     <string name="next">بعدی</string>
-    <string name="SAVE">ذخیره</string>
     <string name="button_ok">تأیید</string>
     <string name="qr_attributes">مشخصات</string>
     <string name="qr_events">پېښې</string>
     <string name="qr_relationships">وابستگی ها</string>
     <string name="about">درباره</string>
     <string name="share">اشتراک</string>
-    <string name="max">بزرگتر</string>
-    <string name="current">کنونی/ فعلی</string>
-    <string name="warning_on_complete_title">اخطاریه</string>
-    <string name="error_on_complete_title">خطا</string>
     <string name="save">ذخیره</string>
     <string name="select_option">انتخاب گزینه</string>
     <string name="menu_home">صفحه اصلی</string>
     <string name="qr_data_values">مجموعه های اطلاعات</string>
-    <string name="dashboard_relationships">وابستگی ها</string>
-    <string name="dashboard_indicators">شاخص ها</string>
-    <string name="dashboard_notes">یاداشت ها</string>
-    <string name="event_overview">جزئیات</string>
-    <string name="event_indicators">شاخص ها</string>
-    <string name="event_notes">یاداشت ها</string>
     <string name="please_wait">لطفاً انتظار بکشید</string>
     <string name="skip">اسکیپ</string>
-    <string name="reschedule">زمانبندی دوباره</string>
-    <string name="event_overdue">گذشته از موعد</string>
-    <string name="table">جدول</string>
-    <string name="local_data_accept">پذیرش</string>
     <string name="state_warning">اخطاریه</string>
+    <string name="state_relationship">رابطه/ وابستگی</string>
     <string name="action_close">بستن</string>
-    <string name="unsupported_value_type">نوع پرونده پشتیبانی نمی‌شود.</string>
-    <string name="data_every_day">روزنه</string>
-    <string name="data_every_week">هفته وار</string>
-    <string name="period_week">هفته</string>
-    <string name="sms_completed">تکمیل شد</string>
-    <string name="sms_bar_state_sending">در حال پیشرفت</string>
-    <string name="sms_bar_state_sent">ارسال شده</string>
-    <string name="sms_bar_state_failed">ناکام</string>
-
+    <!--region TRACKER IMPORT CONFLICT MESSAGES-->
     <string name="polygon">چند ضلعی</string>
     <string name="filters_title_period">دوره</string>
-    <string name="filters_title_status">وضعیت</string>
     <string name="filter_period_today">امروز</string>
     <string name="filter_period_yesterday">دیروز</string>
     <string name="filter_period_this_week">هفته جاری</string>
@@ -111,4 +92,49 @@
     <string name="filter_period_this_month">ماه جاری</string>
     <string name="filter_period_last_month">ماه گذشته</string>
     <string name="filter_period_other">دیگر</string>
+    <string name="filter_event_status_open">باز کردن</string>
+    <string name="filter_event_status_schedule">تقسیم اوقات</string>
+    <string name="filter_event_status_overdue">گذشته از موعد</string>
+    <string name="filter_event_status_completed">تکمیل شد</string>
+    <string name="filter_event_status_skipped">اسکیپ شده</string>
+    <string name="go_back">برگشتن</string>
+    <string name="data_sets">دیتا سیت ها</string>
+    <string name="interval_yesterday">دیروز</string>
+    <string name="enrollment_status_active">باز کردن</string>
+    <string name="enrollment_status_completed">تکمیل</string>
+    <string name="filters_title_date">تاریخ</string>
+    <string name="customactivityoncrash_error_activity_restart_app">برگشتن</string>
+    <string name="section_charts">چارت ها</string>
+    <string name="navigation_list_view">لیست</string>
+    <string name="navigation_map_view">نقشه</string>
+    <string name="navigation_analytics">تجزیه و تحلیل</string>
+    <string name="navigation_programs">برنامه ها</string>
+    <string name="navigation_charts">چارت ها</string>
+    <string name="navigation_notes">یاداشت ها</string>
+    <string name="navigation_data_entry">وارد کردن معلومات</string>
+    <string name="navigation_tei_data">جزئیات</string>
+    <string name="filter_period_this_year">سال جاری</string>
+    <string name="filter_period_this_quarter">سه ماهه جاری</string>
+    <string name="filter_period_last_quarter">سه ماهه آخیر</string>
+    <string name="filter_period_months_this_year">ماه های سال هذا</string>
+    <string name="filter_period_quarters_this_year">ربع های سال هذا</string>
+    <string name="filter_period_months_last_year">ماه های سال گذشته</string>
+    <string name="filter_period_last_year">سال گذشته</string>
+    <string name="filter_period_this_financial_year">سال مالی جاری</string>
+    <string name="filter_period_last_financial_year">سال گذشته مالی</string>
+    <string name="section_feedback">نظرات/فیدبک</string>
+    <string name="section_indicators">شاخص ها</string>
+    <string name="troubleshooting_language_title">زبان</string>
+    <string name="action_ok">او کی\!</string>
+    <string name="sync_dialog_action_send">فرستادن</string>
+    <string name="sync_dialog_action_refresh">تازه کردن</string>
+    <string name="skipped">اسکیپ شده</string>
+    <string name="programs">برنامه ها</string>
+    <string name="mark_follow_up">نشانی برای پیگیری</string>
+    <string name="coordinates">ځانګړتیاوې</string>
+    <string name="schedule">تقسیم اوقات</string>
+    <string name="scheduled_enter_event">زمان بندی شده</string>
+    <string name="program_stage">مراحل برنامه</string>
+    <string name="show_more">نمایش دادن بیشتر</string>
+    <string name="show_less">نمایش دادن کم</string>
     </resources>

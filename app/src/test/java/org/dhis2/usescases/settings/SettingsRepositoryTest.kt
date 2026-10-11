@@ -3,6 +3,7 @@ package org.dhis2.usescases.settings
 import io.reactivex.Single
 import org.dhis2.bindings.toSeconds
 import org.dhis2.commons.Constants
+import org.dhis2.commons.featureconfig.data.FeatureConfigRepository
 import org.dhis2.commons.prefs.Preference.Companion.DEFAULT_NUMBER_RV
 import org.dhis2.commons.prefs.Preference.Companion.EVENT_MAX
 import org.dhis2.commons.prefs.Preference.Companion.EVENT_MAX_DEFAULT
@@ -18,6 +19,7 @@ import org.dhis2.commons.prefs.Preference.Companion.TIME_META
 import org.dhis2.commons.prefs.Preference.Companion.TIME_WEEKLY
 import org.dhis2.commons.prefs.PreferenceProvider
 import org.dhis2.data.server.UserManager
+import org.dhis2.mobile.sync.data.SyncBackgroundJobAction
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.settings.DataSyncPeriod
@@ -26,11 +28,9 @@ import org.hisp.dhis.android.core.settings.LimitScope
 import org.hisp.dhis.android.core.settings.MetadataSyncPeriod
 import org.hisp.dhis.android.core.settings.ProgramSetting
 import org.hisp.dhis.android.core.settings.ProgramSettings
+import org.hisp.dhis.android.core.settings.SynchronizationSettings
 import org.hisp.dhis.android.core.sms.domain.interactor.ConfigCase
-import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository
-import org.hisp.dhis.android.core.sms.domain.repository.internal.LocalDbRepository
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.doReturn
@@ -38,34 +38,39 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class SettingsRepositoryTest {
-
     private lateinit var settingsRepository: SettingsRepository
     private val d2: D2 = Mockito.mock(D2::class.java, Mockito.RETURNS_DEEP_STUBS)
     private val userManager: UserManager =
         Mockito.mock(UserManager::class.java, Mockito.RETURNS_DEEP_STUBS)
     private val preferencesProvider: PreferenceProvider = mock()
-    private var localDbRepository: LocalDbRepository = mock()
-    private var webApiRepository: WebApiRepository = mock()
-
-    private val SETTINGS_METADATA_PERIOD = MetadataSyncPeriod.EVERY_7_DAYS
-    private val SETTINGS_DATA_PERIOD = DataSyncPeriod.EVERY_HOUR
-    private val SETTINGS_ENCRYPT = false
-    private val SETTINGS_GATEWAY = "+1111111111"
-    private val SETTINGS_RESPONSE = "+2222222222"
-    private val SETTINGS_RV = 50
-    private val SETTINGS_TEI_DOWNLOAD = 100
-    private val SETTINGS_EVENT_DOWNLOAD = 100
-    private val SETTINGS_LIMIT_SCOPE = LimitScope.PER_OU_AND_PROGRAM
-
-    private val SETTINGS_PREF_METADATA_PERIOD = TIME_DAILY
-    private val SETTINGS_PREF_DATA_PERIOD = TIME_15M
-    private val SETTINGS_PREF_RV = 25
-    private val SETTINGS_PREF_TEI_DOWNLOAD = 50
-    private val SETTINGS_PREF_EVENT_DOWNLOAD = 50
+    private val featureConfigRepository: FeatureConfigRepository = mock()
+    private val syncBackgroundJobAction: SyncBackgroundJobAction = mock {
+        on { getNextSettingsSync() } doReturn null
+        on { getNextMetadataSync() } doReturn null
+        on { getNextDataSync() } doReturn null
+    }
+    private val smsConfig: ConfigCase.SmsConfig =
+        mock {
+            on { isModuleEnabled } doReturn true
+            on { gateway } doReturn "gatewaynumber"
+            on { isWaitingForResult } doReturn true
+            on { resultSender } doReturn "confirmationNumber"
+            on { resultWaitingTimeout } doReturn 120
+        }
+    private val configCase: ConfigCase =
+        mock {
+            on { getSmsModuleConfig() } doReturn Single.just(smsConfig)
+        }
 
     @Before
     fun setUp() {
-        settingsRepository = SettingsRepository(d2, preferencesProvider)
+        settingsRepository =
+            SettingsRepository(
+                d2,
+                preferencesProvider,
+                featureConfigRepository,
+                syncBackgroundJobAction,
+            )
         configurePreferences()
         configureDataCount()
         configureSMSConfig()
@@ -73,8 +78,9 @@ class SettingsRepositoryTest {
 
     @Test
     fun `Should return metadata period from general settings if exist`() {
+        configureSyncSettings(true)
         configureGeneralSettings(true)
-        val testObserver = settingsRepository.metaSync(userManager).test()
+        val testObserver = settingsRepository.metaSync().test()
         testObserver
             .assertNoErrors()
             .assertValue { metadataSettings ->
@@ -85,7 +91,7 @@ class SettingsRepositoryTest {
     @Test
     fun `Should return metadata period from preferences if general settings does not exist`() {
         configureGeneralSettings(false)
-        val testObserver = settingsRepository.metaSync(userManager).test()
+        val testObserver = settingsRepository.metaSync().test()
         testObserver
             .assertNoErrors()
             .assertValue { metadataSettings ->
@@ -95,6 +101,7 @@ class SettingsRepositoryTest {
 
     @Test
     fun `Should return data period from general settings if exist`() {
+        configureSyncSettings(true)
         configureGeneralSettings(true)
         configureDataErrors()
         val testObserver = settingsRepository.dataSync().test()
@@ -119,8 +126,9 @@ class SettingsRepositoryTest {
 
     @Test
     fun `Should return parameters from general settings if exist`() {
+        configureSyncSettings(true)
         configureGeneralSettings(true)
-        configureProgramSettings(true)
+
         val testObserver = settingsRepository.syncParameters().test()
         testObserver
             .assertNoErrors()
@@ -133,8 +141,9 @@ class SettingsRepositoryTest {
 
     @Test
     fun `Should return parameters from preferences if general settings does not exist`() {
+        configureSyncSettings(false)
         configureGeneralSettings(false)
-        configureProgramSettings(false)
+
         val testObserver = settingsRepository.syncParameters().test()
         testObserver
             .assertNoErrors()
@@ -149,6 +158,7 @@ class SettingsRepositoryTest {
     fun `Should return reserved values from settings if exist`() {
         configureGeneralSettings(true)
         val testObserver = settingsRepository.reservedValues().test()
+
         testObserver
             .assertNoErrors()
             .assertValue {
@@ -160,6 +170,7 @@ class SettingsRepositoryTest {
     fun `Should return reserved values from preferences if settings does not exist`() {
         configureGeneralSettings(false)
         val testObserver = settingsRepository.reservedValues().test()
+
         testObserver
             .assertNoErrors()
             .assertValue {
@@ -167,27 +178,27 @@ class SettingsRepositoryTest {
             }
     }
 
-    @Ignore
-    @Test
-    fun `Should return non editable sms configuration if settings exist`() {
-        configureGeneralSettings(true)
-        val testObserver = settingsRepository.sms().test()
-        testObserver
-            .assertNoErrors()
-            .assertValue {
-                !it.isGatewayNumberEditable && !it.isResponseNumberEditable
-            }
-    }
-
     @Test
     fun `Should return editable sms configuration if settings does not exist`() {
         configureGeneralSettings(false)
         val testObserver = settingsRepository.sms().test()
+
         testObserver
             .assertNoErrors()
             .assertValue {
                 it.isGatewayNumberEditable && it.isResponseNumberEditable
             }
+    }
+
+    private fun configureSyncSettings(hasSyncSettings: Boolean) {
+        whenever(
+            d2.settingModule().synchronizationSettings().blockingExists(),
+        ) doReturn hasSyncSettings
+        if (hasSyncSettings) {
+            whenever(
+                d2.settingModule().synchronizationSettings().blockingGet(),
+            ) doReturn mockedSyncSettings()
+        }
     }
 
     private fun configureGeneralSettings(hasGeneralSettings: Boolean) {
@@ -197,15 +208,6 @@ class SettingsRepositoryTest {
         if (hasGeneralSettings) {
             whenever(d2.settingModule().generalSetting().blockingGet()) doReturn
                 mockedGeneralSettings()
-        }
-    }
-
-    private fun configureProgramSettings(hasProgramSettings: Boolean) {
-        whenever(d2.settingModule().programSetting().blockingExists()) doReturn
-            hasProgramSettings
-        if (hasProgramSettings) {
-            whenever(d2.settingModule().programSetting().blockingGet()) doReturn
-                mockedProgramSettings()
         }
     }
 
@@ -266,169 +268,274 @@ class SettingsRepositoryTest {
 
         whenever(d2.eventModule().events().byAggregatedSyncState()) doReturn mock()
         whenever(
-            d2.eventModule().events().byAggregatedSyncState().`in`(State.ERROR),
+            d2
+                .eventModule()
+                .events()
+                .byAggregatedSyncState()
+                .`in`(State.ERROR),
         ) doReturn mock()
         whenever(
-            d2.eventModule().events().byAggregatedSyncState().`in`(State.WARNING),
+            d2
+                .eventModule()
+                .events()
+                .byAggregatedSyncState()
+                .`in`(State.WARNING),
         ) doReturn mock()
         whenever(
-            d2.eventModule().events().byAggregatedSyncState().`in`(State.ERROR).blockingGet(),
+            d2
+                .eventModule()
+                .events()
+                .byAggregatedSyncState()
+                .`in`(State.ERROR)
+                .blockingGet(),
         ) doReturn
             emptyList()
         whenever(
-            d2.eventModule().events().byAggregatedSyncState().`in`(State.WARNING).blockingGet(),
+            d2
+                .eventModule()
+                .events()
+                .byAggregatedSyncState()
+                .`in`(State.WARNING)
+                .blockingGet(),
         ) doReturn
             emptyList()
 
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
                 .byAggregatedSyncState(),
         ) doReturn mock()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().`in`(State.ERROR),
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .`in`(State.ERROR),
         ) doReturn mock()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().`in`(State.WARNING),
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .`in`(State.WARNING),
         ) doReturn mock()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().`in`(State.ERROR).blockingGet(),
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .`in`(State.ERROR)
+                .blockingGet(),
         ) doReturn emptyList()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().`in`(State.WARNING).blockingGet(),
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .`in`(State.WARNING)
+                .blockingGet(),
         ) doReturn emptyList()
 
         whenever(
-            d2.dataValueModule().dataValues()
+            d2
+                .dataValueModule()
+                .dataValues()
                 .bySyncState(),
         ) doReturn mock()
         whenever(
-            d2.dataValueModule().dataValues()
-                .bySyncState().`in`(State.ERROR),
+            d2
+                .dataValueModule()
+                .dataValues()
+                .bySyncState()
+                .`in`(State.ERROR),
         ) doReturn mock()
         whenever(
-            d2.dataValueModule().dataValues()
-                .bySyncState().`in`(State.WARNING),
+            d2
+                .dataValueModule()
+                .dataValues()
+                .bySyncState()
+                .`in`(State.WARNING),
         ) doReturn mock()
         whenever(
-            d2.dataValueModule().dataValues()
-                .bySyncState().`in`(State.ERROR).blockingGet(),
+            d2
+                .dataValueModule()
+                .dataValues()
+                .bySyncState()
+                .`in`(State.ERROR)
+                .blockingGet(),
         ) doReturn emptyList()
         whenever(
-            d2.dataValueModule().dataValues()
-                .bySyncState().`in`(State.WARNING).blockingGet(),
+            d2
+                .dataValueModule()
+                .dataValues()
+                .bySyncState()
+                .`in`(State.WARNING)
+                .blockingGet(),
         ) doReturn emptyList()
     }
 
     private fun configureDataCount() {
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
                 .byAggregatedSyncState(),
         ) doReturn mock()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().neq(State.RELATIONSHIP),
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .neq(State.RELATIONSHIP),
         ) doReturn mock()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().neq(State.RELATIONSHIP).byDeleted(),
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .neq(State.RELATIONSHIP)
+                .byDeleted(),
         ) doReturn mock()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().neq(State.RELATIONSHIP).byDeleted().isFalse,
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .neq(State.RELATIONSHIP)
+                .byDeleted()
+                .isFalse,
         ) doReturn mock()
         whenever(
-            d2.trackedEntityModule().trackedEntityInstances()
-                .byAggregatedSyncState().neq(State.RELATIONSHIP).byDeleted().isFalse.blockingCount(),
+            d2
+                .trackedEntityModule()
+                .trackedEntityInstances()
+                .byAggregatedSyncState()
+                .neq(State.RELATIONSHIP)
+                .byDeleted()
+                .isFalse
+                .blockingCount(),
         ) doReturn 0
 
         whenever(
-            d2.eventModule().events()
+            d2
+                .eventModule()
+                .events()
                 .byEnrollmentUid(),
         ) doReturn mock()
         whenever(
-            d2.eventModule().events()
-                .byEnrollmentUid().isNull,
+            d2
+                .eventModule()
+                .events()
+                .byEnrollmentUid()
+                .isNull,
         ) doReturn mock()
         whenever(
-            d2.eventModule().events()
-                .byEnrollmentUid().isNull.byDeleted(),
+            d2
+                .eventModule()
+                .events()
+                .byEnrollmentUid()
+                .isNull
+                .byDeleted(),
         ) doReturn mock()
         whenever(
-            d2.eventModule().events()
-                .byEnrollmentUid().isNull.byDeleted().isFalse,
+            d2
+                .eventModule()
+                .events()
+                .byEnrollmentUid()
+                .isNull
+                .byDeleted()
+                .isFalse,
         ) doReturn mock()
         whenever(
-            d2.eventModule().events()
-                .byEnrollmentUid().isNull
-                .byDeleted().isFalse
+            d2
+                .eventModule()
+                .events()
+                .byEnrollmentUid()
+                .isNull
+                .byDeleted()
+                .isFalse
                 .bySyncState(),
         ) doReturn mock()
         whenever(
-            d2.eventModule().events()
-                .byEnrollmentUid().isNull
-                .byDeleted().isFalse
-                .bySyncState().neq(State.RELATIONSHIP),
+            d2
+                .eventModule()
+                .events()
+                .byEnrollmentUid()
+                .isNull
+                .byDeleted()
+                .isFalse
+                .bySyncState()
+                .neq(State.RELATIONSHIP),
         ) doReturn mock()
         whenever(
-            d2.eventModule().events()
-                .byEnrollmentUid().isNull
-                .byDeleted().isFalse
-                .bySyncState().neq(State.RELATIONSHIP)
+            d2
+                .eventModule()
+                .events()
+                .byEnrollmentUid()
+                .isNull
+                .byDeleted()
+                .isFalse
+                .bySyncState()
+                .neq(State.RELATIONSHIP)
                 .blockingCount(),
         ) doReturn 0
     }
 
     private fun configureSMSConfig() {
-        whenever(localDbRepository.isModuleEnabled()) doReturn
-            Single.just(true)
-        whenever(localDbRepository.getGatewayNumber()) doReturn
-            Single.just("gatewaynumber")
-        whenever(localDbRepository.getWaitingForResultEnabled()) doReturn
-            Single.just(true)
-        whenever(localDbRepository.getConfirmationSenderNumber()) doReturn
-            Single.just("confirmationNumber")
-        whenever(localDbRepository.getWaitingResultTimeout()) doReturn
-            Single.just(120)
-        whenever(d2.smsModule().configCase()) doReturn
-            ConfigCase(
-                webApiRepository,
-                localDbRepository,
-            )
+        whenever(d2.smsModule().configCase()) doReturn configCase
     }
 
-    private fun mockedGeneralSettings(): GeneralSettings {
-        return GeneralSettings.builder()
+    private fun mockedSyncSettings() =
+        SynchronizationSettings
+            .builder()
             .dataSync(SETTINGS_DATA_PERIOD)
             .metadataSync(SETTINGS_METADATA_PERIOD)
+            .programSettings(mockedProgramSettings())
+            .build()
+
+    private fun mockedGeneralSettings(): GeneralSettings =
+        GeneralSettings
+            .builder()
             .encryptDB(SETTINGS_ENCRYPT)
             .reservedValues(SETTINGS_RV)
             .build()
-    }
 
-    private fun mockedProgramSettings(): ProgramSettings {
-        return ProgramSettings.builder()
+    private fun mockedProgramSettings(): ProgramSettings =
+        ProgramSettings
+            .builder()
             .globalSettings(
-                ProgramSetting.builder()
+                ProgramSetting
+                    .builder()
                     .eventsDownload(SETTINGS_TEI_DOWNLOAD)
                     .teiDownload(SETTINGS_EVENT_DOWNLOAD)
                     .settingDownload(SETTINGS_LIMIT_SCOPE)
                     .build(),
-            )
-            .specificSettings(
+            ).specificSettings(
                 mutableMapOf(
                     Pair(
                         "programUid",
-                        ProgramSetting.builder()
+                        ProgramSetting
+                            .builder()
                             .eventsDownload(200)
                             .teiDownload(300)
                             .build(),
                     ),
                 ),
-            )
-            .build()
+            ).build()
+
+    companion object {
+        private val SETTINGS_PREF_EVENT_DOWNLOAD = 50
+        private val SETTINGS_PREF_TEI_DOWNLOAD = 50
+        private val SETTINGS_METADATA_PERIOD = MetadataSyncPeriod.EVERY_7_DAYS
+        private val SETTINGS_DATA_PERIOD = DataSyncPeriod.EVERY_HOUR
+        private val SETTINGS_ENCRYPT = false
+        private val SETTINGS_RV = 50
+        private val SETTINGS_TEI_DOWNLOAD = 100
+        private val SETTINGS_EVENT_DOWNLOAD = 100
+        private val SETTINGS_LIMIT_SCOPE = LimitScope.PER_OU_AND_PROGRAM
+        private val SETTINGS_PREF_METADATA_PERIOD = TIME_DAILY
+        private val SETTINGS_PREF_DATA_PERIOD = TIME_15M
+        private val SETTINGS_PREF_RV = 25
     }
 }

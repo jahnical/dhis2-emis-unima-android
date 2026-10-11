@@ -1,9 +1,16 @@
-# Release notes - Android App for DHIS2 - 3.1.0.1
+# Release notes - Android App for DHIS2 - 3.4.2
 
 ### Bug
 
-[ANDROAPP-6653](https://dhis2.atlassian.net/browse/ANDROAPP-6653) Large option sets freeze the app
+[ANDROAPP-7682](https://dhis2.atlassian.net/browse/ANDROAPP-7682) Sync button doesn't always appear
+in enrollments list
 
-[ANDROAPP-6665](https://dhis2.atlassian.net/browse/ANDROAPP-6665) Filters persists when exiting the program or data set
+[ANDROAPP-7706](https://dhis2.atlassian.net/browse/ANDROAPP-7706) Tei list items display wrong
+attributes
 
-[ANDROAPP-6691](https://dhis2.atlassian.net/browse/ANDROAPP-6691) NullPointerException: Dataset table
+[ANDROAPP-7708](https://dhis2.atlassian.net/browse/ANDROAPP-7708) NullPointerException: Attempt to
+invoke virtual method 'java.lang.Class java.lang.Object.getClass\(\)'... \(ProgramFragment\)
+
+[ANDROAPP-7711](https://dhis2.atlassian.net/browse/ANDROAPP-7711) NullPointerException: Attempt to
+invoke virtual method 'android.content.res.Resources android.view.View.getResources\(\)' on a null
+object reference

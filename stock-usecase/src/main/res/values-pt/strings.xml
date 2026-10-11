@@ -1,0 +1,129 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name"> Gestão de stocks de farmácia</string>
+    <string name="title_activity_home">Início</string>
+
+    <string name="distribution">Distribuição</string>
+    <string name="discard">Descartar</string>
+    <string name="correction">Correção</string>
+
+    <!-- Sign in -->
+    <string name="username">Nome de utilizador</string>
+
+    <!-- Sync -->
+    <string name="metadata_sync_error">Não foi possível concluir a sincronização de metadados</string>
+
+    <!-- FloatingActionButtons -->
+    <string name="review">Revisão</string>
+
+    <string name="search"> Procurar item</string>
+    <string name="search_placeholder">Pesquisar...</string>
+    <string name="delete">Apagar</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+
+    <string name="from">A partir de</string>
+    <string name="to"> Entrega para...</string>
+    <string name="subtitle">%s</string>
+
+    <!-- Languages -->
+
+    <!-- Settings -->
+
+    <!-- Stock table -->
+    <string name="quantity">Quantidade</string>
+
+    <!-- Messages -->
+    <string name="mandatory_facility_selection">
+        O campo da instalação deve ser preenchido antes de prosseguir
+    </string>
+    <string name="transaction_completed">
+       A transação foi concluída com êxito!
+    </string>
+
+    <!-- Errors -->
+    <string name="facilities_load_error"> Não é possível carregar a lista de unidades sanitárias disponíveis</string>
+    <string name="destinations_load_error">
+        Não foi possível carregar a lista de destinos disponíveis
+    </string>
+
+    <!-- Content descriptions for accessibility -->
+
+    <string name="confirm_transaction_label">Confirme</string>
+
+    <string name="stock_on_hand_exceeded_message">As existências disponíveis não podem ser excedidas</string>
+
+    <string name="permission_granted"> Autorização concedida</string>
+    <string name="permission_denied"> Autorização recusada</string>
+
+    <!-- Speech error messages -->
+    <string name="insufficient_speech_permissions_error">
+       Permissões insuficientes. Pedido android.permissão.RECORD_AUDIO
+    </string>
+    <string name="speech_audio_error"> Erro de gravação de áudio</string>
+    <string name="speech_client_error">
+        Erro do lado do cliente. Por favor, verifique a sua ligação à internet!
+    </string>
+    <string name="speech_network_error"> Erro de rede</string>
+    <string name="speech_network_timeout_error"> O tempo de funcionamento da rede expirou</string>
+    <string name="no_speech_match_error"> Nenhum resultado de reconhecimento coincidiu.</string>
+    <string name="speech_recognition_service_busy_error"> O serviço de reconhecimento está ocupado</string>
+    <string name="speech_server_error"> Ocorreu um erro no servidor de voz</string>
+    <string name="speech_timeout_error"> Não foi detectada qualquer entrada de voz</string>
+    <string name="unknown_speech_error"> Ocorreu um erro desconhecido.</string>
+    <string name="non_numeric_speech_input_error"> Não é permitida a introdução de dados não numéricos: \"%s\"</string>
+    <string name="negative_number_speech_input_error">
+       A introdução de números negativos não é permitida:\"%s\"
+    </string>
+
+    <string name="unable_to_sync_data_no_network_available">
+       Não é possível sincronizar dados porque não existe uma ligação de rede disponível
+    </string>
+
+    <!--SDK error codes-->
+    <string name="login_error_unsuccessful_response">Algo correu mal. Verifique se o URL do servidor, o nome de utilizador e a palavra-passe estão correctos e tente novamente.</string>
+    <string name="login_error_error_response"> Ops! Algo correu mal no lado do servidor.</string>
+    <string name="login_error_no_dhis_instance"> O URL fornecido não é um servidor DHIS2.</string>
+    <string name="login_error_bad_credentials"> O nome de utilizador e/ou a palavra-passe estão incorrectos</string>
+    <string name="login_error_unknown_host">Servidor desconhecido</string>
+    <string name="online_search_parsing_error">Erro ao analisar resultados</string>
+    <string name="error_unexpected"> Algo inesperado correu mal.</string>
+    <string name="error_many_requests">O servidor está um pouco ocupado neste momento. Por favor, tente mais tarde.</string>
+    <string name="error_already_authenticated">O utilizador já tem sessão iniciada.</string>
+    <string name="error_already_executed">O pedido já foi executado.</string>
+    <string name="error_api_invalid_query">O pedido do servidor é inválido.</string>
+    <string name="error_create_existing_error">Criação abortada. O objeto já existe.</string>
+    <string name="error_export_login">Inicie sessão para exportar a base de dados.</string>
+    <string name="error_export_encrypted">A exportação de uma base de dados encriptada não é suportada.</string>
+    <string name="error_import_exist">Está a importar uma base de dados já existente.</string>
+    <string name="error_import_logout">Termine a sessão para importar uma nova base de dados.</string>
+    <string name="error_import_version">A versão da base de dados importada é superior à suportada.</string>
+    <string name="error_user_no_authenticated">Não há nenhum utilizador autenticado.</string>
+    <string name="error_user_no_authenticated_offline">Não existe nenhum utilizador autenticado offline.</string>
+    <string name="error_different_offline_user">Está a tentar iniciar sessão offline com um utilizador diferente.</string>
+    <string name="error_object_update">Não foi possível atualizar o objeto.</string>
+    <string name="error_object_insert"> O objeto não pôde ser inserido.</string>
+    <string name="error_ownership_access"> Não tem acesso.</string>
+    <string name="error_null_url"> O URL do servidor está em falta. Por favor, introduza o URL.</string>
+    <string name="error_server_malformed"> O URL do servidor não está bem formado. Por favor, verifique-o.</string>
+    <string name="error_settings_app_not_supported"> Esta versão da aplicação Web de definições não é suportada.</string>
+    <string name="error_settings_app_not_intalled"> A aplicação Web de definições não está instalada no servidor.</string>
+    <string name="error_socket_timeout"> O servidor demorou demasiado tempo a responder. Cancelamos a requisição.</string>
+    <string name="error_url_not_found"> Não foi possível encontrar o URL. Por favor, verifique-o.</string>
+    <string name="error_account_disabled"> A sua conta de utilizador foi desactivada. Se isto for um erro, contacte o seu administrador.</string>
+    <string name="error_account_locked"> A sua conta de utilizador está bloqueada. Se isto for um erro, contacte o seu administrador.</string>
+    <string name="error_set_value">O valor não pode ser definido.</string>
+    <string name="error_ssl">Existe um problema com os certificados do servidor. Por favor, contacte o seu administrador.</string>
+    <string name="done_task">Início</string>
+    <string name="back">Voltar</string>
+    <string name="from_facility"> Da unidade sanitária</string>
+    <string name="to_facility"> Para a unidade sanitária</string>
+    <string name="stock">Stock</string>
+    <string name="not_saved"> Não guardado</string>
+    <string name="transaction_not_confirmed">A transação não foi confirmada. Se sair agora, os dados introduzidos serão eliminados.</string>
+    <string name="transaction_discarted"> Esta transação não foi confirmada. Se alterar as definições, os dados introduzidos serão anulados.</string>
+    <string name="count">Contagem</string>
+    <string name="under_review">Em revisão</string>
+    <string name="formatting_error">Erro de formatação</string>
+    <string name="invalid_possitive_zero">Somente números positivos ou zero são permitidos</string>
+    <string name="leading_zero_error"> Não são permitidos números com zero à esquerda</string>
+</resources>

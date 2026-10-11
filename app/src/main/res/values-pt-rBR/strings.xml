@@ -1,73 +1,129 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Warnings and error messages -->
     <string name="error">Erro</string>
-    <string name="add_new">Adicionar novo</string>
-    <string name="add">Adicionar</string>
-    <string name="user_hint">Utilizador</string>
-    <string name="password_hint">Password</string>
+    <string name="referral">Transferência</string>
+
     <string name="account_recovery">Recuperar Conta</string>
+
     <!--PERIOD-->
     <string name="DAILY">Diário</string>
     <string name="WEEKLY">Semanal</string>
     <string name="MONTHLY">Mensal</string>
     <string name="YEARLY">Anual</string>
+    <string name="clear_filters">Limpar filtros</string>
     <string name="action_share_zero_items">Partilhar</string>
     <!-- Input hints -->
     <string name="search">Pesquisar</string>
+    <!-- Status -->
+
+    <string name="event_open">Abrir</string>
     <string name="read_only">Apenas leitura</string>
+    <string name="completed">Concluído</string>
+    <string name="cancelled">Cancelado</string>
+    <string name="active">Activo</string>
+
     <string name="state_error">Erro</string>
+
+    <!--Completion-->
+
     <!--Event initial-->
-    <string name="create">Criar</string>
     <string name="update">Actualizar</string>
-    <string name="date">Data</string>
-    <string name="category_option">Opcções de categorias</string>
     <string name="latitude">Latitude</string>
     <string name="longitude">Longitude</string>
+
     <!--DataSet initial-->
     <string name="report_period">Período de relatório</string>
     <!--Event Detail-->
     <string name="due_date">Data de vencimento</string>
     <string name="cancel">Cancelar</string>
     <string name="delete">Apagar</string>
+    <string name="active_programs">Programas ativos</string>
+    <string name="enroll">Registrar</string>
+
+    <!--TEI DASHBOARD-->
+    <string name="edit">Editar</string>
+    <string name="deactivate">Desativar</string>
     <string name="done_task">Origem</string>
     <string name="wipe_data_no">Cancelar</string>
     <string name="SYNC_MANAGER">Configurações</string>
+    <string name="settingTwoFA">Autenticação de dois fatores</string>
+    <string name="settingsTwoFAStatus">Situação</string>
+    <!--endregion-->
+
     <!-- SEARCH OPTION SET -->
     <string name="search_optionset">Pesquisar</string>
     <!--FORM FRAGMENT-->
     <string name="report_date">Data do relatório</string>
-    <string name="hint_month">Meses</string>
-    <string name="hint_year">Anos</string>
-    <string name="date_dialog_clear">Limpar</string>
+    <string name="add_note">Adicionar uma nota</string>
+    <!--EVENT SUMMARY-->
+
+    <!--AGE CUSTOM VIEW-->
+    <string name="incident_date">Data do incidente</string>
     <string name="period">Período</string>
+    <!-- RELATIONSHIPS -->
     <string name="next">Próximo</string>
-    <string name="SAVE">Salvar</string>
     <string name="button_ok">Aprovado</string>
     <string name="qr_attributes">Atributos</string>
+    <string name="qr_relationships">Relacionamentos</string>
     <string name="about">Acerca</string>
     <string name="share">Partilhar</string>
-    <string name="max">Máx</string>
-    <string name="current">Corrente</string>
-    <string name="warning_on_complete_title">Advertência</string>
-    <string name="error_on_complete_title">Erro</string>
     <string name="save">Salvar</string>
     <string name="menu_home">Origem</string>
     <string name="qr_data_values">Valor de Dados</string>
-    <string name="dashboard_indicators">Indicadores</string>
-    <string name="event_overview">Detalhes</string>
-    <string name="event_indicators">Indicadores</string>
+    <string name="dashboard_overview">Visão geral</string>
     <string name="please_wait">Por favor aguarde...</string>
+    <string name="skip">Pular</string>
     <string name="state_warning">Advertência</string>
+    <string name="state_relationship">Relação</string>
     <string name="action_close">Fechar</string>
-    <string name="data_every_day">Diário</string>
-    <string name="data_every_week">Semanal</string>
-    <string name="sms_bar_state_sent">Enviar</string>
+    <!--region TRACKER IMPORT CONFLICT MESSAGES-->
     <string name="polygon">Poligono</string>
+    <!--endregion-->
+
+    <string name="security_title">Segurança</string>
     <string name="filters_title_period">Período</string>
-    <string name="filters_title_status">Estado</string>
     <string name="filter_period_today">Hoje</string>
     <string name="filter_period_yesterday">Ontém</string>
     <string name="filter_period_last_week">Última semana</string>
     <string name="filter_period_last_month">Mês passado</string>
     <string name="filter_period_other">Outro</string>
+    <string name="filter_event_status_open">Abrir</string>
+    <string name="filter_event_status_schedule">Programar</string>
+    <string name="filter_event_status_overdue">Atrasado</string>
+    <string name="filter_event_status_completed">Concluído</string>
+    <string name="filter_event_status_skipped">Ignorado</string>
+    <string name="go_back">Voltar</string>
+    <string name="data_sets">Agregação de Dados</string>
+    <string name="interval_yesterday">Ontém</string>
+    <string name="enrollment_status_active">Abrir</string>
+    <string name="enrollment_status_completed">Completo</string>
+    <string name="enrollment_status_cancelled">Cancelado</string>
+    <string name="filters_title_date">Data</string>
+    <string name="customactivityoncrash_error_activity_restart_app">Voltar</string>
+    <string name="customactivityoncrash_error_activity_error_details_copy">Copiar para área de transferência</string>
+    <string name="navigation_list_view">Lista</string>
+    <string name="navigation_map_view">Mapa</string>
+    <string name="navigation_programs">Programas</string>
+    <string name="navigation_notes">Notas</string>
+    <string name="navigation_data_entry">Entrada de dados</string>
+    <string name="navigation_tei_data">Detalhes</string>
+    <string name="filter_period_this_year">Este ano</string>
+    <string name="filter_period_last_quarter">Último trimestre</string>
+    <string name="filter_period_months_this_year">Meses deste ano</string>
+    <string name="filter_period_quarters_this_year">Trimestres deste ano</string>
+    <string name="filter_period_months_last_year">Meses do ano passado</string>
+    <string name="filter_period_last_year">Ano passado</string>
+    <string name="filter_period_last_financial_year">último ano financeiro</string>
+    <string name="section_feedback">Retroinformacão</string>
+    <string name="section_indicators">Indicadores</string>
+    <string name="action_ok">Esta bem</string>
+    <string name="sync_dialog_action_send">Enviar</string>
+    <string name="sync_dialog_action_refresh">Actualizar</string>
+    <string name="skipped">Ignorado</string>
+    <string name="programs">Programas</string>
+    <string name="mark_follow_up">Marcar para acompanhamento</string>
+    <string name="coordinates">Coordenadas</string>
+    <string name="schedule">Programar</string>
+    <string name="scheduled_enter_event">Agendado</string>
+    <string name="program_stage">Estágio do programa</string>
     </resources>

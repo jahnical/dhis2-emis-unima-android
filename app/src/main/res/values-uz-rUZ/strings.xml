@@ -1,0 +1,422 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!--GENERAL-->
+    <string name="app_name">DHIS2</string>
+    <!-- Warnings and error messages -->
+    <string name="error">Xatolik</string>
+    <string name="no_reserved_values">Saqlangan boshqa qiymatlar yoʼq. Tizim administratoriga murojaat qiling.</string>
+    <string name="something_wrong">Nimadir notoʼgʼri bajarildi</string>
+    <!-- SyncService strings: -->
+
+    <string name="sync_events">Hodisa/tadbirlar</string>
+
+    <string name="sync_error_title">Sinxronlashda xatolik</string>
+    <string name="sync_error_text">Sinxronlash paytida xatolik yuz berdi. Iltimos, qayta urinib koʼring</string>
+    <string name="referral">Yoʼnalishlarga</string>
+
+    <!-- Login -->
+    <string name="syncing_configuration">Konfiguratsiyangiz sinxronlashmoqda</string>
+    <string name="syncing_data_shortly">Maʼlumotlaringiz tez orada sinxronlashtiriladi</string>
+    <string name="syncing_data">Maʼlumotlaringiz sinxronlashmoqda</string>
+    <string name="configuration_ready">Sizning yangi konfiguratsiyangiz tayyor</string>
+    <string name="data_ready">Maʼlumotingiz tayyor</string>
+    <string name="account_recovery">Аkkauntni tiklash</string>
+
+    <!--PERIOD-->
+    <string name="DAILY">Кунлик</string>
+    <string name="WEEKLY">Ҳафталик</string>
+    <string name="MONTHLY">Ойлик</string>
+    <string name="YEARLY">Йиллик</string>
+    <string name="clear_filters">Filtrlarni tozalash</string>
+    <string name="action_accept">Qabul qiling</string>
+    <string name="action_share_zero_items">Улашиш</string>
+    <string name="action_share_single_item">Element ulanishi %d</string>
+    <string name="action_share_multiple_item">Elementlar ulanishi %d</string>
+
+    <!-- Input hints -->
+    <string name="search">Izlash</string>
+    <string name="enter_text">Matn kiriting</string>
+    <string name="enter_long_text">Uzun matn kiriting</string>
+    <string name="enter_number">Sonni kiriting</string>
+    <string name="enter_negative_integer">Butun manfiy son kiriting</string>
+    <string name="enter_positive_integer_or_zero">Butun musbat yoki nol sonini kiriting</string>
+    <string name="enter_positive_integer">Musbat son kiriting</string>
+    <string name="choose_date">Sanani tanlang</string>
+
+    <!-- Status -->
+
+    <string name="event_open">Ochiq</string>
+    <string name="read_only">Faqat oʼqish uchun</string>
+    <string name="completed">bajarildi</string>
+    <string name="cancelled">Bekor qilindi</string>
+    <string name="active">Faol</string>
+
+    <!-- State -->
+    <string name="state_synced">Sinxronlash</string>
+    <string name="state_to_post">Yuborish uchun</string>
+    <string name="state_to_update">Yangilash uchun</string>
+    <string name="state_error">Xatolik</string>
+
+    <!--Completion-->
+
+    <!--Event initial-->
+    <string name="update">Янгилаш</string>
+    <string name="org_unit">Tashkiliy birlik</string>
+    <string name="no_org_units">Tanlangan sanalar uchun ochiq Tashkiliy boʼlimlar mavjud emas. Iltimos, boshqa sana yoki boshqa Tashkiliy boʼlimni tanlang.</string>
+    <string name="latitude">Kenglik</string>
+    <string name="longitude">Kenglik</string>
+
+    <!--DataSet initial-->
+    <string name="report_period">Hisobot davri</string>
+    <!--Event Detail-->
+    <string name="due_date">Muddati</string>
+    <string name="cat_combo">Kategoriya kombinatsiyasi</string>
+    <string name="cancel">Бекор қилиш</string>
+    <string name="delete">Oʼchirib tashlash</string>
+    <string name="most_recent_event_date">Oxirgi tadbir sanasi</string>
+    <string name="no_options">Variantlar mavjud emas</string>
+
+    <string name="active_programs">Faol dasturlar</string>
+    <string name="enroll">Roʼyxatga kiritish</string>
+
+    <!--TEI DASHBOARD-->
+    <string name="edit">Tahrirlash</string>
+    <string name="deactivate">Faolsizlantirish</string>
+    <string name="program_not_allow_events">Ushbu dastur yana koʼproq tadbirlarni qabul qilmaydi</string>
+
+    <string name="done_task">Бош саҳифа</string>
+    <!-- SYNC -->
+    <string name="thirty_minutes">30 daqiqa</string>
+    <string name="a_hour">1 soat</string>
+    <string name="every_6_hours">6 soat</string>
+    <string name="a_day">1 kun (standart)</string>
+    <string name="every_12_hours">12 soat</string>
+    <string name="Manual">Qoʼllanma</string>
+    <string name="a_week">1 hafta</string>
+    <string name="wipe_data_meesage">Maʼlumotlar bazasi oʼchiriladi. Sizdan qayta kirish soʼraladi.</string>
+    <string name="wipe_data_ok">Qabul qiling</string>
+    <string name="wipe_data_no">Бекор қилиш</string>
+    <string name="SYNC_DATA">Maʼlumotlarni sinxronlash, hozir</string>
+    <string name="SYNC_META">Konfiguratsiyani sinxronlang, hozir</string>
+    <string name="SYNC_MANAGER">Sozlamalar</string>
+    <string name="refill_reserved_values">Toʼldirish</string>
+    <string name="settings_sms_receiver_number">SMS yoʼlak</string>
+    <string name="settings_sms_result_sender_number">SMS natijalarini yuboruvchi</string>
+    <string name="settings_sms_module_switch">SMS yuborishni yoqish</string>
+    <string name="settings_sms_response_wait_switch">SMS natijalar tarqatilishini kutish</string>
+    <string name="settings_limit_scope">Sozlamalar cheklangan</string>
+    <string name="settings_limit_globally">Global miqyosda</string>
+    <string name="settings_limit_program">dastur boʼyicha</string>
+    <string name="settings_limit_ou">Tashkiliy birlik tomonidan</string>
+    <string name="settings_limit_ou_program">Tashkiliy birlik va dastur tomonidan</string>
+    <!-- SEARCH TRACK ENTITY -->
+
+    <!--region SETTINCS-->
+    <string name="settingsSyncData">Maʼlumotlarni sinxronlash</string>
+    <string name="settingsSyncMetadata">Konfiguratsiyani sinxronlash</string>
+    <string name="settingsSyncParameters">Parametrlarni sinxronlash</string>
+    <string name="settingsReservedValues">Oldindan buyurtirilgan qiymatlar</string>
+    <string name="settingsReservedValues_descr">Bu yerda siz offlayn rejimda mavjud boʼlgan qiymatlar sonini koʼrishingiz va yangilarini zaxiralashingiz mumkin.</string>
+    <string name="settingsErrorLog">Sinxronlashdagi xatolar jurnalini oching</string>
+    <string name="settingsErrorLog_descr">Ushbu jurnalda maʼlumotlar va MetaMaʼlumotlarni sinxronlashda vujudga kelgan barcha xatoliklar qayd etilgan</string>
+    <string name="settingsDeleteLocalData">Lokal maʼlumotlarni oʼchirib tashlash</string>
+    <string name="settingsDeleteLocalData_descr">Qurilmangizda saqlangan barcha Kuzatuv-Nazorat ilovasi maʼlumotlari oʼchirib tashlanadi. Server bilan sinxronlanmagan maʼlumotlar yoʼqotiladi.</string>
+    <string name="settingsSms">SMS sozlamalari</string>
+    <string name="settingsSms_descr">SMS shlyuzi bilan bogʼliq parametrlarni tekshiring va tahrirlang</string>
+    <string name="settingsTwoFAStatus">Status</string>
+    <!--endregion-->
+
+    <!-- SEARCH OPTION SET -->
+    <string name="search_optionset">Izlash</string>
+    <!--FORM FRAGMENT-->
+    <string name="report_date">Hisobot sanasi</string>
+    <string name="add_file">Fayl qoʼshish</string>
+    <string name="write_new_note">Yangi eslatma yozing</string>
+    <string name="clear">aniq</string>
+    <string name="add_note">Izoh qoldirish</string>
+    <string name="title_delete_go_back">Maʼlumotingiz saqlanmadi</string>
+    <string name="tei_coordinates">Uchun koordinatalar</string>
+
+    <!--EVENT SUMMARY-->
+
+    <!--AGE CUSTOM VIEW-->
+    <string name="incident_date">Hodisa sanasi</string>
+    <string name="past_programs">Аvvalgi dasturlar</string>
+
+    <!--PERMISSIONS-->
+    <string name="permission_denied">Ushbu amalni bajarish uchun sizda zaruriy ruxsat yoʼq</string>
+
+    <string name="period">davr</string>
+    <string name="tuto_main_1">DHIS2 ga Xush kelibsiz</string>
+    <string name="tuto_main_2">Bu yerda щz faoliyatingizni kuzatishingiz mumkin</string>
+    <string name="tuto_main_3">Filtrni щzgartirishingiz mumkin</string>
+    <string name="tuto_main_4">... davrni oʼzgartirish va sanalarni tanlash orqali ...</string>
+    <string name="tuto_main_5">... yoki filtrlanadi, Tashkiliy boʼlim orqali</string>
+    <string name="tuto_main_6">Аsosiy menyudan boshqa harakatlarni tekshirish</string>
+
+    <!-- RELATIONSHIPS -->
+    <string name="next">Кейинги</string>
+    <string name="search_min_num_attr">Qidiruv uchun kamida %d atributni kiritish kerak</string>
+
+    <!-- QR -->
+    <string name="QR_SCANNER">QR qurilmalarni import qilish</string>
+    <string name="button_ok">OK</string>
+    <string name="qr_id">Identifikatsiya</string>
+    <string name="qr_attributes">Аttributlar</string>
+    <string name="qr_enrollment">Roʼyxatdan oʼtish</string>
+    <string name="qr_events">Hodisa/tadbirlar</string>
+    <string name="qr_relationships">Oʼzaro aloqalar</string>
+    <string name="read_more_qr">Qoʼshimcha maʼlumot olish uchun keyingi QR ni qoʼshing</string>
+    <string name="save_qr">Oʼqishni toʼxtatish va maʼlumotlarni saqlash</string>
+    <string name="qr_no_data">maʼlumotlar yoʼq</string>
+    <string name="qr_error_id">QR kod yaroqsiz</string>
+    <string name="qr_error_attr">Ushbu atributlarrni qoʼshib boʼlmadi</string>
+
+    <string name="about">Ҳақида</string>
+    <string name="programs_to_enroll">Roʼyxatga olish dasturlari</string>
+    <string name="share">Улашиш</string>
+    <string name="share_qr">QR ni ulashish</string>
+    <string name="tei">TEI</string>
+    <string name="teis">TEI lar</string>
+    <string name="wipe_data">Ilova maʼlumotlarining asl standart holatini tiklash; konfiguratsiya</string>
+    <string name="warning_error_on_complete_title">Buni tekshiring!</string>
+    <string name="save">Saqlash</string>
+    <string name="reserved_value">Himoyalangan qiymatlar</string>
+
+    <!--ABOUT-->
+    <string name="about_app">Ilova versiyasi: 1 %s</string>
+    <string name="about_sdk">SDK versiyasi: 1 %s</string>
+    <string name="about_connected">%s ga ulangan</string>
+    <string name="about_user">Аmaldagi foydalanuvchi: %s</string>
+    <string name="about_more">Ushbu maʼlumot uchun koʼproq maʼlumot: Qoʼllab-quvvatlanadigan va qoʼllab quvvatlanmaydiganlarni bu yerda oʼqing</string>
+    <string name="about_git">Dasturning ushbu va avvalgi versiyalari hamda manba kodlari GitHub da majud. DHIS2 Аndroid Kuzatuv-nazorat dasturi GNU General Public License litsenziyasiga binoan Free Software Foundation tomonidan eʼlon qilingan - http://www.gnu.org/licenses/gpl-3.0.html ga qarang.</string>
+    <string name="about_dev">Oslo Universiteti tomonidan ishlab chiqilgan va qoʼllab quvvatlanadigan DHIS2 loyihasi</string>
+    <string name="about_contact">Ushbu dastur haqida qoʼshimcha maʼlumot yoki savollar uchun android@dhis2.org elektron manziliga yozing</string>
+
+    <string name="search_program_not_selected">Roʼyxatdan oʼtishni yoqish uchun dasturni tanlang</string>
+    <string name="search_access_error">Sizda kerakli ruxsat yoʼq</string>
+    <string name="all_tei_type">Barchasi %s</string>
+    <string name="invalid_phone_number">Bu yaroqli telefon raqami emas</string>
+    <string name="invalid_possitive_zero">Faqat musbat raqamlar yoki nolga ruxsat beriladi</string>
+    <string name="select_option">Variant tanlang</string>
+    <string name="event_completed_title">Hodisa/Tadbir Tugallandi</string>
+    <string name="event_completed_message">Ushbu dasturdagi barcha hodisa/tadbirlar yakunlandi. Haqiqatdan ham ushbu dasturni yopishni xoxlaysizmi?</string>
+    <string name="check_event">Tekshiring</string>
+
+    <string name="menu_home">Бош саҳифа</string>
+    <string name="appwidget_text">MISOL</string>
+    <string name="showHelp">Yordam bering</string>
+    <string name="tuto_dashboard_1">Bu shaxs-obʼektlarni boshqaruv paneli</string>
+    <string name="tuto_dashboard_2">Shaxs-obʼektlarning profil maʼlumotlarini koʼring...</string>
+    <string name="tuto_dashboard_6">Bu yerda siz barcha hodisa/tadbirlarni koʼrasiz. Hodisa/tadbir tafsilotlarini koʼrish uchun bosing.</string>
+    <string name="tuto_dashboard_7">Oʼzaro munosabatlarni qoʼshish, koʼrsatgichlarni koʼrish yoki yozuvlarni yozish uchun menyu boʼylab harakatlananing.</string>
+    <string name="tuto_event_initial_new_1">Hodisa/tadbir yaratish uchun barcha maʼlumotlarni kiriting</string>
+    <string name="tuto_event_initial_1">Hodisa/tadbirning tugash holatini tekshirish uchun, bosing.</string>
+    <string name="empty_tei_add">Hech qanday hodisa/tadbir roʼyxatdan oʼtkazilmagan, yangisini qoʼshish uchun \"+\" tugmasini bosing.</string>
+    <string name="qr_data_values">Maʼlumotlarning qiymatlari</string>
+    <string name="info">Аxborot</string>
+    <string name="qr_no_id_error">ID oʼqib boʼlmadi</string>
+    <string name="delete_local_data">Lokal maʼlumotlarni oʼchirib tashlash</string>
+    <string name="dashboard_overview">Qisqacha koʼzdan kechirish</string>
+    <string name="empty_indicators">Ushbu dastur uchun indikator mavjud emas.</string>
+    <string name="unselect_enrollment">Barcha qaydlar</string>
+    <string name="unselect_enrollment_description">Barcha faol dasturlar bilan boshqaruv panelini koʼrsatish</string>
+    <string name="error_dialog_title">Sinxronizatsiyadagi xatoliklar jurnali</string>
+    <string name="share_with">bilan ulashish ...</string>
+    <string name="unique_warning">Qiymat noyob boʼlishi lozim, bir biriga oʼxshash topildi. U saqlanmadi. Iltimos, tekshirib koʼrish.</string>
+    <string name="please_wait">Iltimos, kuting</string>
+    <string name="skip">Oʼtkazib yuborish</string>
+    <string name="no_intructions">Ushbu ekrandagi haqida maʼlumot yoʼq</string>
+    <string name="delete_local_data_message">Sinxronizatsiya qilinmagan maʼlumotlar yoʼqoladi. Haqiqatdan ham davom ettirishni xoxlaysizmi?</string>
+    <string name="delete_local_data_error">Maʼlumotlarni oʼchirib boʼlmadi. Iltimos, qayta urinib koʼring.</string>
+    <string name="delete_local_data_done">Lokal maʼlumotlarni oʼchirish muvaffaqiyatli yakunlandi.</string>
+    <string name="resource_not_found">%s topilmadi</string>
+    <string name="relationship_not_found_message">Siz kirib koʼrmoqchi boʼlgan yozuv mavjud emas. Buni qidirmoqchimisiz?</string>
+    <string name="sync_by_sms">SMS orqali sinxronlash</string>
+    <string name="state_warning">Ogohlantirish</string>
+    <string name="state_relationship">Oʼzaro aloqa</string>
+    <string name="action_close">Yopmoq</string>
+    <string name="tuto_main_11">Endi siz shu tugmaga bosish orqali sinxronizatsiya maʼlumotlarini tekshirishingiz mumkin</string>
+    <string name="relationship_error_recursive">Yozuvni oʼzaro aloqalar bilan bogʼlab boʼlmadi</string>
+    <string name="change_calendar_view">Taqvim koʼrinishini oʼzgartirish</string>
+    <string name="relationship_without_enrollment">Siz kirib koʼrmoqchi boʼlgan yozuv qayd etilmagan. Siz boshqaruv paneliga kira olmaysiz</string>
+    <string name="formatting_error">Formatlashda xatolik</string>
+    <string name="delete_authority_error">Ushbu yozuvni oʼchirib tashlash huquqiga ega emassiz</string>
+    <string name="adjusting_form">Shakl sozlanmoqda...</string>
+
+    <string name="sms_amount_question">Siz %d ta xabar yuborilishini qabul qilasizmi?</string>
+    <string name="sms_sending">%1$d / %2$d yuborilmoqda</string>
+    <string name="sms_waiting_amount_confirm">Kutish vaqtini tasdiqlash - 1%d</string>
+    <string name="sms_all_sent">Barchasi yuborildi</string>
+    <string name="sms_submission_completed">Yuborish tugallandi</string>
+    <string name="sms_waiting_confirmation">SMS xabarni tasdiqlash uchun kutish</string>
+    <string name="sms_waiting_timeout">Tasdiqlash xabari olinmadi</string>
+    <string name="sms_confirmed">Tasdiqlash qabul qilindi</string>
+    <string name="sms_error">Yuborishda xatolik</string>
+    <string name="sms_error_item_not_ready">Maʼlumotlar joʼnatishga tayyor emas</string>
+    <string name="sms_error_no_network">Internet aloqa uzilgan</string>
+    <string name="sms_error_no_check_network_permission">Tarmoq ruxsati tekshiruvi yoʼq</string>
+    <string name="sms_error_no_receive_sms_permission">SMS ga ruxsat yoʼq</string>
+    <string name="sms_error_no_send_sms_permission">Yuborishga ruxsat yoʼq</string>
+    <string name="sms_error_no_gateway_set">Shlyuz oʼrnatilmagan</string>
+    <string name="sms_error_no_user_login">Foydalanuvchi tizimga kirmagan</string>
+    <string name="sms_error_module_disabled">SMS modul oʼchirib qoʼyilgan</string>
+    <string name="sms_metadata_empty">SMS modul ishga tushirilmadi, talab qilingan metamaʼlumotlar topilmadi</string>
+    <string name="sms_count_error">Qabul qilinmagan SMS lar soni</string>
+    <string name="sms_state_started">SMS yuborilishi boshlandi</string>
+    <string name="sms_state_converted">Maʼlumotlar oʼqildi va qayta moslashtirildi. Yuborish identifikatori %d</string>
+    <string name="sms_title_enrollment">SMS TEI roʼyxatdan oʼtish va qayd qilish</string>
+    <string name="sms_title_event">SMS hodisa/tadbirlarni yuborish</string>
+    <string name="sms_title_data_set">SMS maʼlumotlar toʼplamini yuborish</string>
+
+    <string name="syncing">Sinxronizatsiyalanmoqda...</string>
+
+    <string name="copied_text">Nusxa olindi</string>
+
+    <!--region TRACKER IMPORT CONFLICT MESSAGES-->
+    <string name="polygon">Poligon</string>
+    <!--endregion-->
+
+    <string name="security_title">Xavfsizlik</string>
+    <string name="security_rooted_message">Xavfsizlik tufayli dasturning ushbu versiyasidan andoza olingan qurilmalarga foydalanishga ruxmat berilmagan. Iltimos, mashq versiyasidan foydalaning.</string>
+
+    <string name="filters_active">Filtrlar qoʼllaniladi</string>
+    <string name="filters_disabled">Hech qanday filtr qoʼllanilmagan</string>
+    <string name="filters_title_period">davr</string>
+    <string name="filters_title_org_unit">Tashkiliy boʼlim</string>
+    <string name="filters_title_state">Sinxronlash</string>
+    <string name="filters_title_assigned">Menga berilgan vakolat</string>
+    <string name="filter_period_today">бугун</string>
+    <string name="filter_period_yesterday">Кеча</string>
+    <string name="filter_period_tomorrow">Ertaga</string>
+    <string name="filter_period_this_week">Ушбу ҳафта</string>
+    <string name="filter_period_last_week">Охирги ҳафта</string>
+    <string name="filter_perdior_next_week">Keyingi hafta</string>
+    <string name="filter_period_this_month">Ушбу ой</string>
+    <string name="filter_period_last_month">Охирги ой</string>
+    <string name="filter_period_next_month">Keyingi oy</string>
+    <string name="filter_period_form_to">Dan-Gacha</string>
+    <string name="filter_period_other">Boshqa</string>
+    <string name="filter_period_any">Istalgan vaqt</string>
+    <string name="filter_event_status_open">Ochiq</string>
+    <string name="filter_event_status_schedule">Reja</string>
+    <string name="filter_event_status_overdue">Muddat oʼtgan</string>
+    <string name="filter_event_status_visited">Tashrif buyurdi</string>
+    <string name="filter_event_status_completed">bajarildi</string>
+    <string name="filter_event_status_skipped">Oʼtkazib yuborildi</string>
+    <string name="sms_enabled">SMS modul yoqib qoʼyilgan</string>
+    <string name="sms_disabled">SMS modul oʼchirib qoʼyilgan</string>
+    <string name="sms_downloading_data">SMS modul uchun maʼlumotlar yuklanmoqda. Iltimos, kuting</string>
+    <string name="sms_empty_gateway">SMS shlyuz boʼsh boʼlishi mumkin emas</string>
+    <string name="granular_sync_enrollments_empty">Yuklash uchun qayd etilganlar yoʼq</string>
+    <string name="granular_sync_unsupported_task">Ushbu konvertatsiya qilish vazifasi qoʼllab-quvvatlanmaydi</string>
+    <string name="set_pin">PIN kodni oʼrnating</string>
+    <string name="conflict">Nomutanosiblik</string>
+    <string name="change_event_date">Sanani oʼzgartirish</string>
+    <string name="go_back">Orqaga qayting</string>
+    <string name="data_sets">Maʼlumotlar toʼplami</string>
+    <string name="no_notes">Izohlar yoʼq</string>
+    <string name="no_add_notes">Ortiq eslatmalar qoʼshib boʼlmaydi</string>
+    <string name="new_note">Yangi eslatma</string>
+    <string name="note_saved">Eslatma saqlandi</string>
+    <string name="discard_note">Eslatma bekor qilinsinmi?</string>
+    <string name="interval_now">hozir</string>
+    <string name="interval_minute_ago">%d daqiqa oldin</string>
+    <string name="interval_hour_ago">%d soat oldin</string>
+    <string name="interval_yesterday">Кеча</string>
+    <string name="enrollment_single_section_label">Аtribatlar - %s</string>
+    <string name="select_time">Vaqtni tanlang</string>
+    <string name="enter_letter">Xatni kiriting</string>
+    <string name="enter_unit_interval">0 dan 1 gacha raqamni kiriting</string>
+    <string name="enter_percentage">Foizni kiriting</string>
+    <string name="enter_phone_number">Telefon raqamini kiriting</string>
+    <string name="enter_email">ye-pochta manzilini kiriting</string>
+    <string name="choose_ou">Tashkiliy boʼlimni tanlang</string>
+    <string name="enter_url">URL ni tanlang</string>
+    <string name="enter_value">Qiymatni tanlang</string>
+    <string name="reserved_values_hint">TEI atributidan yuklangan himoyalangan qiymatlar</string>
+    <string name="reserved_values_left">%s himoyalangan qiymatlar qoldi</string>
+    <string name="manage_reserved_values_button">Himoyalangan qiymatlarni boshqarish</string>
+    <string name="events_to_download">Yuklab olish uchun hodisa/tadbirlar</string>
+    <string name="teis_to_download">Yuklash uchun TEI</string>
+    <string name="program_settings">Dastur sozlamalari</string>
+    <string name="limit_scope_all_ou_trailing">barcha tashkiliy boʼlimlar uchun</string>
+    <string name="limit_scope_ou_trailing">har bir tashkiliy boʼlim</string>
+    <string name="limit_scope_program_trailing">har bir dastur</string>
+    <string name="limit_scope_ou_program_trailing">har bir tashkiliy boʼlim va dastur uchun</string>
+    <string name="activity_program_settings">Dastur sinxronizatsiyasini sozlash</string>
+    <string name="syncing_period_not_editable">Sinxronizatsiya davri tahrirlanmaydi</string>
+    <string name="sync_parameters_not_editable">Sinxronizatsiya parametri tahrirlanmaydi</string>
+    <string name="rv_no_editable">Yuklangan himoyalangan qiymatlar soni tahrirlanmaydi</string>
+    <string name="downloading">Yuklab olinmoqda</string>
+    <string name="filter_sync_synced">Sinxronizatsiyalangan</string>
+    <string name="filter_sync_not_synced">Sinxronizatsiyalanmagan</string>
+    <string name="filter_sync_error">Sinxronlashda xatolik</string>
+    <string name="filter_sync_sms">SMS Sinxronizatsiyalangan</string>
+    <string name="saved">Saqlandi!</string>
+    <string name="fk_message">%s %s dan %s %s yoʼqolgan</string>
+    <string name="filters_title_event_status">Hodisa/Tadbir holati</string>
+    <string name="dataset_empty_list_can_create">Maʼlumot yoʼq. Yangi yozuv qoʼshish uchun \"+\" tugmasini bosing</string>
+    <string name="dataset_emtpy_list_can_not_create">Maʼlumot yoʼq. Sizda yangi yozuvlarni qoʼshishga ruxsat yoʼq.</string>
+    <string name="validation_rules_empty_description">Hech qanday tavsif yoki koʼrsatma berilmagan</string>
+    <string name="validation_rules_data_to_review">Koʼrib chiqiladigan maʼlumotlar</string>
+    <string name="status_change_error_active_exist">Qayd allaqachon mavjud</string>
+    <string name="enrollment_status_active">Ochiq</string>
+    <string name="enrollment_status_completed">Bajarildi</string>
+    <string name="enrollment_status_cancelled">Bekor qilindi</string>
+    <string name="download_tei_error">Tanlangan %s  yuklanmadi.</string>
+    <string name="filters_title_date">Sana</string>
+    <string name="privacy_policy_title">Maxfiylik siyosati</string>
+    <string name="field_is_mandatory">Maydon toʼldirilishi majburiy</string>
+    <string name="security_debugger_message">Xavfsizlik sababli ushbu versiyadan adb formatidan foydalanishga ruxsat berilmagan.Ilitmos, mashq versiyasidan foydalaning.</string>
+
+    <string name="customactivityoncrash_error_activity_restart_app">Orqaga qayting</string>
+    <string name="customactivityoncrash_error_activity_error_details_copy">Buferga nusxa olish</string>
+    <string name="enrollment_date_edition_warning">Rejalashtirila olinmaydigan hodisa/tadbir rejalari mavjud</string>
+    <string name="section_charts">Diagrammalar</string>
+    <string name="navigation_list_view">Patsientlar Roʼyxati</string>
+    <string name="navigation_table_view">Jadval koʼrinishi</string>
+    <string name="navigation_map_view">Харита</string>
+    <string name="navigation_analytics">Аnalitika</string>
+    <string name="navigation_tasks">Vazifalar</string>
+    <string name="navigation_programs">Dasturlar</string>
+    <string name="navigation_charts">Diagrammalar</string>
+    <string name="navigation_notes">Izohlar</string>
+    <string name="navigation_data_entry">Maʼlumot kiritish</string>
+    <string name="navigation_tei_data">Тафсилотлари</string>
+    <string name="show_table_graph">Jadval sifatida koʼrish</string>
+    <string name="filter_period_this_year">Ушбу йил</string>
+    <string name="filter_period_this_bimonth">Ushbu juft oylik</string>
+    <string name="filter_period_last_bimonth">Oxirgi juft oylik</string>
+    <string name="filter_period_this_quarter">Ушбу квартал</string>
+    <string name="filter_period_last_quarter">Охирги квартал</string>
+    <string name="filter_period_weeks_this_year">Haftalar ayni yilda</string>
+    <string name="filter_period_months_this_year">Oylar ushbu yilda</string>
+    <string name="filter_period_bimonths_this_year">Ushbu yildagi juft oylar</string>
+    <string name="filter_period_quarters_this_year">Ushbu yildagi kvartallar</string>
+    <string name="filter_period_months_last_year">Oʼtgan yildagi oylar</string>
+    <string name="filter_period_last_year">Охирги йил</string>
+    <string name="filter_period_this_financial_year">Ушбу молиявий йил</string>
+    <string name="filter_period_last_financial_year">Охирги молиявий йил</string>
+    <string name="section_feedback">Fikr-mulohaza</string>
+    <string name="section_indicators">Indikatorlar</string>
+    <string name="troubleshooting_language_title">Til</string>
+    <string name="search_too_many_results">Natija juda koʼp</string>
+    <string name="sync_dialog_title_synced">Sinxronizatsiyalangan</string>
+    <string name="sync_dialog_title_syncing">Sinxronlashmoqda</string>
+    <string name="sync_dialog_action_send">Yuborish</string>
+    <string name="marked_follow_up">Kuzatuv uchun belgilangan</string>
+    <string name="skipped">Oʼtkazib yuborildi</string>
+    <string name="programs">Dasturlar</string>
+    <string name="sync_error">Sinxronlashda xatolik</string>
+    <string name="mark_follow_up">Kuzatuv uchun belgilang</string>
+    <string name="coordinates">Координаталар</string>
+    <string name="schedule">Reja</string>
+    <string name="scheduled_enter_event">Reja boʼyicha</string>
+    <string name="program_stage">Dastur bosqichi</string>
+    <string name="timeline">Xronologiya</string>
+    <string name="show_more">Koʼproq koʼrsatish</string>
+    <string name="show_less">Kamroq koʼrsatish</string>
+    <string name="sync">Sinxronlash</string>
+    <string name="show_description">Tavsifni koʼrsatish</string>
+    <string name="hide_description">Tavsifni berkitish</string>
+    </resources>

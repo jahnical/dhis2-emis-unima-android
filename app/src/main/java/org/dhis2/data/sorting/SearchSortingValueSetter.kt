@@ -4,6 +4,7 @@ import org.dhis2.commons.filters.Filters
 import org.dhis2.commons.filters.sorting.SortingItem
 import org.dhis2.commons.filters.sorting.SortingStatus
 import org.dhis2.data.enrollment.EnrollmentUiDataHelper
+import org.dhis2.mobile.commons.extensions.toJavaDate
 import org.dhis2.usescases.searchTrackEntity.SearchTeiModel
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope
@@ -21,18 +22,21 @@ class SearchSortingValueSetter(
     private val uiDateFormat: String,
     private val enrollmentUiDataHelper: EnrollmentUiDataHelper,
 ) {
-
-    fun setSortingItem(teiModel: SearchTeiModel, sortingItem: SortingItem?): Pair<String, String>? {
+    fun setSortingItem(
+        teiModel: SearchTeiModel,
+        sortingItem: SortingItem?,
+    ): Pair<String, String>? {
         val sortingKeyValue: Pair<String, String>?
         return if (
             sortingItem != null && sortingItem.filterSelectedForSorting != Filters.ORG_UNIT
         ) {
-            sortingKeyValue = when (sortingItem.filterSelectedForSorting) {
-                Filters.PERIOD -> getTeiSortedEvent(teiModel, sortingItem.sortingStatus)
-                Filters.ENROLLMENT_DATE -> getTeiSortedEnrollmentDate(teiModel)
-                Filters.ENROLLMENT_STATUS -> getTeiSortedStatus(teiModel)
-                else -> Pair(unknownLabel, unknownLabel)
-            }
+            sortingKeyValue =
+                when (sortingItem.filterSelectedForSorting) {
+                    Filters.PERIOD -> getTeiSortedEvent(teiModel, sortingItem.sortingStatus)
+                    Filters.ENROLLMENT_DATE -> getTeiSortedEnrollmentDate(teiModel)
+                    Filters.ENROLLMENT_STATUS -> getTeiSortedStatus(teiModel)
+                    else -> Pair(unknownLabel, unknownLabel)
+                }
             sortingKeyValue ?: Pair(unknownLabel, unknownLabel)
         } else {
             null
@@ -44,18 +48,22 @@ class SearchSortingValueSetter(
         sortingStatus: SortingStatus,
     ): Pair<String, String>? {
         var eventDate = unknownLabel
-        val sortedEvents = d2.eventModule().events()
-            .byEnrollmentUid().eq(teiModel.selectedEnrollment?.uid() ?: "")
-            .byDeleted().isFalse
-            .orderByTimeline(
-                if (sortingStatus === SortingStatus.ASC) {
-                    RepositoryScope.OrderByDirection.ASC
-                } else {
-                    RepositoryScope.OrderByDirection.DESC
-                },
-            )
-            .blockingGet()
-        if (sortedEvents != null && sortedEvents.isNotEmpty()) {
+        val sortedEvents =
+            d2
+                .eventModule()
+                .events()
+                .byEnrollmentUid()
+                .eq(teiModel.selectedEnrollment?.uid ?: "")
+                .byDeleted()
+                .isFalse
+                .orderByTimeline(
+                    if (sortingStatus === SortingStatus.ASC) {
+                        RepositoryScope.OrderByDirection.ASC
+                    } else {
+                        RepositoryScope.OrderByDirection.DESC
+                    },
+                ).blockingGet()
+        if (sortedEvents.isNotEmpty()) {
             val sortedEvent = sortedEvents.first()
             val sortedDate: Date? =
                 if (sortedEvent.status() == EventStatus.SCHEDULE ||
@@ -66,8 +74,9 @@ class SearchSortingValueSetter(
                 } else {
                     sortedEvent.eventDate()
                 }
-            eventDate = SimpleDateFormat(uiDateFormat, Locale.getDefault())
-                .format(sortedDate)
+            eventDate =
+                SimpleDateFormat(uiDateFormat, Locale.getDefault())
+                    .format(sortedDate)
         }
         return Pair(eventDateLabel, eventDate)
     }
@@ -77,20 +86,24 @@ class SearchSortingValueSetter(
         if (teiModel.selectedEnrollment != null) {
             enrollmentStatusValue =
                 enrollmentUiDataHelper.getEnrollmentStatusClientName(
-                    teiModel.selectedEnrollment.status()!!,
+                    teiModel.selectedEnrollment.status,
                 )
         }
         return Pair(enrollmentStatusLabel, enrollmentStatusValue)
     }
 
-    private fun getTeiSortedEnrollmentDate(teiModel: SearchTeiModel): Pair<String, String>? {
-        return teiModel.selectedEnrollment?.let {
-            val enrollmentDateLabel = d2.programModule().programs()
-                .uid(it.program())
-                .blockingGet()?.enrollmentDateLabel() ?: enrollmentDateDefaultLabel
-            val enrollmentDateValue = SimpleDateFormat(uiDateFormat, Locale.getDefault())
-                .format(teiModel.selectedEnrollment.enrollmentDate())
+    private fun getTeiSortedEnrollmentDate(teiModel: SearchTeiModel): Pair<String, String>? =
+        teiModel.selectedEnrollment?.let {
+            val enrollmentDateLabel =
+                d2
+                    .programModule()
+                    .programs()
+                    .uid(it.program)
+                    .blockingGet()
+                    ?.displayEnrollmentDateLabel() ?: enrollmentDateDefaultLabel
+            val enrollmentDateValue =
+                SimpleDateFormat(uiDateFormat, Locale.getDefault())
+                    .format(teiModel.selectedEnrollment.enrollmentDate?.toJavaDate())
             Pair(enrollmentDateLabel, enrollmentDateValue)
         } ?: Pair(enrollmentDateDefaultLabel, unknownLabel)
-    }
 }

@@ -11,8 +11,10 @@ import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MoveDown
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -23,15 +25,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import org.dhis2.App
 import org.dhis2.R
 import org.dhis2.commons.Constants
 import org.dhis2.commons.Constants.TEI_UID
+import org.dhis2.commons.dialogs.bottomsheet.DeleteBottomSheetDialog
 import org.dhis2.commons.featureconfig.data.FeatureConfigRepository
 import org.dhis2.commons.filters.FilterManager
 import org.dhis2.commons.filters.Filters
@@ -39,18 +48,16 @@ import org.dhis2.commons.navigator.TeiDashboardComponentProvider
 import org.dhis2.commons.network.NetworkUtils
 import org.dhis2.commons.orgunitselector.OUTreeFragment
 import org.dhis2.commons.orgunitselector.OUTreeModel
-import org.dhis2.commons.orgunitselector.OrgUnitSelectorScope
+import org.dhis2.mobile.commons.orgunit.OrgUnitSelectorScope
 import org.dhis2.commons.resources.EventResourcesProvider
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.commons.sync.OnDismissListener
 import org.dhis2.commons.sync.SyncContext
 import org.dhis2.databinding.ActivityDashboardMobileBinding
 import org.dhis2.form.model.EnrollmentMode
-import org.dhis2.form.ui.provider.FormResultDialogProvider
 import org.dhis2.tracker.TEIDashboardItems
-import org.dhis2.tracker.relationships.model.RelationshipTopBarIconState
+import org.dhis2.tracker.relationships.ui.state.RelationshipTopBarIconState
 import org.dhis2.ui.ThemeManager
-import org.dhis2.ui.dialogs.bottomsheet.DeleteBottomSheetDialog
 import org.dhis2.usescases.enrollment.DateEditionWarningHandler
 import org.dhis2.usescases.enrollment.EnrollmentActivity
 import org.dhis2.usescases.enrollment.EnrollmentActivity.Companion.getIntent
@@ -101,9 +108,6 @@ class TeiDashboardMobileActivity :
     @Inject
     lateinit var dateEditionWarningHandler: DateEditionWarningHandler
 
-    @Inject
-    lateinit var enrollmentResultDialogProvider: FormResultDialogProvider
-
     var featureConfig: FeatureConfigRepository? = null
         @Inject set
 
@@ -128,7 +132,6 @@ class TeiDashboardMobileActivity :
     @Inject
     lateinit var eventResourcesProvider: EventResourcesProvider
 
-    lateinit var programModel: DashboardProgramModel
     var teiUid: String? = null
     var programUid: String? = null
     var enrollmentUid: String? = null
@@ -140,18 +143,21 @@ class TeiDashboardMobileActivity :
     private var elevation = 0f
     private var restartingActivity = false
 
-    private val detailsLauncher = registerForActivityResult(
+    private val detailsLauncher =
+        registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) {
     }
 
-    private val teiProgramListLauncher = registerForActivityResult(
+    private val teiProgramListLauncher =
+        registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) {
         if (it.resultCode == RESULT_OK) {
             it.data?.let { dataIntent ->
                 if (dataIntent.hasExtra(GO_TO_ENROLLMENT)) {
-                    val intent = getIntent(
+                    val intent =
+                        getIntent(
                         this,
                         dataIntent.getStringExtra(GO_TO_ENROLLMENT) ?: "",
                         dataIntent.getStringExtra(GO_TO_ENROLLMENT_PROGRAM) ?: "",
@@ -185,7 +191,8 @@ class TeiDashboardMobileActivity :
             programUid = intent.getStringExtra(Constants.PROGRAM_UID)
             enrollmentUid = intent.getStringExtra(Constants.ENROLLMENT_UID)
         }
-        (applicationContext as App).createDashboardComponent(
+        (applicationContext as App)
+            .createDashboardComponent(
             TeiDashboardModule(
                 this,
                 teiUid ?: "",
@@ -237,13 +244,17 @@ class TeiDashboardMobileActivity :
     }
 
     private fun observeDashboardModel() {
-        dashboardViewModel.dashboardModel.observe(this) {
-            if (sessionManagerServiceImpl.isUserLoggedIn()) {
-                when (it) {
-                    is DashboardEnrollmentModel -> setData(it)
-                    is DashboardTEIModel -> setDataWithOutProgram(it)
-                    else -> // Do nothing
-                        Unit
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                dashboardViewModel.dashboardModel.collectLatest {
+                    if (sessionManagerServiceImpl.isUserLoggedIn()) {
+                        when (it) {
+                            is DashboardEnrollmentModel -> setData(it)
+                            is DashboardTEIModel -> setDataWithOutProgram(it)
+                            else -> // Do nothing
+                                Unit
+                        }
+                    }
                 }
             }
         }
@@ -297,7 +308,8 @@ class TeiDashboardMobileActivity :
         if (isLandscape() && enrollmentUid != null) {
             val saveButton = findViewById<View>(R.id.saveLand) as FloatingActionButton
             buildEnrollmentForm(
-                config = EnrollmentFormBuilderConfig(
+                config =
+                    EnrollmentFormBuilderConfig(
                     enrollmentUid = enrollmentUid!!,
                     programUid = programUid!!,
                     enrollmentMode = EnrollmentMode.CHECK,
@@ -309,7 +321,6 @@ class TeiDashboardMobileActivity :
                 ),
                 locationProvider = locationProvider,
                 dateEditionWarningHandler = dateEditionWarningHandler,
-                enrollmentResultDialogProvider = enrollmentResultDialogProvider,
             ) {
                 dashboardViewModel.updateDashboard()
             }
@@ -337,7 +348,7 @@ class TeiDashboardMobileActivity :
     private fun setUpNavigationBar() {
         binding.navigationBar.setContent {
             DHIS2Theme {
-                val uiState by dashboardViewModel.navigationBarUIState.collectAsState()
+                val uiState by dashboardViewModel.navigationBarUIState.collectAsStateWithLifecycle()
                 var selectedHomeItemIndex by remember(uiState) {
                     mutableIntStateOf(
                         uiState.items.indexOfFirst {
@@ -354,8 +365,10 @@ class TeiDashboardMobileActivity :
                     dashboardViewModel.onNavigationItemSelected(itemId)
                 }
 
-                uiState.selectedItem?.let {
-                    navigateToFragment(it)
+                LaunchedEffect(uiState.selectedItem) {
+                    uiState.selectedItem?.let {
+                        navigateToFragment(it)
+                    }
                 }
             }
         }
@@ -415,9 +428,10 @@ class TeiDashboardMobileActivity :
             }
         }
 
-        supportFragmentManager.beginTransaction()
+        supportFragmentManager
+            .beginTransaction()
             .replace(R.id.fragmentContainer, fragment, item.name)
-            .commit()
+            .commitAllowingStateLoss()
 
         updateTopBar(item)
     }
@@ -505,8 +519,8 @@ class TeiDashboardMobileActivity :
     }
 
     private fun setData(dashboardModel: DashboardEnrollmentModel) {
-        themeManager.setProgramTheme(dashboardModel.currentProgram().uid())
-        setProgramColor(dashboardModel.currentProgram().uid())
+        themeManager.setProgramTheme(dashboardModel.currentProgram()?.uid()!!)
+        setProgramColor(dashboardModel.currentProgram()?.uid())
         val title = String.format(
             "%s %s",
             if (dashboardModel.getTrackedEntityAttributeValueBySortOrder(1) != null) {
@@ -685,11 +699,13 @@ class TeiDashboardMobileActivity :
             .singleSelection()
             .withModel(
                 OUTreeModel(
-                    title = getString(
+                    title =
+                        getString(
                         R.string.transfer_tei_org_sheet_title,
                         presenter.teType.lowercase(),
                     ),
-                    subtitle = getString(
+                    subtitle =
+                        getString(
                         R.string.transfer_tei_org_sheet_description,
                         ownerOrgUnit?.displayName(),
                     ),
@@ -699,25 +715,23 @@ class TeiDashboardMobileActivity :
                     doneButtonIcon = Icons.Outlined.MoveDown,
                     hideOrgUnits = ownerOrgUnit?.let { listOf(it) },
                 ),
-            )
-            .orgUnitScope(
+            ).orgUnitScope(
                 OrgUnitSelectorScope.ProgramSearchScope(programUid),
-            )
-            .onSelection { selectedOrgUnits ->
+            ).onSelection { selectedOrgUnits ->
                 if (selectedOrgUnits.isNotEmpty()) {
                     dashboardViewModel.transferTei(
                         selectedOrgUnits.first().uid(),
                     ) {
                         val contextView = findViewById<View>(R.id.navigationBar)
-                        Snackbar.make(
+                        Snackbar
+                            .make(
                             contextView,
                             R.string.successfully_transferred,
                             Snackbar.LENGTH_SHORT,
                         ).show()
                     }
                 }
-            }
-            .build()
+            }.build()
             .show(supportFragmentManager, "ORG_UNIT_DIALOG")
     }
 
@@ -740,11 +754,13 @@ class TeiDashboardMobileActivity :
         val dashboardModel = dashboardViewModel.dashboardModel.value
         if (dashboardModel is DashboardEnrollmentModel) {
             DeleteBottomSheetDialog(
-                title = getString(R.string.remove_enrollment_dialog_title).format(
-                    dashboardModel.currentProgram().displayName(),
+                title =
+                    getString(R.string.remove_enrollment_dialog_title).format(
+                    dashboardModel.currentProgram()?.displayName(),
                 ),
-                description = getString(R.string.remove_enrollment_dialog_message).format(
-                    dashboardModel.currentProgram().displayName(),
+                description =
+                    getString(R.string.remove_enrollment_dialog_message).format(
+                    dashboardModel.currentProgram()?.displayName(),
                 ),
                 mainButtonText = getString(R.string.remove),
                 onMainButtonClick = {
@@ -785,7 +801,11 @@ class TeiDashboardMobileActivity :
         finish()
     }
 
-    override fun restoreAdapter(programUid: String, teiUid: String, enrollmentUid: String) {
+    override fun restoreAdapter(
+        programUid: String,
+        teiUid: String,
+        enrollmentUid: String
+    ) {
         startActivity(
             intent(
                 this,
@@ -862,7 +882,8 @@ class TeiDashboardMobileActivity :
 
     private fun setupMoreOptionsMenu() {
         binding.moreOptions.setContent {
-            val menuItems = getEnrollmentMenuList(
+            val menuItems =
+                getEnrollmentMenuList(
                 enrollmentUid = enrollmentUid,
                 resourceManager = resourceManager,
                 presenter = presenter,
@@ -889,11 +910,13 @@ class TeiDashboardMobileActivity :
 
                     EnrollmentMenuItem.ENROLLMENTS -> presenter.onEnrollmentSelectorClick()
                     EnrollmentMenuItem.SHARE -> startQRActivity()
-                    EnrollmentMenuItem.ACTIVATE -> dashboardViewModel.updateEnrollmentStatus(
+                    EnrollmentMenuItem.ACTIVATE ->
+                        dashboardViewModel.updateEnrollmentStatus(
                         EnrollmentStatus.ACTIVE,
                     )
 
-                    EnrollmentMenuItem.DEACTIVATE -> dashboardViewModel.updateEnrollmentStatus(
+                    EnrollmentMenuItem.DEACTIVATE ->
+                        dashboardViewModel.updateEnrollmentStatus(
                         EnrollmentStatus.CANCELLED,
                     )
 

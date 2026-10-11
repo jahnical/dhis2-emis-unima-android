@@ -2,8 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
-    kotlin("android")
-    kotlin("kapt")
+    alias(libs.plugins.legacy.kapt)
     id("kotlin-parcelize")
     id("dagger.hilt.android.plugin")
     id("kotlinx-serialization")
@@ -20,7 +19,6 @@ base {
     archivesName.set("psm-v" + libs.versions.vName.get())
 }
 
-
 android {
     compileSdk = libs.versions.sdk.get().toInt()
     namespace = "org.saudigitus.emis"
@@ -28,13 +26,6 @@ android {
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
         multiDexEnabled = true
-
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments["dagger.hilt.disableCrossCompilationRootValidation"] = "true"
-            }
-        }
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -53,7 +44,6 @@ android {
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -87,8 +77,8 @@ kotlin {
 }
 
 dependencies {
-
     implementation(project(":commons"))
+    implementation(project(":commonskmm"))
     implementation(project(":compose-table"))
     implementation(project(":form"))
     implementation(project(":dhis2-mobile-program-rules"))
@@ -113,19 +103,15 @@ dependencies {
     implementation(libs.kotlin.serialization.json)
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.androidx.lifecycle.runtime.compose.android)
-
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.kotlin)
+    implementation(libs.jackson.annotations)
 
     kapt(libs.dagger.hilt.android.compiler)
 
     coreLibraryDesugaring(libs.desugar)
 
-    debugImplementation(libs.bundles.stock.debugImplementation)
-    releaseImplementation(libs.bundles.stock.releaseImplementation)
     testImplementation(libs.bundles.stock.test)
-
-    debugImplementation(libs.analytics.flipper.network) {
-        exclude("com.squareup.okhttp3")
-    }
 }
 
 kapt {

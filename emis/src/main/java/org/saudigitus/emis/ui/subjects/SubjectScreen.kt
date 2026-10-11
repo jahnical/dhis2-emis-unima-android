@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -54,9 +53,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.dhis2.commons.resources.ColorUtils
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardColumn
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.components.DetailsWithOptions
@@ -213,7 +215,7 @@ fun SubjectScreen(
 
                                 val liveIndex = SubjectTab.entries.indexOf(latestSelectedTab)
                                 val atBoundary = (accumulatedDrag > 0 && liveIndex <= 0) ||
-                                    (accumulatedDrag < 0 && liveIndex >= SubjectTab.entries.lastIndex)
+                                        (accumulatedDrag < 0 && liveIndex >= SubjectTab.entries.lastIndex)
 
                                 overscrollScope.launch {
                                     if (atBoundary) {
@@ -298,10 +300,10 @@ fun SubjectScreen(
                         transitionSpec = {
                             if (targetState.ordinal >= initialState.ordinal) {
                                 (slideInHorizontally { width -> width } + fadeIn()) togetherWith
-                                    (slideOutHorizontally { width -> -width } + fadeOut())
+                                        (slideOutHorizontally { width -> -width } + fadeOut())
                             } else {
                                 (slideInHorizontally { width -> -width } + fadeIn()) togetherWith
-                                    (slideOutHorizontally { width -> width } + fadeOut())
+                                        (slideOutHorizontally { width -> width } + fadeOut())
                             }
                         },
                         label = "subjectTabContent",
@@ -326,7 +328,10 @@ fun SubjectScreen(
                                                 null
                                             },
                                             onClick = {
-                                                onClick.invoke(subject.uid, subject.displayName ?: "-")
+                                                onClick.invoke(
+                                                    subject.uid,
+                                                    subject.displayName ?: "-"
+                                                )
                                             },
                                         )
                                     }
@@ -341,7 +346,7 @@ fun SubjectScreen(
                                     items(filteredStudentEntries) { (student, card) ->
                                         val isInactive =
                                             student.enrollments.getOrNull(0)?.status() ==
-                                                EnrollmentStatus.CANCELLED
+                                                    EnrollmentStatus.CANCELLED
                                         val cardWithClick = card.copy(
                                             onCardCLick = {
                                                 onStudentClick(student.uid(), card.title)
@@ -356,6 +361,36 @@ fun SubjectScreen(
                                                 },
                                             ),
                                         ) {
+                                            /*ListCard(
+                                        modifier = Modifier.background(
+                                            color = if (isInactive) {
+                                                Color.LightGray.copy(.25f)
+                                            } else {
+                                                Color.White
+                                            },
+                                        ),
+                                        listAvatar = cardWithClick.avatar,
+                                        title = ListCardTitleModel(text = cardWithClick.title),
+                                        additionalInfoList = cardWithClick.additionalInfo,
+                                        actionButton = {},
+                                        expandLabelText = cardWithClick.expandLabelText,
+                                        shrinkLabelText = cardWithClick.shrinkLabelText,
+                                        onCardClick = cardWithClick.onCardCLick,
+                                    )*/
+
+                                            val additionalInfoColumnState =
+                                                rememberAdditionalInfoColumnState(
+                                                    additionalInfoList = cardWithClick.additionalInfo,
+                                                    syncProgressItem = AdditionalInfoItem(value = ""), // provide your sync item here
+                                                    expandLabelText = cardWithClick.expandLabelText,
+                                                    shrinkLabelText = cardWithClick.shrinkLabelText,
+                                                )
+
+                                            val cardState = rememberListCardState(
+                                                title = ListCardTitleModel(text = cardWithClick.title),
+                                                additionalInfoColumnState = additionalInfoColumnState,
+                                            )
+
                                             ListCard(
                                                 modifier = Modifier.background(
                                                     color = if (isInactive) {
@@ -364,12 +399,9 @@ fun SubjectScreen(
                                                         Color.White
                                                     },
                                                 ),
+                                                listCardState = cardState,
                                                 listAvatar = cardWithClick.avatar,
-                                                title = ListCardTitleModel(text = cardWithClick.title),
-                                                additionalInfoList = cardWithClick.additionalInfo,
                                                 actionButton = {},
-                                                expandLabelText = cardWithClick.expandLabelText,
-                                                shrinkLabelText = cardWithClick.shrinkLabelText,
                                                 onCardClick = cardWithClick.onCardCLick,
                                             )
                                         }
@@ -378,7 +410,6 @@ fun SubjectScreen(
                             }
                         }
                     }
-                    EdgeOverscrollShadow(offsetPx = overscrollOffset.value, maxPx = maxOverscrollPx)
                 }
             }
         }

@@ -3,21 +3,19 @@ package org.dhis2.usescases.main.program
 import io.reactivex.Flowable
 import io.reactivex.parallel.ParallelFlowable
 import org.dhis2.commons.bindings.isStockProgram
-import org.dhis2.commons.bindings.stockUseCase
 import org.dhis2.commons.filters.data.FilterPresenter
 import org.dhis2.commons.resources.MetadataIconProvider
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.commons.schedulers.SchedulerProvider
 import org.dhis2.data.dhislogic.DhisProgramUtils
-import org.dhis2.data.service.SyncStatusData
+import org.dhis2.mobile.sync.model.SyncStatusData
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.program.Program
 import org.hisp.dhis.android.core.program.ProgramType.WITHOUT_REGISTRATION
 import org.hisp.dhis.android.core.program.ProgramType.WITH_REGISTRATION
 import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
-import org.saudigitus.emis.data.model.app_config.EMISConfig
-import org.saudigitus.emis.utils.Constants
+import org.saudigitus.emis.utils.ProgramValidator
 
 internal class ProgramRepositoryImpl(
     private val d2: D2,
@@ -58,17 +56,6 @@ internal class ProgramRepositoryImpl(
         baseProgramCache = emptyList()
     }
 
-    private fun isSEMIS(program: String): Boolean {
-        val dataStore = d2.dataStoreModule()
-            .dataStore()
-            .byNamespace().eq("semis")
-            .byKey().eq(Constants.KEY)
-            .one().blockingGet()
-
-        val config = EMISConfig.fromJson(dataStore?.value()) ?: emptyList()
-        return config.find { it.program == program } != null
-    }
-
     private fun aggregatesModels(): Flowable<List<ProgramUiModel>> {
         return filterPresenter.filteredDataSetInstances().get()
             .toFlowable()
@@ -78,11 +65,17 @@ internal class ProgramRepositoryImpl(
                         .uid(it.dataSetUid())
                         .blockingGet()?.let { dataSet ->
                             programViewModelMapper.map(
-                                dataSet,
-                                it,
-                                it.dataSetInstanceCount(),
-                                resourceManager.defaultDataSetLabel(),
-                                metadataIconProvider(dataSet.style(), SurfaceColor.Primary),
+                                dataSet = dataSet,
+                                dataSetInstanceSummary = it,
+                                recordCount =
+                                    if (filterPresenter.isAssignedToMeApplied()) {
+                                        0
+                                    } else {
+                                        it.dataSetInstanceCount()
+                                    },
+                                dataSetLabel = resourceManager.defaultDataSetLabel(),
+                                filtersAreActive = filterPresenter.areFiltersActive(),
+                                metadataIconData = metadataIconProvider(dataSet.style(), SurfaceColor.Primary),
                             )
                         }
                 }
@@ -100,6 +93,7 @@ internal class ProgramRepositoryImpl(
     }
 
     private fun basePrograms(): List<ProgramUiModel> {
+        val programValidator = ProgramValidator(d2)
         return dhisProgramUtils.getProgramsInCaptureOrgUnits()
             .flatMap { programs ->
                 ParallelFlowable.from(Flowable.fromIterable(programs))
@@ -120,14 +114,11 @@ internal class ProgramRepositoryImpl(
                     0,
                     recordLabel,
                     state,
+                    filtersAreActive = false,
                     metadataIconData = metadataIconProvider(program.style(), SurfaceColor.Primary),
                 ).copy(
-                    stockConfig = if (d2.isStockProgram(program.uid())) {
-                        d2.stockUseCase(program.uid())?.toAppConfig()
-                    } else {
-                        null
-                    },
-                    isSEMIS = isSEMIS(program.uid()),
+                    isSEMIS = programValidator.isSEMIS(program.uid()),
+                    isStockUseCase = d2.isStockProgram(program.uid()),
                 )
             }.toList().toFlowable().blockingFirst()
     }
@@ -176,7 +167,7 @@ internal class ProgramRepositoryImpl(
     }
 
     private fun getTrackerTeiCount(program: Program): Int {
-        return filterPresenter.filteredTrackerProgram(program)
+        return filterPresenter.filteredTrackerProgram(program.uid())
             .offlineFirst().blockingCount()
     }
 }

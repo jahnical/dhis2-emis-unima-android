@@ -1,17 +1,15 @@
 package org.dhis2.android.rtsm.ui.home.screens.components
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.material.BackdropScaffold
 import androidx.compose.material.BackdropValue
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.SnackbarDuration
 import androidx.compose.material.SnackbarResult
 import androidx.compose.material.rememberBackdropScaffoldState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,37 +20,39 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentManager
-import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.dhis2.android.rtsm.R
 import org.dhis2.android.rtsm.data.TransactionType
 import org.dhis2.android.rtsm.ui.home.HomeViewModel
+import org.dhis2.android.rtsm.ui.home.LocalThemeColor
 import org.dhis2.android.rtsm.ui.home.model.DataEntryStep
 import org.dhis2.android.rtsm.ui.home.model.EditionDialogResult
 import org.dhis2.android.rtsm.ui.home.model.SettingsUiState
 import org.dhis2.android.rtsm.ui.managestock.ManageStockViewModel
-import org.dhis2.ui.dialogs.bottomsheet.BottomSheetDialog
-import org.dhis2.ui.dialogs.bottomsheet.BottomSheetDialogUiModel
-import org.dhis2.ui.dialogs.bottomsheet.DialogButtonStyle
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialogUiModel
+import org.dhis2.commons.dialogs.bottomsheet.DialogButtonStyle
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun Backdrop(
-    activity: Activity,
     viewModel: HomeViewModel,
     manageStockViewModel: ManageStockViewModel,
     modifier: Modifier = Modifier,
-    themeColor: Color,
     supportFragmentManager: FragmentManager,
-    barcodeLauncher: ActivityResultLauncher<ScanOptions>,
     scaffoldState: ScaffoldState,
     syncAction: (scope: CoroutineScope, scaffoldState: ScaffoldState) -> Unit = { _, _ -> },
+    onFinish: () -> Unit
 ) {
+    val context = LocalContext.current
+
     val backdropState = rememberBackdropScaffoldState(BackdropValue.Revealed)
     var isFrontLayerDisabled by remember { mutableStateOf<Boolean?>(null) }
     val settingsUiState by viewModel.settingsUiState.collectAsState()
@@ -61,15 +61,15 @@ fun Backdrop(
     val bottomSheetState = manageStockViewModel.bottomSheetState.collectAsState()
     if (bottomSheetState.value) {
         launchBottomSheet(
-            activity.getString(R.string.not_saved),
-            activity.getString(R.string.transaction_not_confirmed),
+            stringResource(R.string.not_saved),
+            stringResource(R.string.transaction_not_confirmed),
             supportFragmentManager,
             onKeepEdition = {
                 manageStockViewModel.onBottomSheetClosed()
             },
             onDiscard = {
                 manageStockViewModel.onBottomSheetClosed()
-                activity.finish()
+                onFinish()
             },
         )
     }
@@ -87,7 +87,7 @@ fun Backdrop(
                 settingsUiState.selectedTransactionItem.label,
                 settingsUiState.fromFacilitiesLabel().asString(),
                 settingsUiState.deliverToLabel()?.asString(),
-                themeColor,
+                LocalThemeColor.current,
                 launchBottomSheet = {
                     manageStockViewModel.onHandleBackNavigation()
                 },
@@ -98,17 +98,16 @@ fun Backdrop(
                 settingsUiState.hasDestinationSelected(),
             )
         },
-        backLayerBackgroundColor = themeColor,
+        backLayerBackgroundColor = LocalThemeColor.current,
         backLayerContent = {
             FilterList(
                 viewModel,
                 dataEntryUiState,
-                themeColor,
                 supportFragmentManager,
                 launchDialog = { msg, result ->
                     launchBottomSheet(
-                        activity.getString(R.string.not_saved),
-                        activity.getString(msg),
+                        context.getString(R.string.not_saved),
+                        context.getString(msg),
                         supportFragmentManager,
                         onKeepEdition = {
                             result.invoke(EditionDialogResult.KEEP)
@@ -135,10 +134,8 @@ fun Backdrop(
             MainContent(
                 backdropState,
                 isFrontLayerDisabled,
-                themeColor,
                 viewModel,
                 manageStockViewModel,
-                barcodeLauncher,
             )
         },
         scaffoldState = backdropState,
@@ -157,32 +154,30 @@ fun Backdrop(
 }
 
 @Composable
-private fun getScrimColor(settingsUiState: SettingsUiState): Color {
-    return if (settingsUiState.selectedTransactionItem.type == TransactionType.DISTRIBUTION) {
+private fun getScrimColor(settingsUiState: SettingsUiState): Color =
+    if (settingsUiState.selectedTransactionItem.type == TransactionType.DISTRIBUTION) {
         if (settingsUiState.hasFacilitySelected() && settingsUiState.hasDestinationSelected()) {
             Color.Unspecified
         } else {
-            MaterialTheme.colors.surface.copy(alpha = 0.60f)
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.60f)
         }
     } else {
         if (!settingsUiState.hasFacilitySelected()) {
-            MaterialTheme.colors.surface.copy(alpha = 0.60f)
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.60f)
         } else {
             Color.Unspecified
         }
     }
-}
 
 @Composable
-private fun getBackdropState(settingsUiState: SettingsUiState): Boolean {
-    return if (
+private fun getBackdropState(settingsUiState: SettingsUiState): Boolean =
+    if (
         settingsUiState.selectedTransactionItem.type == TransactionType.DISTRIBUTION
     ) {
         !(settingsUiState.hasFacilitySelected() && settingsUiState.hasDestinationSelected())
     } else {
         !settingsUiState.hasFacilitySelected()
     }
-}
 
 private fun launchBottomSheet(
     title: String,
@@ -192,18 +187,20 @@ private fun launchBottomSheet(
     onKeepEdition: () -> Unit, // Leave it as it was
 ) {
     BottomSheetDialog(
-        bottomSheetDialogUiModel = BottomSheetDialogUiModel(
-            title = title,
-            message = subtitle,
-            iconResource = R.drawable.ic_outline_error_36,
-            mainButton = DialogButtonStyle.MainButton(org.dhis2.commons.R.string.keep_editing),
-            secondaryButton = DialogButtonStyle.DiscardButton(),
-        ),
+        bottomSheetDialogUiModel =
+            BottomSheetDialogUiModel(
+                title = title,
+                message = subtitle,
+                iconResource = R.drawable.ic_outline_error_36,
+                mainButton = DialogButtonStyle.MainButton(org.dhis2.commons.R.string.keep_editing),
+                secondaryButton = DialogButtonStyle.DiscardButton(),
+            ),
         onMainButtonClicked = {
             supportFragmentManager.popBackStack()
             onKeepEdition.invoke()
         },
         onSecondaryButtonClicked = { onDiscard.invoke() },
+        showTopDivider = true,
     ).apply {
         this.show(supportFragmentManager.beginTransaction(), "DIALOG")
         this.isCancelable = false
@@ -211,24 +208,28 @@ private fun launchBottomSheet(
 }
 
 @Composable
-fun DisplaySnackBar(manageStockViewModel: ManageStockViewModel, scaffoldState: ScaffoldState) {
+fun DisplaySnackBar(
+    manageStockViewModel: ManageStockViewModel,
+    scaffoldState: ScaffoldState,
+) {
     val coroutineScope: CoroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         manageStockViewModel.dataEntryUiState.collectLatest {
             if (it.step == DataEntryStep.COMPLETED) {
                 coroutineScope.launch {
-                    val result = scaffoldState.snackbarHostState.showSnackbar(
-                        message = "Snackbar # ",
-                        actionLabel = "Action on ",
-                        duration = SnackbarDuration.Short,
-                    )
+                    val result =
+                        scaffoldState.snackbarHostState.showSnackbar(
+                            message = "Snackbar # ",
+                            actionLabel = "Action on ",
+                            duration = SnackbarDuration.Short,
+                        )
                     when (result) {
                         SnackbarResult.ActionPerformed -> {
-                            /* action has been performed */
+                            // action has been performed
                         }
                         SnackbarResult.Dismissed -> {
-                            /* dismissed, no action needed */
+                            // dismissed, no action needed
                         }
                     }
                 }

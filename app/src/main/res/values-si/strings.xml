@@ -1,0 +1,50 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!-- Warnings and error messages -->
+    <string name="error">දෝෂය</string>
+    <!--PERIOD-->
+    <string name="DAILY">දිනපතා</string>
+    <string name="WEEKLY">සතිපතා</string>
+    <string name="MONTHLY">මාස්පතා</string>
+    <string name="YEARLY">අවුරුදු පතා</string>
+    <string name="action_accept">පිළිගන්න</string>
+    <!-- Input hints -->
+    <string name="search">සොයන්න</string>
+    <!-- Status -->
+
+    <string name="event_open">විවෘත කරන්න</string>
+    <string name="state_error">දෝෂය</string>
+
+    <string name="delete">ඉවත් කරන්න</string>
+    <!--TEI DASHBOARD-->
+    <string name="edit">වෙනස් කරන්න</string>
+    <string name="wipe_data_ok">පිළිගන්න</string>
+    <!--endregion-->
+
+    <!-- SEARCH OPTION SET -->
+    <string name="search_optionset">සොයන්න</string>
+    <string name="save">සුරකින්න</string>
+    <string name="qr_data_values">දත්ත අගයන්</string>
+    <string name="state_warning">අවවාදයයි</string>
+    <string name="action_close">වසන්න</string>
+    <string name="filter_period_today">අද</string>
+    <string name="filter_period_yesterday">ඊයේ</string>
+    <string name="filter_period_this_week">මෙම සතිය</string>
+    <string name="filter_period_last_week">පසුගිය සතිය</string>
+    <string name="filter_period_this_month">මෙම මාසය</string>
+    <string name="filter_period_last_month">පසුගිය මාසය</string>
+    <string name="filter_period_other">වෙනත්</string>
+    <string name="filter_event_status_open">විවෘත කරන්න</string>
+    <string name="interval_yesterday">ඊයේ</string>
+    <string name="enrollment_status_active">විවෘත කරන්න</string>
+    <string name="filters_title_date">දිනය</string>
+    <string name="section_charts">ප්‍රස්ථාර</string>
+    <string name="navigation_map_view">සිතියම</string>
+    <string name="navigation_charts">ප්‍රස්ථාර</string>
+    <string name="show_table_graph">වගුවක් ලෙස නරඹන්න</string>
+    <string name="show_table_value">අගයක් ලෙස නරඹන්න</string>
+    <string name="filter_period_this_year">මෙම වසර</string>
+    <string name="filter_period_last_year">පසුගිය වසර</string>
+    <string name="sync_dialog_action_send">යවන්න</string>
+    <string name="show_more">වැඩියෙන් පෙන්වන්න</string>
+    <string name="show_description">විස්තරය පෙන්වන්න</string>
+    </resources>

@@ -4,14 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.ActivityResultLauncher
-import org.dhis2.android.rtsm.data.AppConfig
 import org.dhis2.android.rtsm.ui.home.HomeActivity
 import org.dhis2.commons.Constants
 import org.dhis2.usescases.datasets.datasetDetail.DataSetDetailActivity
 import org.dhis2.usescases.main.program.ProgramUiModel
 import org.dhis2.usescases.programEventDetail.ProgramEventDetailActivity
 import org.dhis2.usescases.searchTrackEntity.SearchTEActivity
+import org.hisp.dhis.android.core.D2Manager
 import org.hisp.dhis.android.core.program.ProgramType
+import org.saudigitus.emis.utils.ProgramValidator
+import timber.log.Timber
 
 sealed class HomeItemData(
     open val uid: String,
@@ -23,8 +25,8 @@ sealed class HomeItemData(
         override val label: String,
         override val accessDataWrite: Boolean,
         val trackedEntityType: String,
-        val stockConfig: AppConfig?,
         val isSEMIS: Boolean,
+        val isStockUseCase: Boolean,
     ) : HomeItemData(uid, label, accessDataWrite)
 
     data class EventProgram(
@@ -40,36 +42,43 @@ sealed class HomeItemData(
     ) : HomeItemData(uid, label, accessDataWrite)
 }
 
-fun ProgramUiModel.toHomeItemData(): HomeItemData {
-    return when (programType) {
+fun ProgramUiModel.toHomeItemData(): HomeItemData =
+    when (programType) {
         ProgramType.WITHOUT_REGISTRATION.name ->
             HomeItemData.EventProgram(
-                uid,
-                title,
-                accessDataWrite,
+                uid = uid,
+                label = title,
+                accessDataWrite = accessDataWrite,
             )
 
-        ProgramType.WITH_REGISTRATION.name ->
+        ProgramType.WITH_REGISTRATION.name -> {
+            val checkSEMIS = isSEMIS || (D2Manager.isD2Instantiated() && ProgramValidator(D2Manager.getD2()).isSEMIS(uid))
             HomeItemData.TrackerProgram(
-                uid,
-                title,
-                accessDataWrite,
-                type!!,
-                stockConfig,
-                isSEMIS,
+                uid = uid,
+                label = title,
+                accessDataWrite = accessDataWrite,
+                trackedEntityType = type!!,
+                isSEMIS = checkSEMIS,
+                isStockUseCase = isStockUseCase,
             )
+        }
 
-        else -> HomeItemData.DataSet(
-            uid,
-            title,
-            accessDataWrite,
-        )
+        else ->
+            HomeItemData.DataSet(
+                uid = uid,
+                label = title,
+                accessDataWrite = accessDataWrite,
+            )
     }
-}
 
-fun ActivityResultLauncher<Intent>.navigateTo(context: Context, homeItemData: HomeItemData) {
+
+fun ActivityResultLauncher<Intent>.navigateTo(
+    context: Context,
+    homeItemData: HomeItemData,
+) {
     val bundle = Bundle()
-    val idTag = if (homeItemData is HomeItemData.DataSet) {
+    val idTag =
+        if (homeItemData is HomeItemData.DataSet) {
         Constants.DATASET_UID
     } else {
         Constants.PROGRAM_UID
@@ -89,24 +98,40 @@ fun ActivityResultLauncher<Intent>.navigateTo(context: Context, homeItemData: Ho
                 launch(this)
             }
 
-        is HomeItemData.EventProgram -> {
+        is HomeItemData.EventProgram ->{
             Intent(context, ProgramEventDetailActivity::class.java).apply {
                 putExtras(ProgramEventDetailActivity.getBundle(homeItemData.uid))
                 launch(this)
             }
-        }
-
+    }
         is HomeItemData.TrackerProgram -> {
+            val branch =
+                when {
+                    homeItemData.isSEMIS -> "SEMIS"
+                    homeItemData.isStockUseCase -> "STOCK"
+                    else -> "TRACKER"
+                }
+            Timber.tag("EMIS_WIRING").i(
+                "programUid=%s isSEMIS=%s isStockUseCase=%s branch=%s",
+                homeItemData.uid,
+                homeItemData.isSEMIS,
+                homeItemData.isStockUseCase,
+                branch,
+            )
             if (homeItemData.isSEMIS) {
                 Intent(context, org.saudigitus.emis.MainActivity::class.java).apply {
                     putExtras(bundle)
                     launch(this)
                 }
-            } else if (homeItemData.stockConfig != null) {
+            } else if (homeItemData.isStockUseCase) {
                 Intent(context, HomeActivity::class.java).apply {
-                    putExtra(
-                        org.dhis2.android.rtsm.commons.Constants.INTENT_EXTRA_APP_CONFIG,
-                        homeItemData.stockConfig,
+                    putExtras(bundle)
+                    Timber.tag("EMIS_WIRING").i(
+                        "programUid=%s isSEMIS=%s isStockUseCase=%s branch=STOCK launch=HomeActivity programExtra=%s",
+                        homeItemData.uid,
+                        homeItemData.isSEMIS,
+                        homeItemData.isStockUseCase,
+                        getStringExtra(Constants.PROGRAM_UID),
                     )
                     launch(this)
                 }

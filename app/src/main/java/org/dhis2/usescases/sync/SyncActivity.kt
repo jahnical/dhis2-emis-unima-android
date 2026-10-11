@@ -2,24 +2,31 @@ package org.dhis2.usescases.sync
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View.GONE
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.databinding.DataBindingUtil
-import androidx.work.WorkInfo
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import org.dhis2.App
 import org.dhis2.R
 import org.dhis2.bindings.Bindings
 import org.dhis2.bindings.userComponent
 import org.dhis2.databinding.ActivitySynchronizationBinding
+import org.dhis2.mobile.sync.data.SyncBackgroundJobAction
 import org.dhis2.usescases.general.ActivityGlobalAbstract
 import org.dhis2.usescases.login.LoginActivity
 import org.dhis2.usescases.main.MainActivity
 import org.dhis2.utils.OnDialogClickListener
 import org.dhis2.utils.extension.navigateTo
 import org.dhis2.utils.extension.share
+import org.koin.android.ext.android.inject
 import javax.inject.Inject
 
-class SyncActivity : ActivityGlobalAbstract(), SyncView {
-
+class SyncActivity :
+    ActivityGlobalAbstract(),
+    SyncView {
     lateinit var binding: ActivitySynchronizationBinding
 
     @Inject
@@ -28,20 +35,23 @@ class SyncActivity : ActivityGlobalAbstract(), SyncView {
     @Inject
     lateinit var animations: SyncAnimations
 
+    private val backgroundJobAction: SyncBackgroundJobAction by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val serverComponent = (applicationContext as App).serverComponent()
-        userComponent()?.plus(SyncModule(this, serverComponent))?.inject(this) ?: finish()
+        userComponent()?.plus(SyncModule(this, backgroundJobAction, serverComponent))?.inject(this)
+            ?: finish()
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_synchronization)
         binding.presenter = presenter
-        presenter.sync()
-    }
 
-    override fun onResume() {
-        super.onResume()
-        presenter.observeSyncProcess().observe(this) { workInfoList: List<WorkInfo> ->
-            presenter.handleSyncInfo(workInfoList)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                presenter.observeSyncProcess().collect(presenter::handleSyncInfo)
+            }
         }
+
+        presenter.sync()
     }
 
     override fun setMetadataSyncStarted() {
@@ -102,14 +112,18 @@ class SyncActivity : ActivityGlobalAbstract(), SyncView {
     }
 
     override fun setFlag(flagName: String?) {
-        binding.logoFlag.setImageResource(
-            resources.getIdentifier(flagName, "drawable", packageName),
-        )
-        animations.startFlagAnimation { value: Float? ->
-            binding.apply {
-                logoFlag.alpha = value!!
-                dhisLogo.alpha = 0f
+        flagName?.takeIf { it.isNotBlank() }?.let {
+            val flagRes = resources.getIdentifier(flagName, "drawable", packageName)
+            binding.logoFlag.setImageResource(flagRes)
+            animations.startFlagAnimation { value ->
+                binding.apply {
+                    logoFlag.alpha = value
+                    dhisLogo.alpha = 0f
+                }
             }
+        } ?: run {
+            // Hide flag if no valid name provided
+            binding.logoFlag.visibility = GONE
         }
     }
 
