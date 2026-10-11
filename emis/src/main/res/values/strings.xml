@@ -37,6 +37,7 @@
     <string name="search_students">Search students</string>
     <string name="performance_summary">Performance summary</string>
     <string name="marks_saved">Performance saved successfully</string>
+    <string name="enter_score_to_see_grade">Enter score to see grade</string>
     <string name="bulk_assing">Bulk assign</string>
     <string name="marked_follow_up">Marked for follow-up</string>
     <string name="sync_retry">Retry sync</string>
