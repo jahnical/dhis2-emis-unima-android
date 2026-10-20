@@ -188,6 +188,9 @@ class MainActivity : FragmentActivity() {
                             val uiState by performanceViewModel.uiState.collectAsStateWithLifecycle()
                             val infoCard by performanceViewModel.infoCard.collectAsStateWithLifecycle()
                             val stats by performanceViewModel.cache.collectAsStateWithLifecycle()
+                            // One student can have multiple cached entries (e.g. score + grade),
+                            // so count distinct students, not raw cache entries.
+                            val filledCount = stats.distinctBy { it.tei }.size
                             val teis by viewModel.teis.collectAsStateWithLifecycle()
                             val performanceStep by performanceViewModel.buttonStep.collectAsStateWithLifecycle()
                             val homeUiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -214,7 +217,7 @@ class MainActivity : FragmentActivity() {
                                 infoCard = infoCard,
                                 defaultSelection = it.arguments?.getString("subjectName") ?: "",
                                 setPerformanceState = performanceViewModel::fieldState,
-                                performanceStats = Pair("${stats.size}", "${teis.size.minus(stats.size)}"),
+                                performanceStats = Pair("$filledCount", "${teis.size - filledCount}"),
                                 performanceStep = performanceStep,
                                 setDate = performanceViewModel::setDate,
                                 onNext = performanceViewModel::onClickNext,
